@@ -10,6 +10,17 @@ using Xunit;
 
 public sealed class WidgetDialogTests {
 	[Fact]
+	public void OkDialogAcknowledgesEnterAndEscapeCancels() {
+		using WidgetHost host = HostWithBackground( out _ );
+		WidgetMessageDialog accepted = WidgetMessageDialog.Ok( "notice", "Notice", "Saved." ); host.ShowModal( accepted );
+		WidgetDialogCompletedAction ok = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+		WidgetMessageDialog dismissed = WidgetMessageDialog.Ok( "notice2", "Notice", "Saved." ); host.ShowModal( dismissed );
+		WidgetDialogCompletedAction cancel = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+
+		Assert.Equal( WidgetDialogOutcome.Ok, ok.Result.Outcome ); Assert.Equal( WidgetDialogOutcome.Cancel, cancel.Result.Outcome );
+	}
+
+	[Fact]
 	public void NoDiffersFromCancel() {
 		using WidgetHost host = HostWithBackground( out _ );
 		WidgetMessageDialog noDialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( noDialog );
