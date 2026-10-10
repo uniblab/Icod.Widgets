@@ -92,7 +92,8 @@ public sealed partial class WidgetHost : IDisposable {
 		this.currentTime = timestamp;
 		bool handled = false;
 
-		if ( WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
+		if ( WidgetInputKind.Key == input.Kind && this.popup is null && this.ActiveModal is null && this.TryMenuBarInput( input ) ) handled = true;
+		else if ( WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
 			CursesFocusDirection direction = 0 != ( input.Modifiers & WidgetInputModifiers.Shift )
 				? CursesFocusDirection.Backward : CursesFocusDirection.Forward;
 			if ( this.popup is not null ) this.DismissPopup();
@@ -104,6 +105,13 @@ public sealed partial class WidgetHost : IDisposable {
 		}
 
 		return new WidgetDispatchResult( handled || this.ActiveModal is not null, this.DrainActions() );
+	}
+
+	private bool TryMenuBarInput( WidgetInput input ) {
+		foreach ( WidgetMenuBar menu in this.roots.SelectMany( root => root.DescendantsAndSelf() ).OfType<WidgetMenuBar>() ) {
+			if ( menu.IsEffectivelyEnabled && menu.IsEffectivelyVisible && menu.TryGlobalInput( input, this ) ) return true;
+		}
+		return false;
 	}
 
 	public IReadOnlyList<WidgetAction> DrainActions() {

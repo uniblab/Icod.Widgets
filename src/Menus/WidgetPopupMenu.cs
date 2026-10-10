@@ -82,6 +82,17 @@ public class WidgetPopupMenu : Widget {
 		this.Close(); return true;
 	}
 
+	protected bool TryRootMnemonic( WidgetInput input, WidgetHost host ) {
+		if ( WidgetInputKind.Key != input.Kind || WidgetKey.Character != input.KeyCode || input.Character is not { Value: <= char.MaxValue } character ||
+			0 == ( input.Modifiers & WidgetInputModifiers.Alt ) || 0 != ( input.Modifiers & WidgetInputModifiers.Control ) ) return false;
+		int index = Array.FindIndex( this.rootItems, item => item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
+		if ( 0 > index ) return false;
+		if ( !this.IsOpen ) this.Open();
+		this.levels[ 0 ].Cursor = index;
+		while ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 );
+		return this.Activate( host );
+	}
+
 	private bool TryShortcut( WidgetInput input, WidgetHost host ) {
 		foreach ( WidgetMenuItem item in Flatten( this.levels[ ^1 ].Items ) ) {
 			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || ( shortcut.Character.HasValue && input.Character?.Value != shortcut.Character.Value ) ) continue;
