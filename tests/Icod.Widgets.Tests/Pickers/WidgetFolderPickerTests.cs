@@ -40,6 +40,15 @@ public sealed class WidgetFolderPickerTests {
 		Assert.False( picker.ApplyValidationResult( WidgetPickerValidationResult.Success( request ) ) );
 	}
 
+	[Fact]
+	public void KeyboardNavigationRequestsDirectoryAndAcceptance() {
+		FakeProvider provider = new(); WidgetFolderPicker picker = new( "folder", provider, "/folder" ); WidgetBrowserRequest load = picker.RequestDirectory( "/folder" ); picker.ApplyLoadResult( WidgetBrowserLoadResult.Success( load, new WidgetDirectorySnapshot( "/folder", "/", [ new( "/folder/sub", "sub", true ) ] ) ) ); using WidgetHost host = ModalHost( picker );
+		WidgetBrowserLoadRequestedAction navigation = Assert.IsType<WidgetBrowserLoadRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( "/folder/sub", navigation.Request.Location );
+		WidgetPickerValidationRequestedAction acceptance = Assert.IsType<WidgetPickerValidationRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+		Assert.Equal( [ "/folder" ], acceptance.Request.Paths );
+	}
+
 	private static WidgetFolderPicker Loaded( FakeProvider provider ) { WidgetFolderPicker picker = new( "folder", provider, "/folder" ); WidgetBrowserRequest load = picker.RequestDirectory( "/folder" ); picker.ApplyLoadResult( WidgetBrowserLoadResult.Success( load, new WidgetDirectorySnapshot( "/folder", "/", [ new( "/folder/file", "file", false ) ] ) ) ); return picker; }
 	private static WidgetHost ModalHost( WidgetFolderPicker picker ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); host.ShowModal( picker ); return host; }
 	private sealed class FakeProvider : IWidgetFileSystemProvider {

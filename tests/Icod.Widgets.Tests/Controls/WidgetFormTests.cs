@@ -28,7 +28,26 @@ public sealed class WidgetFormTests {
 
 		host.Process( WidgetInput.Paste( "one\r\n\t two\u0001three" ), TimeSpan.Zero );
 
-		Assert.Equal( "one twothree", input.Value );
+		Assert.Equal( "one two three", input.Value );
+	}
+
+	[Fact]
+	public void PastePreservesBoundarySeparator() {
+		WidgetTextInput input = new( "input", "one" ); using WidgetHost host = FocusedHost( input );
+		host.Process( WidgetInput.Paste( "\ntwo" ), TimeSpan.Zero );
+		Assert.Equal( "one two", input.Value );
+	}
+
+	[Fact]
+	public void CaretEditsWholeTextElementsAndKeepsTailVisible() {
+		WidgetTextInput input = new( "input", "a\u0301bc" ); using WidgetHost host = FocusedHost( input, columns: 2 );
+		host.Process( WidgetInput.Key( WidgetKey.Left ), TimeSpan.Zero );
+		host.Process( WidgetInput.Key( WidgetKey.Backspace ), TimeSpan.FromMilliseconds( 1 ) );
+		host.Process( WidgetInput.TextInput( new Rune( 'Z' ) ), TimeSpan.FromMilliseconds( 2 ) );
+		Assert.Equal( "a\u0301Zc", input.Value );
+		host.Process( WidgetInput.Key( WidgetKey.End ), TimeSpan.FromMilliseconds( 3 ) );
+		host.Render();
+		Assert.Equal( "Zc", string.Concat( Enumerable.Range( 0, 2 ).Select( column => host.Screen.StandardWindow.GetCell( 0, column ).Content ) ) );
 	}
 
 	[Fact]
@@ -74,9 +93,9 @@ public sealed class WidgetFormTests {
 		Assert.Equal( "normal", Assert.IsType<WidgetValueChangedAction<string>>( Assert.Single( result.Actions ) ).Value );
 	}
 
-	private static WidgetHost FocusedHost( Widget widget, bool focus = true ) {
-		WidgetHost host = new( new CursesScreen( 40, 5 ), WidgetTheme.Default );
-		host.Attach( widget ); host.Arrange( new CursesRectangle( 0, 0, 1, 40 ) );
+	private static WidgetHost FocusedHost( Widget widget, bool focus = true, int columns = 40 ) {
+		WidgetHost host = new( new CursesScreen( columns, 5 ), WidgetTheme.Default );
+		host.Attach( widget ); host.Arrange( new CursesRectangle( 0, 0, 1, columns ) );
 		if ( focus ) Assert.True( host.Focus( widget ) );
 		return host;
 	}

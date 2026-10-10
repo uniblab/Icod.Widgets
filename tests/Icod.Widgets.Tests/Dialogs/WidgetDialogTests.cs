@@ -38,7 +38,22 @@ public sealed class WidgetDialogTests {
 	public void ModalBlocksBackgroundCommands() {
 		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
 		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.Zero );
-		Assert.Empty( result.Actions );
+		Assert.Empty( result.Actions ); Assert.True( result.Handled );
+	}
+
+	[Fact]
+	public void ModalTabCannotFocusBackground() {
+		using WidgetHost host = HostWithBackground( out WidgetButton background ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Tab ), TimeSpan.Zero );
+		Assert.True( result.Handled ); Assert.NotSame( background, host.FocusedWidget ); Assert.Same( dialog, host.FocusedWidget );
+	}
+
+	[Fact]
+	public void DetachingOpenParentCancelsModalTree() {
+		using WidgetHost host = HostWithBackground( out WidgetButton background ); WidgetMessageDialog parent = WidgetMessageDialog.OkCancel( "parent", "P", "P" ); host.ShowModal( parent ); host.ShowModal( WidgetMessageDialog.OkCancel( "child", "C", "C" ) );
+		Assert.True( host.Detach( parent ) );
+		Assert.Equal( 0, host.ModalDepth ); Assert.False( parent.IsOpen ); Assert.Same( background, host.FocusedWidget );
+		Assert.Equal( 2, host.DrainActions().Count );
 	}
 
 	[Fact]
@@ -54,6 +69,15 @@ public sealed class WidgetDialogTests {
 		Assert.False( wizard.CanPrevious );
 		WidgetWizardNavigationRequestedAction request = Assert.IsType<WidgetWizardNavigationRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
 		Assert.Equal( 1, request.ToPage ); wizard.RejectNavigation( "Invalid" ); Assert.Equal( 0, wizard.PageIndex ); Assert.Equal( "Invalid", wizard.Error ); Assert.True( wizard.IsOpen );
+	}
+
+	[Fact]
+	public void WizardRendersPageAndCompletesFromFinalPage() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetWizardDialog wizard = new( "wizard", "Setup", [ "First page", "Final page" ] ); host.ShowModal( wizard ); wizard.ApplyNavigation( 1 );
+		host.Render();
+		Assert.Contains( "Final page", string.Concat( Enumerable.Range( 0, host.Screen.Columns ).Select( column => host.Screen.StandardWindow.GetCell( 1, column ).Content ) ) );
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.Accepted, completed.Result.Outcome );
 	}
 
 	[Fact]

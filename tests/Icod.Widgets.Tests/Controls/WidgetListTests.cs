@@ -60,6 +60,28 @@ public sealed class WidgetListTests {
 	}
 
 	[Fact]
+	public void ControlASelectsEveryEnabledItem() {
+		WidgetList list = new( "list", WidgetSelectionMode.Multiple );
+		list.SetItems( [ new( "a", "Alpha" ), new( "b", "Beta", false ), new( "c", "Charlie" ) ] );
+		using WidgetHost host = Focus( list );
+		WidgetDispatchResult result = host.Process(
+			WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new Rune( 'a' ) ),
+			TimeSpan.Zero );
+		Assert.True( result.Handled );
+		Assert.Equal( [ "a", "c" ], list.SelectedKeys );
+	}
+
+	[Fact]
+	public void ReplacementMovesMissingCursorToNearestEnabledItem() {
+		WidgetList list = new( "list", WidgetSelectionMode.Single );
+		list.SetItems( [ new( "a", "A" ), new( "b", "B" ), new( "c", "C" ) ] );
+		using WidgetHost host = Focus( list );
+		host.Process( WidgetInput.Key( WidgetKey.End ), TimeSpan.Zero );
+		list.SetItems( [ new( "a", "A" ), new( "b", "B" ) ] );
+		Assert.Equal( "b", list.CursorKey );
+	}
+
+	[Fact]
 	public void VisibleRenderingDoesNotVisitWholeList() {
 		WidgetList list = new( "list", WidgetSelectionMode.Single );
 		list.SetItems( Enumerable.Range( 0, WidgetLimits.MaximumItems ).Select( i => new WidgetListItem( i.ToString(), $"Item {i}" ) ).ToArray() );

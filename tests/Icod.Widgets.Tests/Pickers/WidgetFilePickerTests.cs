@@ -57,6 +57,26 @@ public sealed class WidgetFilePickerTests {
 		Assert.False( picker.ApplyValidationResult( WidgetPickerValidationResult.Success( request ) ) );
 	}
 
+	[Fact]
+	public void DirectBasketRemovalInvalidatesPendingValidation() {
+		FakeProvider provider = new( StringComparer.Ordinal ); WidgetFilePicker picker = Loaded( provider, true ); using WidgetHost host = ModalHost( picker ); picker.ToggleFile( "/dir/a.txt" ); WidgetPickerValidationRequest request = picker.RequestAccept(); picker.Basket.Clear();
+		Assert.False( picker.ApplyValidationResult( WidgetPickerValidationResult.Success( request ) ) );
+	}
+
+	[Fact]
+	public void ClosedAndReopenedPickerRejectsOldValidation() {
+		FakeProvider provider = new( StringComparer.Ordinal ); WidgetFilePicker picker = Loaded( provider, true ); using WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); WidgetModalLease lease = host.ShowModal( picker ); picker.ToggleFile( "/dir/a.txt" ); WidgetPickerValidationRequest request = picker.RequestAccept(); lease.Dispose(); _ = host.DrainActions(); host.ShowModal( picker );
+		Assert.False( picker.ApplyValidationResult( WidgetPickerValidationResult.Success( request ) ) ); Assert.True( picker.IsOpen );
+	}
+
+	[Fact]
+	public void KeyboardSelectionRequestsValidation() {
+		FakeProvider provider = new( StringComparer.Ordinal ); WidgetFilePicker picker = Loaded( provider, false ); using WidgetHost host = ModalHost( picker );
+		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.Zero );
+		WidgetPickerValidationRequestedAction action = Assert.IsType<WidgetPickerValidationRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+		Assert.Equal( [ "/dir/a.txt" ], action.Request.Paths );
+	}
+
 	private static WidgetFilePicker Loaded( FakeProvider provider, bool multiple ) { WidgetFilePicker picker = new( "files", provider, "/dir", multiple, [ new WidgetFileFilter( "text", [ ".txt" ] ), new WidgetFileFilter( "logs", [ ".log" ] ), WidgetFileFilter.AllFiles ] ); WidgetBrowserRequest request = picker.RequestDirectory( "/dir" ); picker.ApplyLoadResult( WidgetBrowserLoadResult.Success( request, new WidgetDirectorySnapshot( "/dir", "/", [ new( "/dir/sub", "sub", true ), new( "/dir/a.txt", "a.txt", false ), new( "/dir/a.log", "a.log", false ) ] ) ) ); return picker; }
 	private static WidgetHost ModalHost( WidgetFilePicker picker ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); host.ShowModal( picker ); return host; }
 	private sealed class FakeProvider( StringComparer comparer ) : IWidgetFileSystemProvider {

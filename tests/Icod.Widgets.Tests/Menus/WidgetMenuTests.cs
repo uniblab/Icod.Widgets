@@ -46,6 +46,16 @@ public sealed class WidgetMenuTests {
 		Assert.Throws<ArgumentException>( () => new WidgetPopupMenu( "deep", [ Chain( 17 ) ] ) );
 	}
 
+	[Fact]
+	public void CompactMenuScrollsCurrentItemIntoView() {
+		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "a", "Alpha", "a" ), WidgetMenuItem.Command( "b", "Beta", "b" ), WidgetMenuItem.Command( "c", "Gamma", "c" ) ] );
+		using WidgetHost host = Focus( menu, columns: 20, rows: 1 ); menu.Open();
+		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.Zero );
+		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 1 ) );
+		host.Render();
+		Assert.StartsWith( "Gamma", string.Concat( Enumerable.Range( 0, menu.RenderBounds.Columns ).Select( column => host.Screen.StandardWindow.GetCell( 0, column ).Content ) ) );
+	}
+
 	private static WidgetMenuItem Chain( int levels ) => 1 == levels ? WidgetMenuItem.Command( "leaf", "Leaf", "leaf" ) : WidgetMenuItem.Submenu( $"level-{levels}", "More", [ Chain( levels - 1 ) ] );
 	private static WidgetHost Focus( WidgetPopupMenu menu, int columns = 30, int rows = 8 ) { WidgetHost host = new( new CursesScreen( columns, rows ), WidgetTheme.Default ); host.Attach( menu ); host.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( menu ) ); return host; }
 }

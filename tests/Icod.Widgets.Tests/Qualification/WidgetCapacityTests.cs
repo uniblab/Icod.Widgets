@@ -11,4 +11,13 @@ public sealed class WidgetCapacityTests {
 		Assert.Throws<InvalidOperationException>( () => host.Enqueue( new WidgetInvokedAction( "probe", "overflow" ) ) );
 		Assert.Equal( WidgetLimits.MaximumPendingActions, host.DrainActions().Count );
 	}
+
+	[Fact]
+	public void FullQueueRejectsModalCloseBeforeStateMutationAndCanRetry() {
+		using WidgetHost host = new( new CursesScreen( 20, 3 ), WidgetTheme.Default ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "dialog", "D", "D" ); WidgetModalLease lease = host.ShowModal( dialog );
+		for ( int i = 0; i < WidgetLimits.MaximumPendingActions; i++ ) host.Enqueue( new WidgetInvokedAction( "probe", i.ToString() ) );
+		Assert.Throws<InvalidOperationException>( lease.Dispose );
+		Assert.True( lease.IsActive ); Assert.True( dialog.IsOpen ); Assert.Equal( 1, host.ModalDepth );
+		_ = host.DrainActions(); lease.Dispose(); Assert.False( lease.IsActive ); Assert.False( dialog.IsOpen ); Assert.Single( host.DrainActions() );
+	}
 }
