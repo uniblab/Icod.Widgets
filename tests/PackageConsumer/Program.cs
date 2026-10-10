@@ -5,6 +5,8 @@
 */
 using Icod.DCurses;
 using Icod.Widgets;
-using WidgetHost host = new( new CursesScreen( 20, 2 ), WidgetTheme.Default );
-WidgetButton button = new( "ok", "OK", "ok" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button );
-return host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions.Single() is WidgetInvokedAction ? 0 : 1;
+using WidgetHost host = new( new CursesScreen( 24, 5 ), WidgetTheme.Default );
+WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "run", "Run", "run", 'r' ) ], 'f' ) ] );
+host.Attach( menu ); host.Arrange( host.Screen.Bounds ); host.Focus( menu );
+host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ), TimeSpan.Zero );
+return host.Process( WidgetInput.Key( WidgetKey.Character, character: new( 'r' ) ), TimeSpan.FromMilliseconds( 1 ) ).Actions.Single() is WidgetInvokedAction ? 0 : 1;

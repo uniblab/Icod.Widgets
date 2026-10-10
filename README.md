@@ -24,7 +24,8 @@ Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 ## CONTROLS
 
-- Menu bars, popup menus, submenus, separators, disabled and checkable items.
+- Menu bars, framed popup menus, scoped mnemonics, visible command shortcuts,
+  submenus, separators, disabled and checkable items.
 - Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs with explicit results.
 - Single-select and multi-select lists, and framed drop-down selection popups.
 - Folder selection and single/multiple existing-file selection.
@@ -60,12 +61,43 @@ await session.RefreshAsync();
 
 Tab and Shift+Tab traverse controls. Arrows navigate lists, radio groups, menus,
 and drop-downs. Enter activates or commits, Space toggles, and Escape cancels the
-top dialog/menu. Applications supply monotonic timestamps for list search.
+top dialog/menu. Menu-bar `Alt` mnemonics and command shortcuts are routed only
+through the active host scope, so a modal cannot invoke background commands.
+Applications supply monotonic timestamps for list search.
 
 Filesystem loading and selection validation are asynchronous provider calls.
 Apply returned browser/validation results on the application loop; stale,
 foreign, canceled, and disposed-controller results are ignored. Pickers return
 paths and never open, create, delete, or write files.
+
+## MENUS
+
+Mnemonics navigate menu structure; shortcuts invoke commands directly. Assign a
+mnemonic separately from a shortcut so `Alt+V` can open View, plain `F` can invoke
+Go to File within that open level, and `Ctrl+L` can invoke Go to Line without
+opening the menu:
+
+```csharp
+WidgetMenuShortcut goToLine = new(
+    WidgetKey.Character, WidgetInputModifiers.Control, 'l');
+
+WidgetMenuBar menu = new("menu", [
+    WidgetMenuItem.Submenu("view", "View", [
+        WidgetMenuItem.Command(
+            "file", "Go to File...", "view.file", 'f'),
+        WidgetMenuItem.Command(
+            "line", "Go to Line...", "view.line", 'l',
+            shortcut: goToLine)
+    ], 'v')
+]);
+```
+
+Mnemonics are case-insensitive and unique within each menu level. While a menu
+is open, an unmodified mnemonic invokes a command, toggles a checkable command,
+or opens a submenu. Command shortcuts remain distinct, render right-aligned, and
+work from the visible menu bar's active host scope without changing menu
+navigation. Expanded menus use `WidgetTheme.Border`; viewports too small for a
+complete frame retain borderless keyboard operation.
 
 ## FILE PICKERS
 

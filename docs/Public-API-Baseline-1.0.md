@@ -9,6 +9,11 @@ replayable `WidgetInput`, immutable semantic actions, stack/grid layout, themes,
 forms, stable-key lists, drop-downs, menus, typed dialogs, provider-backed folder
 and file pickers, and domain-neutral game UI conveniences.
 
+The reviewed pre-stable menu correction preserves the original menu factories
+and adds overloads with explicit `char mnemonic` parameters plus the read-only
+`WidgetMenuItem.Mnemonic` property. Mnemonics remain structurally distinct from
+`WidgetMenuShortcut` command chords.
+
 Applications own terminal sessions and loops, command execution, validation,
 filesystem operations, and game state. The library's sole direct production
 dependency is `Icod.DCurses 2.3.1`. Samples and tests are separate GPL projects

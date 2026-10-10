@@ -32,14 +32,18 @@ internal static class Program {
 		internal Gallery( CursesScreen screen ) : base( screen ) {
 			WidgetList single = new( "single", WidgetSelectionMode.Single ); single.SetItems( Items() );
 			WidgetList multiple = new( "multiple", WidgetSelectionMode.Multiple ); multiple.SetItems( Items() );
-			WidgetMenuItem[] menuItems = [ WidgetMenuItem.Command( "run", "Run command", "menu.run" ), WidgetMenuItem.Command( "disabled", "Disabled", "disabled", false ), WidgetMenuItem.Separator( "separator" ), WidgetMenuItem.Checkable( "check", "Checked option", "menu.check" ), WidgetMenuItem.Submenu( "sub", "Submenu", [ WidgetMenuItem.Command( "nested", "Nested action", "menu.nested" ) ] ) ];
+			WidgetMenuShortcut runShortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'r' );
+			WidgetMenuItem[] menuItems = [
+				WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "run", "Run command", "menu.run", 'r', shortcut: runShortcut ), WidgetMenuItem.Command( "disabled", "Disabled", "disabled", 'd', isEnabled: false ) ], 'f' ),
+				WidgetMenuItem.Submenu( "view", "View", [ WidgetMenuItem.Checkable( "check", "Checked option", "menu.check", 'c' ), WidgetMenuItem.Separator( "separator" ), WidgetMenuItem.Submenu( "sub", "Submenu", [ WidgetMenuItem.Command( "nested", "Nested action", "menu.nested", 'n' ) ], 's' ) ], 'v' )
+			];
 			WidgetPopupMenu menu = new( "menu", menuItems );
 			WidgetInventoryList inventory = new( "inventory" ); inventory.SetItems( Items() );
 			WidgetMessageHistory history = new( "history" ); history.Append( "The library receives items and messages from the application." ); history.Append( "No game rules live in Icod.Widgets." );
 			WidgetStatusBar status = new( "status" ); status.SetFields( [ new( "hp", "HP 12/20", 10 ), new( "depth", "Depth 3", 5 ) ] );
 			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode/paste), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
 			this.pages.Add( [ new WidgetLabel( "list-hint", "Single: Enter commits | Multi: Space toggles, Ctrl+A all, Shift+arrows range" ), single, multiple, new WidgetDropDown( "drop", Items(), "potion" ) ] );
-			this.pages.Add( [ new WidgetLabel( "menu-hint", "Enter/Down opens | Arrows navigate | Right opens submenu | Left/Esc closes" ), new WidgetMenuBar( "bar", menuItems ), menu ] );
+			this.pages.Add( [ new WidgetLabel( "menu-hint", "Alt+F/V opens | letter invokes | Ctrl+R shortcut | arrows navigate | Esc closes" ), new WidgetMenuBar( "bar", menuItems ), menu ] );
 			this.pages.Add( [ Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
 			this.pages.Add( [ Button( "folder", "Select folder", "picker.folder" ), Button( "file", "Select one existing file", "picker.file" ), Button( "files", "Select multiple existing files", "picker.files" ) ] );
 			this.pages.Add( [ inventory, history, status, Button( "help", "Show help", "game.help" ) ] );

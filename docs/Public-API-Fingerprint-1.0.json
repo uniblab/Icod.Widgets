@@ -617,14 +617,18 @@
       "kind": "class",
       "members": [
         "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Char, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
         "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Char, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
         "Method: Icod.Widgets.WidgetMenuItem Separator(System.String)",
         "Method: Icod.Widgets.WidgetMenuItem Submenu(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem], Boolean)",
+        "Method: Icod.Widgets.WidgetMenuItem Submenu(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem], Char, Boolean)",
         "Property: Boolean IsChecked",
         "Property: Boolean IsEnabled",
         "Property: Icod.Widgets.WidgetMenuItemKind Kind",
         "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem] Children",
         "Property: System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut] Shortcut",
+        "Property: System.Nullable\u00601[System.Char] Mnemonic",
         "Property: System.String CommandId",
         "Property: System.String Id",
         "Property: System.String Text"

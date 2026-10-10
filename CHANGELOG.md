@@ -13,8 +13,11 @@ All notable changes to Icod.Widgets are recorded here.
   focus/rendering, popup scope/focus restoration and outside dismissal.
 - Fixed Unicode caret editing, long drop-down/menu scrolling, Ctrl+A selection,
   wrapped messages, visible wizard validation, and action-overflow mutation ordering.
-- Framed expanded drop-down lists with the theme border while retaining usable
-  borderless rendering in viewports too compact for a frame.
+- Added separate menu mnemonics and direct command shortcuts: Alt opens a
+  top-level menu, unmodified letters navigate its active level, and visible
+  right-aligned Ctrl/Alt/Shift chords invoke commands without menu navigation.
+- Framed expanded drop-down and menu popups with the theme border while retaining
+  usable borderless rendering in viewports too compact for a complete frame.
 - Reject stale file validation after direct basket changes; closed pickers ignore loads.
 - Added regression and sample CI coverage. Stable multi-platform live qualification
   remains open; this candidate has not been published.

@@ -15,8 +15,11 @@ Ctrl+N/Ctrl+P change page; Tab/Shift+Tab focus controls. Six pages:
    Ctrl+A selects enabled entries; Shift+arrows select a range. Type a search
    prefix (750 ms expiry). Enter/Down opens the drop-down; arrows preview;
    Enter commits; Escape/outside click cancels. Disabled items are inert.
-3. Menus: Enter/Down opens; Up/Down navigate; Right/Enter opens submenu;
-   Left/Escape returns; Enter invokes once and closes.
+3. Menus: Alt+F/Alt+V opens the matching menu-bar entry from another control;
+   an unmodified mnemonic letter invokes within the open level; Ctrl+R invokes
+   its command directly. Shortcuts render at the right edge of framed popups.
+   Enter/Down opens; arrows navigate; Right/Enter opens a submenu; Left/Escape
+   returns.
 4. Dialogs: Yes/No defaults to No; OK/Cancel to Cancel. Arrows/Tab choose;
    Enter completes; Escape reports Cancel. Wizard first rejects Next to show
    application validation; Enter again advances; Left returns; Escape closes.

@@ -79,10 +79,27 @@ bool WidgetDropDown.IsOpen { get; }
 void WidgetDropDown.Open()
 void WidgetDropDown.Dismiss()
 
-WidgetMenuItem.Command(...)
-WidgetMenuItem.Checkable(...)
-WidgetMenuItem.Separator(...)
-WidgetMenuItem.Submenu(...)
+WidgetMenuShortcut(WidgetKey Key,
+    WidgetInputModifiers Modifiers = None, char? Character = null)
+char? WidgetMenuItem.Mnemonic { get; }
+WidgetMenuItem WidgetMenuItem.Command(string id, string text,
+    string commandId, bool isEnabled = true,
+    WidgetMenuShortcut? shortcut = null)
+WidgetMenuItem WidgetMenuItem.Command(string id, string text,
+    string commandId, char mnemonic, bool isEnabled = true,
+    WidgetMenuShortcut? shortcut = null)
+WidgetMenuItem WidgetMenuItem.Checkable(string id, string text,
+    string commandId, bool isChecked = false, bool isEnabled = true,
+    WidgetMenuShortcut? shortcut = null)
+WidgetMenuItem WidgetMenuItem.Checkable(string id, string text,
+    string commandId, char mnemonic, bool isChecked = false,
+    bool isEnabled = true, WidgetMenuShortcut? shortcut = null)
+WidgetMenuItem WidgetMenuItem.Separator(string id)
+WidgetMenuItem WidgetMenuItem.Submenu(string id, string text,
+    IReadOnlyList<WidgetMenuItem> children, bool isEnabled = true)
+WidgetMenuItem WidgetMenuItem.Submenu(string id, string text,
+    IReadOnlyList<WidgetMenuItem> children, char mnemonic,
+    bool isEnabled = true)
 WidgetPopupMenu(string id, IReadOnlyList<WidgetMenuItem> items)
 WidgetMenuBar(string id, IReadOnlyList<WidgetMenuItem> items)
 void WidgetPopupMenu.Open()
