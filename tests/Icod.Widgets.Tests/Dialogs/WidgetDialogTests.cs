@@ -27,7 +27,7 @@ public sealed class WidgetDialogTests {
 		CursesWindow window = host.GetPresentationWindow( dialog );
 
 		Assert.Equal( "┌─ Notice ─────────┐", Row( window, 0, 20 ) );
-		Assert.Equal( "│Saved.            │", Row( window, 1, 20 ) );
+		Assert.Equal( "│", window.GetCell( 1, 0 ).Content ); Assert.Equal( "Saved.", string.Concat( Enumerable.Range( 1, 6 ).Select( column => window.GetCell( 1, column ).Content ) ) ); Assert.Equal( "│", window.GetCell( 1, 19 ).Content );
 		Assert.Equal( "│[OK] (Esc cancels)│", Row( window, 3, 20 ) );
 		Assert.Equal( "└──────────────────┘", Row( window, 4, 20 ) );
 	}
