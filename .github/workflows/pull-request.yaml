@@ -96,6 +96,18 @@ jobs:
           -Configuration '${{ env.CONFIGURATION }}'
           -AllowNoPackages
 
+      - name: Verify release selection and symbol companion
+        if: matrix.verify_packages
+        shell: pwsh
+        run: |
+          Import-Module ./packaging/RepositoryTools.psm1 -Force
+          $version = Get-MSBuildProperty -ProjectPath ./Icod.Widgets.csproj -Name PackageVersion -Configuration Staging
+          ./packaging/SelectReleasePackages.ps1 -SourceDirectory artifacts/packages -DestinationDirectory artifacts/selected -ExpectedVersion $version
+          $package = @(Get-ChildItem -LiteralPath artifacts/selected -Filter '*.nupkg' -File)
+          $symbols = @(Get-ChildItem -LiteralPath artifacts/selected -Filter '*.snupkg' -File)
+          if (1 -ne $package.Count -or 1 -ne $symbols.Count -or $package[0].BaseName -ne $symbols[0].BaseName) {
+              throw 'Release selection must preserve exactly one matching package and symbol package.'
+          }
       - name: Package-only consumer
         if: matrix.verify_packages
         shell: pwsh
