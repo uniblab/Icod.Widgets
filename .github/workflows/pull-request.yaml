@@ -85,14 +85,14 @@ jobs:
           -c ${{ env.CONFIGURATION }}
           --no-build
           --no-restore
-          -o artifacts
+          -o artifacts/packages
           -p:ContinuousIntegrationBuild=true
       - name: Verify exact Staging package artifacts
         if: matrix.verify_packages
         shell: pwsh
         run: >-
           ./packaging/VerifyPackageArtifact.ps1
-          -ArtifactDirectory artifacts
+          -ArtifactDirectory artifacts/packages
           -Configuration '${{ env.CONFIGURATION }}'
           -AllowNoPackages
 
@@ -100,7 +100,7 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: |
-          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --source artifacts --source https://api.nuget.org/v3/index.json
+          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Staging --no-restore
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
