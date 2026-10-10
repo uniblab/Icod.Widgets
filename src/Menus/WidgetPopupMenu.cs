@@ -104,9 +104,9 @@ public class WidgetPopupMenu : Widget {
 		return this.Activate( host );
 	}
 
-	private bool TryShortcut( WidgetInput input, WidgetHost host ) {
-		foreach ( WidgetMenuItem item in Flatten( this.levels[ ^1 ].Items ) ) {
-			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || ( shortcut.Character.HasValue && input.Character?.Value != shortcut.Character.Value ) ) continue;
+	protected bool TryShortcut( WidgetInput input, WidgetHost host ) {
+		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) {
+			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || !ShortcutCharacterMatches( shortcut, input ) ) continue;
 			if ( !item.IsEnabled || item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
 			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
 			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
@@ -114,6 +114,9 @@ public class WidgetPopupMenu : Widget {
 		}
 		return false;
 	}
+
+	private static bool ShortcutCharacterMatches( WidgetMenuShortcut shortcut, WidgetInput input ) => !shortcut.Character.HasValue ||
+		input.Character is { Value: <= char.MaxValue } character && char.ToUpperInvariant( shortcut.Character.Value ) == char.ToUpperInvariant( (char)character.Value );
 
 	private static IEnumerable<WidgetMenuItem> Flatten( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { yield return item; foreach ( WidgetMenuItem child in Flatten( item.Children ) ) yield return child; } }
 	private static int MaximumDepth( IReadOnlyList<WidgetMenuItem> items ) { int depth = 1; foreach ( WidgetMenuItem item in items ) if ( 0 < item.Children.Count ) depth = Math.Max( depth, 1 + MaximumDepth( item.Children ) ); return depth; }
