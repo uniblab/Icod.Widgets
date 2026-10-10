@@ -50,6 +50,13 @@ public sealed class WidgetFolderPickerTests {
 		Assert.Equal( [ "/folder/sub" ], acceptance.Request.Paths );
 	}
 
+	[Fact]
+	public void BrowserContentRendersInsideCaptionedFrame() {
+		WidgetFolderPicker picker = new( "folder", new FakeProvider(), "/" ); using WidgetHost host = ModalHost( picker ); host.Render(); CursesWindow window = host.GetPresentationWindow( picker );
+
+		Assert.Equal( "┌", window.GetCell( 0, 0 ).Content ); Assert.Equal( "│", window.GetCell( 1, 0 ).Content ); Assert.Equal( "N", window.GetCell( 1, 1 ).Content ); Assert.Equal( "│", window.GetCell( 1, 39 ).Content ); Assert.Equal( "└", window.GetCell( 9, 0 ).Content );
+	}
+
 	private static WidgetFolderPicker Loaded( FakeProvider provider ) { WidgetFolderPicker picker = new( "folder", provider, "/folder" ); WidgetBrowserRequest load = picker.RequestDirectory( "/folder" ); picker.ApplyLoadResult( WidgetBrowserLoadResult.Success( load, new WidgetDirectorySnapshot( "/folder", "/", [ new( "/folder/file", "file", false ) ] ) ) ); return picker; }
 	private static WidgetHost ModalHost( WidgetFolderPicker picker ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); host.ShowModal( picker ); return host; }
 	private sealed class FakeProvider : IWidgetFileSystemProvider {

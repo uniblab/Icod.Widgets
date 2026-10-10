@@ -36,6 +36,21 @@ public sealed class WidgetGameUiTests {
 	}
 
 	[Fact]
+	public void HelpAndTextPromptsRenderInsideCaptionedFrames() {
+		using WidgetHost helpHost = new( new CursesScreen( 20, 5 ), WidgetTheme.Default ); WidgetHelpOverlay help = new( "help", "Help", [ new( "inventory", "i", "Inventory" ) ] ); helpHost.ShowModal( help ); helpHost.Render();
+		CursesWindow helpWindow = helpHost.GetPresentationWindow( help ); Assert.Equal( "┌", helpWindow.GetCell( 0, 0 ).Content ); Assert.Equal( "│", helpWindow.GetCell( 1, 0 ).Content ); Assert.Equal( "i", helpWindow.GetCell( 1, 1 ).Content ); Assert.Equal( "│", helpWindow.GetCell( 1, 19 ).Content );
+
+		using WidgetHost promptHost = new( new CursesScreen( 20, 5 ), WidgetTheme.Default ); WidgetTextPrompt prompt = new( "prompt", "Name", "Ada" ); promptHost.ShowModal( prompt ); promptHost.Render();
+		CursesWindow promptWindow = promptHost.GetPresentationWindow( prompt ); Assert.Equal( "┌", promptWindow.GetCell( 0, 0 ).Content ); Assert.Equal( "│", promptWindow.GetCell( 1, 0 ).Content ); Assert.Equal( "A", promptWindow.GetCell( 1, 1 ).Content ); Assert.Equal( "│", promptWindow.GetCell( 1, 19 ).Content );
+	}
+
+	[Fact]
+	public void NumberPromptErrorRemainsInsideCaptionedFrame() {
+		using WidgetHost host = new( new CursesScreen( 30, 5 ), WidgetTheme.Default ); WidgetNumberPrompt prompt = new( "number", "Amount", CultureInfo.InvariantCulture, 1, 2, "9" ); host.ShowModal( prompt ); host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( prompt ); Assert.Equal( "│", window.GetCell( 2, 0 ).Content ); Assert.Equal( "E", window.GetCell( 2, 1 ).Content ); Assert.Equal( "│", window.GetCell( 2, 29 ).Content );
+	}
+
+	[Fact]
 	public void NumberValidationUsesCallerCultureAndRange() {
 		WidgetNumberPrompt prompt = new( "number", "Amount", CultureInfo.GetCultureInfo( "fr-FR" ), 1.0, 2.0 ); using WidgetHost host = new( new CursesScreen( 30, 5 ), WidgetTheme.Default ); host.ShowModal( prompt );
 		host.Process( WidgetInput.Paste( "1,5" ), TimeSpan.Zero ); WidgetDialogCompletedAction action = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );

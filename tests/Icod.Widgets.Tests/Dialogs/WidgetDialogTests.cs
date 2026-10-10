@@ -104,6 +104,15 @@ public sealed class WidgetDialogTests {
 	}
 
 	[Fact]
+	public void WizardRendersPageInsideCaptionedFrame() {
+		using WidgetHost host = new( new CursesScreen( 20, 5 ), WidgetTheme.Default ); WidgetWizardDialog wizard = new( "wizard", "Setup", [ "First", "Second" ] ); host.ShowModal( wizard ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( wizard );
+
+		Assert.Equal( "┌─ Setup (1/2) ────┐", Row( window, 0, 20 ) ); Assert.Equal( "│", window.GetCell( 1, 0 ).Content ); Assert.Equal( "F", window.GetCell( 1, 1 ).Content ); Assert.Equal( "│", window.GetCell( 1, 19 ).Content );
+		Assert.Equal( "└──────────────────┘", Row( window, 4, 20 ) );
+	}
+
+	[Fact]
 	public void ModalDepthRejectsSeventeen() {
 		using WidgetHost host = HostWithBackground( out _ );
 		for ( int i = 0; i < WidgetLimits.MaximumModalDepth; i++ ) host.ShowModal( WidgetMessageDialog.OkCancel( $"d{i}", "D", "D" ) );
