@@ -44,7 +44,9 @@ public sealed class WidgetDropDown : Widget {
 		if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Button: CursesMouseButton.Primary } pointer ) {
 			if ( !this.IsOpen ) { if ( pointer.Action == CursesMouseAction.Release && this.Bounds.Contains( pointer.Row, pointer.Column ) ) this.Open(); return true; }
 			if ( this.PopupBounds.Contains( pointer.Row, pointer.Column ) ) {
-				int index = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) ) + pointer.Row - this.PopupBounds.Row;
+				int inset = this.HasPopupBorder ? 1 : 0; int contentRows = this.PopupBounds.Rows - inset * 2;
+				if ( pointer.Row < this.PopupBounds.Row + inset || pointer.Row >= this.PopupBounds.BottomExclusive - inset || pointer.Column < this.PopupBounds.Column + inset || pointer.Column >= this.PopupBounds.Column + this.PopupBounds.Columns - inset ) return true;
+				int index = Math.Clamp( this.previewIndex - contentRows + 1, 0, Math.Max( 0, this.items.Length - contentRows ) ) + pointer.Row - this.PopupBounds.Row - inset;
 				if ( this.items[ index ].IsEnabled ) { this.previewIndex = index; if ( pointer.Action == CursesMouseAction.Release ) return this.OnInput( WidgetInput.Key( WidgetKey.Enter ), host ); }
 			} return true;
 		}
