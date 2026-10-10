@@ -28,12 +28,10 @@ public sealed class WidgetWizardDialog : WidgetDialog {
 		return false;
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
-		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		for ( int row = 0; row < area.Rows; row++ ) WidgetBrowserView.WriteLine( screen, area, row, "", theme.Normal );
-		WidgetBrowserView.WriteLine( screen, area, 0, this.Title + $" ({this.PageIndex + 1}/{this.pages.Length})", theme.Border );
-		WidgetBrowserView.WriteLine( screen, area, 1, this.Page, theme.Normal );
-		WidgetBrowserView.WriteLine( screen, area, 2, this.Error ?? "", theme.Error );
-		WidgetBrowserView.WriteLine( screen, area, Math.Max( 3, area.Rows - 1 ), ( this.CanPrevious ? "Left: Previous | " : "" ) + ( this.CanNext ? "Enter/Right: Next | " : "Enter: Finish | " ) + "Esc: Cancel", theme.Focused );
+		CursesRectangle area = this.RenderFrame( screen, theme, this.Title + $" ({this.PageIndex + 1}/{this.pages.Length})" ); if ( area.IsEmpty ) return;
+		WidgetBrowserView.WriteLine( screen, area, 0, this.Page, theme.Normal );
+		WidgetBrowserView.WriteLine( screen, area, 1, this.Error ?? "", theme.Error );
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, ( this.CanPrevious ? "Left: Previous | " : "" ) + ( this.CanNext ? "Enter/Right: Next | " : "Enter: Finish | " ) + "Esc: Cancel", theme.Focused );
 	}
 }
 

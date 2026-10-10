@@ -16,5 +16,5 @@ public sealed class WidgetNumberPrompt : WidgetTextPrompt {
 	public double Maximum { get; }
 	public string? Error { get; private set; }
 	protected override bool Accept( WidgetHost host ) { if ( !double.TryParse( this.Value, NumberStyles.Number, this.Culture, out double value ) || !double.IsFinite( value ) || value < this.Minimum || value > this.Maximum ) { this.Error = $"Enter a number from {this.Minimum} to {this.Maximum}."; return true; } this.Error = null; this.Finish( host, new WidgetDialogResult( WidgetDialogOutcome.Accepted, value ) ); return true; }
-	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { base.OnRender( screen, theme, focused ); if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, this.Bounds.Intersect( screen.Bounds ), 2, this.Error, theme.Error ); }
+	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { base.OnRender( screen, theme, focused ); if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, this.GetContentBounds( screen ), 1, this.Error, theme.Error ); }
 }

@@ -19,6 +19,6 @@ public class WidgetTextPrompt : WidgetDialog {
 		return this.Editor.OnInput( input, host );
 	}
 	protected virtual bool Accept( WidgetHost host ) { this.Finish( host, new WidgetDialogResult( WidgetDialogOutcome.Accepted, this.Value ) ); return true; }
-	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { base.OnRender( screen, theme, focused ); CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.Rows < 2 ) return; this.Editor.Arrange( new CursesRectangle( area.Row + 1, area.Column, 1, area.Columns ) ); this.Editor.OnRender( screen, theme, true ); }
+	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return; this.Editor.Arrange( new CursesRectangle( area.Row, area.Column, 1, area.Columns ) ); this.Editor.OnRender( screen, theme, true ); }
 }
 
