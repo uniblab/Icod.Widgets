@@ -8,7 +8,7 @@
 ## 1. Intent and success
 
 Create a separate reusable TUI-control library above DCurses for general .NET
-applications and roguelikes. The user explicitly requires menus; Yes/No,
+applications and roguelikes. The user explicitly requires menus; OK, Yes/No,
 OK/Cancel and Previous/Next/Cancel dialogs; drop-down and multi-select lists;
 folder selection; and single/multiple file selection. All belong in the first
 stable release. Supporting form controls and inventory/help/status/message
@@ -175,9 +175,12 @@ rejected; narrower active scopes take precedence over broader bindings.
 `WidgetDialogCompletedAction<T>` is emitted once, after successful validation.
 Do not conflate a No answer with dismissal. Yes/No defaults to No; OK/Cancel
 defaults to Cancel; a wizard defaults to Next when enabled. Callers may explicitly
-configure the initial action. Escape is Canceled for each family.
+configure the initial action. Escape is Canceled for each family, including an
+OK-only acknowledgement.
 
-`WidgetMessageDialog` supplies Yes/No and OK/Cancel factories;
+All dialogs render their title as a caption in a themed frame and inset their
+content, with borderless fallback for viewports too compact for the frame.
+`WidgetMessageDialog` supplies OK, Yes/No and OK/Cancel factories;
 `WidgetWizardDialog` supplies Previous/Next/Cancel and an application-provided
 page container. Previous is disabled at the first page by default. A navigation
 action requests a transition; the application validates/applies it and installs

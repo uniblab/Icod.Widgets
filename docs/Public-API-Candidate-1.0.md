@@ -107,6 +107,7 @@ void WidgetPopupMenu.Close()
 
 WidgetModalLease WidgetHost.ShowModal(WidgetDialog dialog)
 int WidgetHost.ModalDepth { get; }
+WidgetMessageDialog WidgetMessageDialog.Ok(string id, string title, string message)
 WidgetMessageDialog WidgetMessageDialog.YesNo(string id, string title, string message)
 WidgetMessageDialog WidgetMessageDialog.OkCancel(string id, string title, string message)
 WidgetWizardDialog(string id, string title, IReadOnlyList<string> pages)

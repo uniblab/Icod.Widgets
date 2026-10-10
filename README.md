@@ -26,7 +26,8 @@ Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 - Menu bars, framed popup menus, scoped mnemonics, visible command shortcuts,
   submenus, separators, disabled and checkable items.
-- Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs with explicit results.
+- Captioned, framed OK, Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs
+  with explicit results.
 - Single-select and multi-select lists, and framed drop-down selection popups.
 - Folder selection and single/multiple existing-file selection.
 - Labels, buttons, single-line text input, checkboxes, radio groups, borders,
@@ -98,6 +99,24 @@ or opens a submenu. Command shortcuts remain distinct, render right-aligned, and
 work from the visible menu bar's active host scope without changing menu
 navigation. Expanded menus use `WidgetTheme.Border`; viewports too small for a
 complete frame retain borderless keyboard operation.
+
+## DIALOGS
+
+Every dialog renders its `Title` as a caption in a `WidgetTheme.Border` frame
+and insets its content within that frame. Viewports too small for a complete
+frame retain a borderless title-and-content fallback. Message-dialog factories
+cover acknowledgement and choice flows:
+
+```csharp
+WidgetMessageDialog notice = WidgetMessageDialog.Ok(
+    "saved", "Saved", "The document was saved.");
+WidgetMessageDialog question = WidgetMessageDialog.YesNo(
+    "overwrite", "Overwrite?", "Replace the existing file?");
+```
+
+Enter completes the selected action. Escape always reports
+`WidgetDialogOutcome.Cancel`, including from an OK-only dialog; cancellation is
+therefore distinct from acknowledging the message.
 
 ## FILE PICKERS
 

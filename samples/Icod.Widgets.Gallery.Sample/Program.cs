@@ -44,7 +44,7 @@ internal static class Program {
 			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode/paste), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
 			this.pages.Add( [ new WidgetLabel( "list-hint", "Single: Enter commits | Multi: Space toggles, Ctrl+A all, Shift+arrows range" ), single, multiple, new WidgetDropDown( "drop", Items(), "potion" ) ] );
 			this.pages.Add( [ new WidgetLabel( "menu-hint", "Alt+F/V opens | letter invokes | Ctrl+R shortcut | arrows navigate | Esc closes" ), new WidgetMenuBar( "bar", menuItems ), menu ] );
-			this.pages.Add( [ Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
+			this.pages.Add( [ Button( "ok", "OK", "dialog.ok" ), Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
 			this.pages.Add( [ Button( "folder", "Select folder", "picker.folder" ), Button( "file", "Select one existing file", "picker.file" ), Button( "files", "Select multiple existing files", "picker.files" ) ] );
 			this.pages.Add( [ inventory, history, status, Button( "help", "Show help", "game.help" ) ] );
 			foreach ( Widget[] widgets in this.pages ) foreach ( Widget widget in widgets ) this.Host.Attach( widget );
@@ -77,6 +77,7 @@ internal static class Program {
 			if ( action is not WidgetInvokedAction invoked ) { base.OnAction( action ); return; }
 			string id = "dialog." + ++this.dialogId;
 			switch ( invoked.CommandId ) {
+				case "dialog.ok": this.Show( WidgetMessageDialog.Ok( id, "Notice", "Enter acknowledges; Escape consistently reports Cancel." ) ); break;
 				case "dialog.yesno": this.Show( WidgetMessageDialog.YesNo( id, "Continue?", "This is a wrapped message. No is the safe default; Escape reports Cancel, independently of No." ) ); break;
 				case "dialog.okcancel": this.Show( WidgetMessageDialog.OkCancel( id, "Apply?", "Cancel is the safe default. Left selects OK; Enter completes." ) ); break;
 				case "dialog.wizard": this.OpenWizard(); break;

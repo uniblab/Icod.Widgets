@@ -20,8 +20,9 @@ Ctrl+N/Ctrl+P change page; Tab/Shift+Tab focus controls. Six pages:
    its command directly. Shortcuts render at the right edge of framed popups.
    Enter/Down opens; arrows navigate; Right/Enter opens a submenu; Left/Escape
    returns.
-4. Dialogs: Yes/No defaults to No; OK/Cancel to Cancel. Arrows/Tab choose;
-   Enter completes; Escape reports Cancel. Wizard first rejects Next to show
+4. Dialogs: all titles are captions in themed frames. The OK-only alert
+   acknowledges with Enter; Yes/No defaults to No; OK/Cancel to Cancel.
+   Arrows/Tab choose; Enter completes; Escape always reports Cancel. Wizard first rejects Next to show
    application validation; Enter again advances; Left returns; Escape closes.
    Text and culture/range-validated number prompts are also available.
 5. Pickers: arrows/Page keys browse; Enter opens directory or toggles file;

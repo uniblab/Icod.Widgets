@@ -664,6 +664,7 @@
       "name": "Icod.Widgets.WidgetMessageDialog",
       "kind": "class",
       "members": [
+        "Method: Icod.Widgets.WidgetMessageDialog Ok(System.String, System.String, System.String)",
         "Method: Icod.Widgets.WidgetMessageDialog OkCancel(System.String, System.String, System.String)",
         "Method: Icod.Widgets.WidgetMessageDialog YesNo(System.String, System.String, System.String)",
         "Property: Icod.Widgets.WidgetDialogOutcome SelectedOutcome",

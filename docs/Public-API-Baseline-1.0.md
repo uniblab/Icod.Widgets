@@ -14,6 +14,10 @@ and adds overloads with explicit `char mnemonic` parameters plus the read-only
 `WidgetMenuItem.Mnemonic` property. Mnemonics remain structurally distinct from
 `WidgetMenuShortcut` command chords.
 
+Dialogs render their existing `Title` as a caption in a themed frame with
+inset content and compact fallback. `WidgetMessageDialog.Ok` adds the
+acknowledgement-only factory; Escape remains the uniform `Cancel` result.
+
 Applications own terminal sessions and loops, command execution, validation,
 filesystem operations, and game state. The library's sole direct production
 dependency is `Icod.DCurses 2.3.1`. Samples and tests are separate GPL projects

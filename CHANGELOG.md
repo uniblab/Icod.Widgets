@@ -18,6 +18,8 @@ All notable changes to Icod.Widgets are recorded here.
   right-aligned Ctrl/Alt/Shift chords invoke commands without menu navigation.
 - Framed expanded drop-down and menu popups with the theme border while retaining
   usable borderless rendering in viewports too compact for a complete frame.
+- Added an acknowledgement-only OK dialog. Framed every dialog with its title as
+  a caption and inset content, with compact fallback; Escape always reports Cancel.
 - Reject stale file validation after direct basket changes; closed pickers ignore loads.
 - Added regression and sample CI coverage. Stable multi-platform live qualification
   remains open; this candidate has not been published.

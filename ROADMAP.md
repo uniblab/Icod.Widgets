@@ -38,7 +38,7 @@ references or introduce a terminal capability database/input reader.
 | Lists | Single/multiple selection, scrolling, keyboard search, disabled items | M2 |
 | Drop-downs | Popup selection with explicit commit/cancel | M2 |
 | Menus | Bars/popups/submenus, separators, disabled/checkable items, shortcuts | M2 |
-| Dialogs | Yes/No, OK/Cancel, Previous/Next/Cancel, wrapped messages, default action, typed results | M2 |
+| Dialogs | Captioned/framed OK, Yes/No, OK/Cancel, Previous/Next/Cancel, wrapped messages, default action, typed results | M2 |
 | Folder picker | Start folder, roots/drives, parent navigation, select current folder | M3 |
 | File picker | Existing single/multiple files, filters, folder navigation, selected-file display | M3 |
 | Roguelike conveniences | Inventory/action lists, message history, status bars, help overlays, text/number prompts | M4 |
