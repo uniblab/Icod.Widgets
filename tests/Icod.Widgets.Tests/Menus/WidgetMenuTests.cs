@@ -99,6 +99,17 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void PopupRendersShortcutInRightAlignedColumn() {
+		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'l' );
+		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "line", "Go to Line...", "view.line", shortcut: shortcut ) ] );
+		using WidgetHost host = Focus( menu, columns: 24, rows: 5 ); menu.Open(); host.Render();
+
+		string row = string.Concat( Enumerable.Range( 0, 24 ).Select( column => host.GetPresentationWindow( menu ).GetCell( 1, column ).Content ) );
+
+		Assert.Equal( "│Go to Line...   Ctrl+L│", row );
+	}
+
+	[Fact]
 	public void CompactMenuScrollsCurrentItemIntoView() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "a", "Alpha", "a" ), WidgetMenuItem.Command( "b", "Beta", "b" ), WidgetMenuItem.Command( "c", "Gamma", "c" ) ] );
 		using WidgetHost host = Focus( menu, columns: 20, rows: 1 ); menu.Open();
