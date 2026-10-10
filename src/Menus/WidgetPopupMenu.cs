@@ -36,6 +36,7 @@ public class WidgetPopupMenu : Widget {
 		if ( WidgetInputKind.Key != input.Kind ) return false;
 		if ( !this.IsOpen ) { if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; } return false; }
 		if ( this.TryShortcut( input, host ) ) return true;
+		if ( this.TryCurrentMnemonic( input, host ) ) return true;
 		if ( input.KeyCode is WidgetKey.Down or WidgetKey.Up ) return this.Move( WidgetKey.Down == input.KeyCode ? 1 : -1 );
 		if ( WidgetKey.Right == input.KeyCode ) return this.OpenSubmenu();
 		if ( WidgetKey.Left == input.KeyCode || WidgetKey.Escape == input.KeyCode ) {
@@ -90,6 +91,16 @@ public class WidgetPopupMenu : Widget {
 		if ( !this.IsOpen ) this.Open();
 		this.levels[ 0 ].Cursor = index;
 		while ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 );
+		return this.Activate( host );
+	}
+
+	private bool TryCurrentMnemonic( WidgetInput input, WidgetHost host ) {
+		if ( WidgetKey.Character != input.KeyCode || input.Character is not { Value: <= char.MaxValue } character ||
+			0 != ( input.Modifiers & ( WidgetInputModifiers.Control | WidgetInputModifiers.Alt ) ) ) return false;
+		Level level = this.levels[ ^1 ];
+		int index = level.Items.ToList().FindIndex( item => item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
+		if ( 0 > index ) return false;
+		level.Cursor = index;
 		return this.Activate( host );
 	}
 
