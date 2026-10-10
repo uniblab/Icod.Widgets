@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Icod.Widgets reusable terminal controls.
+	Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>
+	SPDX-License-Identifier: LGPL-3.0-or-later
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Copyright>Copyright (c) 2026 Timothy J. Bruce</Copyright>
+		<OutputType>Library</OutputType>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+		<AssemblyName>Icod.Widgets</AssemblyName>
+		<RootNamespace>Icod.Widgets</RootNamespace>
+		<Version>1.0.0-rc.1</Version>
+		<PackageVersion>1.0.0-rc.1</PackageVersion>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<PackageId>Icod.Widgets</PackageId>
+		<Title>Icod.Widgets</Title>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
+		<PackageReleaseNotes>First release candidate with controls, dialogs, filesystem pickers, roguelike UI conveniences, and public consumer samples.</PackageReleaseNotes>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<RepositoryUrl>https://github.com/uniblab/Icod.Widgets</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PackageTags>console;controls;cross-platform;csharp;dialog;dotnet;dropdown;file-picker;folder-picker;forms;icod;list;menu;roguelike;terminal;terminal-ui;text-ui;tui;ui;widgets</PackageTags>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<WarningLevel>2</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
+		<WarningLevel>4</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>TRACE</DefineConstants>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<WarningLevel>4</WarningLevel>
+		<DebugType>portable</DebugType>
+		<Optimize>true</Optimize>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="src\**\*.cs" />
+		<EmbeddedResource Remove="samples\**" />
+		<None Remove="samples\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<Content Include="LICENSE">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>$(AssemblyName).LICENSE.txt</TargetPath>
+			<Pack>true</Pack>
+			<PackagePath>\</PackagePath>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Icod.DCurses" Version="2.3.1" />
+	</ItemGroup>
+</Project>

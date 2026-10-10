@@ -2,7 +2,7 @@
 
 **Planning date:** 2026-10-09 (America/New_York)\
 **Target:** `1.0.0`, with `1.0.0-alpha.N` and `1.0.0-rc.N` qualification stages\
-**State:** planning PR; implementation not started\
+**State:** W1001–W1013 complete; release candidate awaiting W1014 live qualification\
 **Runtime:** managed C# 13, `net8.0;net9.0;net10.0`, AnyCPU\
 **Direct runtime dependency:** proposed `Icod.DCurses 2.3.1`, availability checked at W1001\
 **License:** library LGPL-3.0-or-later; samples/tests GPL-3.0-or-later
@@ -38,9 +38,9 @@ Widgets returns actions and draws into DCurses-owned retained presentation.
 | W1013 | M4 | Hardening, API/docs/package freeze and RC | Adversarial/large-data checks; exact API baseline; license/header and package payload audit; all automated gates pass |
 | W1014 | Stable | Exact-head live qualification and release readiness | Windows/macOS/Linux evidence recorded; applicable x64/ARM64 smoke evidence; stable metadata/tag/version and curated notes agree |
 
-W1000's documents are delivered by this PR; detailed design/plan review remains
-pending. All W1001–W1014 tasks are planned. M1–M4 are development checkpoints,
-not separate promises of stable releases.
+W1000–W1013 are implemented with per-tranche evidence in `docs/`. M1–M4
+automated gates are complete. W1014 live platform/terminal qualification and
+stable metadata remain pending and are not replaced by Linux container evidence.
 
 ## Dependency and review order
 

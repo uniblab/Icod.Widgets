@@ -90,11 +90,11 @@ current `uniblab/.github` templates with notices preserved.
 command, input, panel and text/geometry APIs. Produces the compilable candidate
 API ledger, one packable DLL and a test harness for later tasks.
 
-- [ ] Restore DCurses 2.3.1 from NuGet in an isolated consumer; inspect public types and map every host operation to an actual DCurses member. Record exact package/hash and any changed baseline explicitly.
-- [ ] Scaffold the single solution/library/test project. Use explicit `src/**/*.cs` inclusion; disable default compile globbing; declare GPL test metadata and non-packability. Import current tooling only after reading its setup requirements.
-- [ ] Implement `DependencyBoundaryTests.LibraryDoesNotCompileGplSources` and `CandidateHostUsesOnlyPublicDcursesApi`: assert assembly/project inclusion excludes samples/tests and compile the public DCurses mapping without private reflection or terminal bytes.
-- [ ] Record proposed core, list, menu, dialog, provider and picker signatures/enums/defaults in the candidate; resolve feasibility gaps before functional implementation. Add the first W1002 missing-behavior tests and confirm meaningful RED.
-- [ ] Run restore/build/pack with the adapted tooling; inspect nuspec license/direct dependencies and DLL payload. Commit `build: establish Widgets library and public contract baseline`; record W1001 evidence. Do not claim unimplemented widgets work.
+- [x] Restore DCurses 2.3.1 from NuGet in an isolated consumer; inspect public types and map every host operation to an actual DCurses member. Record exact package/hash and any changed baseline explicitly.
+- [x] Scaffold the single solution/library/test project. Use explicit `src/**/*.cs` inclusion; disable default compile globbing; declare GPL test metadata and non-packability. Import current tooling only after reading its setup requirements.
+- [x] Implement `DependencyBoundaryTests.LibraryDoesNotCompileGplSources` and `CandidateHostUsesOnlyPublicDcursesApi`: assert assembly/project inclusion excludes samples/tests and compile the public DCurses mapping without private reflection or terminal bytes.
+- [x] Record proposed core, list, menu, dialog, provider and picker signatures/enums/defaults in the candidate; resolve feasibility gaps before functional implementation. Add the first W1002 missing-behavior tests and confirm meaningful RED.
+- [x] Run restore/build/pack with the adapted tooling; inspect nuspec license/direct dependencies and DLL payload. Commit `build: establish Widgets library and public contract baseline`; record W1001 evidence. Do not claim unimplemented widgets work.
 
 ## W1002 — host, lifecycle, layout and theme (M1)
 
@@ -107,10 +107,10 @@ API ledger, one packable DLL and a test harness for later tasks.
 constructor and `Attach`, `Detach`, `Arrange`, `Process`, `DrainActions`, `Render`,
 `Dispose` signatures, widget state, theme roles and layout containers.
 
-- [ ] Add `AttachRollbackLeavesNoRegions` (capacity failure leaves no registrations), `FocusRemovedWhileOverlayPending` (eligible successor), `ActionsDrainOnce` (detached snapshots), `ClockCannotMoveBackwards` (reject before mutation), and `DisposedHostKeepsBorrowedSessionAlive`.
-- [ ] Add layout assertions: zero-size rectangle registers no visible hits; wide/combining text clips legally; shrink/grow updates bounds before hit testing; limits accept 1,024 widgets and reject 1,025 before attachment.
-- [ ] Confirm focused RED; implement host/adapter and layout using DCurses regions/scopes/geometry. Guard 4,096 queued actions and roll back mutations that would overflow; never refresh/read input implicitly.
-- [ ] Run both focused classes; record rollback/capture/registration counts and M1 partial evidence. Commit `feat: add widget host layout and lifecycle`.
+- [x] Add `AttachRollbackLeavesNoRegions` (capacity failure leaves no registrations), `FocusRemovedWhileOverlayPending` (eligible successor), `ActionsDrainOnce` (detached snapshots), `ClockCannotMoveBackwards` (reject before mutation), and `DisposedHostKeepsBorrowedSessionAlive`.
+- [x] Add layout assertions: zero-size rectangle registers no visible hits; wide/combining text clips legally; shrink/grow updates bounds before hit testing; limits accept 1,024 widgets and reject 1,025 before attachment.
+- [x] Confirm focused RED; implement host/adapter and layout using DCurses regions/scopes/geometry. Guard 4,096 queued actions and roll back mutations that would overflow; never refresh/read input implicitly.
+- [x] Run both focused classes; record rollback/capture/registration counts and M1 partial evidence. Commit `feat: add widget host layout and lifecycle`.
 
 ## W1003 — basic form controls (M1 closure)
 
@@ -122,9 +122,9 @@ constructor and `Attach`, `Detach`, `Arrange`, `Process`, `DrainActions`, `Rende
 text `Value`/`MaxTextElements` (default 4,096); caller-supplied button command IDs;
 typed value-change actions and pointer press/release behavior.
 
-- [ ] Add `UnicodeEditsWholeTextElements`, `PasteNormalizesControls`, `LimitDoesNotSplitTextElement`, `DisabledButtonCannotInvoke`, `PointerReleaseElsewhereDoesNotInvoke`, and `RadioSelectionMovesWithinGroup` with design-section-5 assertions.
-- [ ] Confirm RED; implement controls using public text layout/geometry. No setter executes application commands; each value transition emits once.
-- [ ] Extend the public gallery with forms, focus/keyboard hints and compact resize behavior. Add GPL notices to code/assets/project and set non-packability.
+- [x] Add `UnicodeEditsWholeTextElements`, `PasteNormalizesControls`, `LimitDoesNotSplitTextElement`, `DisabledButtonCannotInvoke`, `PointerReleaseElsewhereDoesNotInvoke`, and `RadioSelectionMovesWithinGroup` with design-section-5 assertions.
+- [x] Confirm RED; implement controls using public text layout/geometry. No setter executes application commands; each value transition emits once.
+- [x] Extend the public gallery with forms, focus/keyboard hints and compact resize behavior. Add GPL notices to code/assets/project and set non-packability.
 - [ ] Run form tests and all tests on net8/net9/net10; run gallery keyboard/mouse/resize acceptance. Commit `feat: add basic terminal form controls`; record M1 closure.
 
 ## W1004 — single/multiple list selection
@@ -136,9 +136,9 @@ typed value-change actions and pointer press/release behavior.
 `WidgetList.SetItems(IReadOnlyList<WidgetListItem>)`, stable-key cursor/selection,
 and immutable `WidgetSelectionChangedAction.Keys` in current item order.
 
-- [ ] Add `MoveCursorPreservesMultipleSelection`, `DisabledItemsCannotSelect`, `RangeUsesAnchor`, `ReplacementPreservesEnabledKeys`, `DuplicateKeysRejectBeforeMutation`, and `SearchExpiresAt750Milliseconds` (explicit app timestamps).
-- [ ] Add `VisibleRenderingDoesNotVisitWhole100000ItemList`: instrument rendering, scroll one row and assert visited content is limited to visible rows; 100,001 items reject without changing prior state.
-- [ ] Confirm RED; implement single commit, Space toggle, Ctrl+A, Shift range, Home/End/Page movement and ordinal case-insensitive wrapping search.
+- [x] Add `MoveCursorPreservesMultipleSelection`, `DisabledItemsCannotSelect`, `RangeUsesAnchor`, `ReplacementPreservesEnabledKeys`, `DuplicateKeysRejectBeforeMutation`, and `SearchExpiresAt750Milliseconds` (explicit app timestamps).
+- [x] Add `VisibleRenderingDoesNotVisitWhole100000ItemList`: instrument rendering, scroll one row and assert visited content is limited to visible rows; 100,001 items reject without changing prior state.
+- [x] Confirm RED; implement single commit, Space toggle, Ctrl+A, Shift range, Home/End/Page movement and ordinal case-insensitive wrapping search.
 - [ ] Run list tests, update gallery multi-selection/search instructions, and commit `feat: add stable-key single and multiple selection lists`.
 
 ## W1005 — drop-down selection
@@ -149,8 +149,8 @@ and immutable `WidgetSelectionChangedAction.Keys` in current item order.
 **Interfaces:** consumes W1004 list behavior and W1002 scope/panel adapter.
 Produces `WidgetDropDown` committed selection, popup open state and commit/cancel actions.
 
-- [ ] Add `CancelRestoresSelectionAndFocus`, `EnterCommitsOnce`, `OutsideDismissRestoresSelection`, and `PopupChoosesAvailableAboveOrBelowSpace` including zero-height space.
-- [ ] Confirm RED; implement saved-selection preview semantics and clipped/scrolled popup using the shared host overlay primitives.
+- [x] Add `CancelRestoresSelectionAndFocus`, `EnterCommitsOnce`, `OutsideDismissRestoresSelection`, and `PopupChoosesAvailableAboveOrBelowSpace` including zero-height space.
+- [x] Confirm RED; implement saved-selection preview semantics and clipped/scrolled popup using the shared host overlay primitives.
 - [ ] Run tests and gallery at top/bottom screen edges; commit `feat: add commit and cancel drop-down selection`.
 
 ## W1006 — menus and submenus
@@ -162,9 +162,9 @@ Produces `WidgetDropDown` committed selection, popup open state and commit/cance
 checkable, separator and submenu item kinds; `WidgetInvokedAction` and
 `WidgetCheckedInvokedAction` exactly once per activation.
 
-- [ ] Add `DisabledAndSeparatorsAreInert`, `CheckableCommandReportsNewStateOnce`, `ShortcutRespectsActiveScope`, `DuplicateShortcutRejects`, and `SubmenuCloseRestoresParentFocus`.
-- [ ] Add `DeepMenuClipsOnTinyViewport`: 16 levels allowed, 17 rejected before mutation; Escape unwinds from compact/zero viewport; bounds never exceed arranged screen.
-- [ ] Confirm RED; implement bar/popup navigation, shortcut precedence and menu-chain close. Render/hit regions share clipped geometry.
+- [x] Add `DisabledAndSeparatorsAreInert`, `CheckableCommandReportsNewStateOnce`, `ShortcutRespectsActiveScope`, `DuplicateShortcutRejects`, and `SubmenuCloseRestoresParentFocus`.
+- [x] Add `DeepMenuClipsOnTinyViewport`: 16 levels allowed, 17 rejected before mutation; Escape unwinds from compact/zero viewport; bounds never exceed arranged screen.
+- [x] Confirm RED; implement bar/popup navigation, shortcut precedence and menu-chain close. Render/hit regions share clipped geometry.
 - [ ] Run menu tests and edge-position gallery acceptance; commit `feat: add terminal menus and bounded submenus`.
 
 ## W1007 — dialogs, modal restoration and wizard shell (M2 closure)
@@ -176,9 +176,9 @@ checkable, separator and submenu item kinds; `WidgetInvokedAction` and
 `WidgetHost.ShowModal(WidgetDialog)`, modal leases, typed completion actions,
 Yes/No and OK/Cancel factories, and wizard navigation requests.
 
-- [ ] Add `NoDiffersFromCancel`, `SafeDefaultActions`, `EscapeCancelsOnce`, `NestedCloseRestoresSurvivingFocus`, `ParentCloseCancelsDescendantsOnce`, and `ModalBlocksBackgroundShortcuts`.
-- [ ] Add `WizardValidationRejectionKeepsPage`: Previous disabled initially, Next requests transition, application rejection retains page/focus/error; test modal depth 16/17 boundary.
-- [ ] Confirm RED; implement wrapped content, LIFO leases, modeless results and application-applied wizard transitions. Host disposal remains silent cleanup.
+- [x] Add `NoDiffersFromCancel`, `SafeDefaultActions`, `EscapeCancelsOnce`, `NestedCloseRestoresSurvivingFocus`, `ParentCloseCancelsDescendantsOnce`, and `ModalBlocksBackgroundShortcuts`.
+- [x] Add `WizardValidationRejectionKeepsPage`: Previous disabled initially, Next requests transition, application rejection retains page/focus/error; test modal depth 16/17 boundary.
+- [x] Confirm RED; implement wrapped content, LIFO leases, modeless results and application-applied wizard transitions. Host disposal remains silent cleanup.
 - [ ] Run dialog/all-framework tests and every M2 gallery workflow; commit `feat: add dialogs and application-owned wizard navigation`; record M2 closure.
 
 ## W1008 — filesystem provider and common browser
@@ -191,10 +191,10 @@ Yes/No and OK/Cancel factories, and wizard navigation requests.
 loader, request/application methods and immutable snapshot/error types; controller
 identities/generations bridge async I/O to caller-owned UI loops.
 
-- [ ] Add `OutOfOrderResultsCannotReplaceLatest`, `ForeignBrowserResultRejected`, `DisposedBrowserIgnoresCompletion`, `PermissionFailureRetainsListing`, `RootsHaveNoParent`, and `TooManyEntriesHasExplicitError` at 100,001 entries.
+- [x] Add `OutOfOrderResultsCannotReplaceLatest`, `ForeignBrowserResultRejected`, `DisposedBrowserIgnoresCompletion`, `PermissionFailureRetainsListing`, `RootsHaveNoParent`, and `TooManyEntriesHasExplicitError` at 100,001 entries.
 - [ ] Add real temporary-directory tests for Unicode/spaces, platform case comparison, links where available and deletion; fake provider covers links/permission cases on every platform.
-- [ ] Confirm RED; implement local provider with System.IO, directory-first listing, absolute logical paths, root/parent metadata and no recursive scans. Catch only expected I/O errors; never mutate controls on a worker thread.
-- [ ] Run provider tests and record which real-OS cases were available. Commit `feat: add provider-backed terminal filesystem browser`.
+- [x] Confirm RED; implement local provider with System.IO, directory-first listing, absolute logical paths, root/parent metadata and no recursive scans. Catch only expected I/O errors; never mutate controls on a worker thread.
+- [x] Run provider tests and record which real-OS cases were available. Commit `feat: add provider-backed terminal filesystem browser`.
 
 ## W1009 — folder picker
 
@@ -205,8 +205,8 @@ identities/generations bridge async I/O to caller-owned UI loops.
 Produces current-folder selection yielding one absolute path only after matching
 generation validation; parent/root/start-folder behavior.
 
-- [ ] Add `SelectCurrentFolderAtRoot`, `InvalidStartShowsRecoverableError`, `DeletedFolderCannotAccept`, `CancelDuringValidationCannotAccept`, and `FileEntryCannotBecomeFolderResult`.
-- [ ] Confirm RED; implement selection policy and caller-driven provider validation; retain dialog/error on failure and ignore stale success.
+- [x] Add `SelectCurrentFolderAtRoot`, `InvalidStartShowsRecoverableError`, `DeletedFolderCannotAccept`, `CancelDuringValidationCannotAccept`, and `FileEntryCannotBecomeFolderResult`.
+- [x] Confirm RED; implement selection policy and caller-driven provider validation; retain dialog/error on failure and ignore stale success.
 - [ ] Run picker tests and gallery folder navigation on Windows and Unix; commit `feat: add directory selection dialog`.
 
 ## W1010 — single/multiple file picker (M3 closure)
@@ -218,9 +218,9 @@ generation validation; parent/root/start-folder behavior.
 acceptance pattern. Produces existing-file single/multiple modes, named suffix
 filters/all-files choice and immutable ordered accepted path payloads.
 
-- [ ] Add `SingleReturnsOneExistingFile`, `BasketSurvivesDirectoryAndFilterChanges`, `ComparerDeduplicatesPaths`, `FilterNeverHidesDirectories`, `ReturnedPathsDoNotAliasBasket`, and `EmptyBasketCannotAccept`.
-- [ ] Add `DeletedSelectionKeepsDialogOpen` and `StaleValidationCannotAcceptAfterNavigationOrCancel`: report failed paths and preserve explicit basket state.
-- [ ] Confirm RED; implement provider-case suffix filtering, ordered basket toggling/removal and matching-generation validation before Accepted.
+- [x] Add `SingleReturnsOneExistingFile`, `BasketSurvivesDirectoryAndFilterChanges`, `ComparerDeduplicatesPaths`, `FilterNeverHidesDirectories`, `ReturnedPathsDoNotAliasBasket`, and `EmptyBasketCannotAccept`.
+- [x] Add `DeletedSelectionKeepsDialogOpen` and `StaleValidationCannotAcceptAfterNavigationOrCancel`: report failed paths and preserve explicit basket state.
+- [x] Confirm RED; implement provider-case suffix filtering, ordered basket toggling/removal and matching-generation validation before Accepted.
 - [ ] Run file picker/all-framework tests and real-OS gallery workflows; commit `feat: add single and multiple file selection dialogs`; record M3 closure.
 
 ## W1011 — roguelike conveniences
@@ -232,9 +232,9 @@ filters/all-files choice and immutable ordered accepted path payloads.
 Produces domain-neutral caller-item/command wrappers, bounded messages (default
 1,000), prioritized status fields, caller-labeled help and validated prompts.
 
-- [ ] Add `InventoryHasNoGameModelDependency`, `HistoryDropsOldestAt1001`, `StatusFitsCompactScreen`, `HelpReflectsEffectiveBindings`, and `NumberValidationUsesCallerCultureAndRange`.
-- [ ] Confirm RED; compose existing behaviors, retaining caller-owned data/validation. No actor, rules, map-generator or save-game types enter the DLL.
-- [ ] Run game-UI tests and gallery examples; commit `feat: add reusable inventory status help and prompt controls`.
+- [x] Add `InventoryHasNoGameModelDependency`, `HistoryDropsOldestAt1001`, `StatusFitsCompactScreen`, `HelpReflectsEffectiveBindings`, and `NumberValidationUsesCallerCultureAndRange`.
+- [x] Confirm RED; compose existing behaviors, retaining caller-owned data/validation. No actor, rules, map-generator or save-game types enter the DLL.
+- [x] Run game-UI tests and gallery examples; commit `feat: add reusable inventory status help and prompt controls`.
 
 ## W1012 — application and package-only qualification
 
@@ -247,10 +247,10 @@ Produces domain-neutral caller-item/command wrappers, bounded messages (default
 gallery, editor open-file and text roguelike inventory/help witnesses and a
 consumer referencing the packed `.nupkg` only.
 
-- [ ] Add public input-replay acceptance assertions for each sample: cancellation leaves model unchanged; file open is application-owned; inventory action reaches caller once; help close restores focus.
-- [ ] Build sample loops with explicit Process/actions/Render/Refresh sequencing. Expose a repeatable `--smoke` path and documented Q/Escape exits. If adding raster demonstration, explicitly choose text during immediate-raster overlays.
-- [ ] Pack Release; restore/run PackageConsumer from `artifacts/packages` with no ProjectReference to the library; record exact package version/hash.
-- [ ] Run `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke` and corresponding editor/roguelike commands; expected exit 0 with named smoke checks passed. Run live workflows separately. Commit `test: qualify Widgets through public application consumers`.
+- [x] Add public input-replay acceptance assertions for each sample: cancellation leaves model unchanged; file open is application-owned; inventory action reaches caller once; help close restores focus.
+- [x] Build sample loops with explicit Process/actions/Render/Refresh sequencing. Expose a repeatable `--smoke` path and documented Q/Escape exits. If adding raster demonstration, explicitly choose text during immediate-raster overlays.
+- [x] Pack Release; restore/run PackageConsumer from `artifacts/packages` with no ProjectReference to the library; record exact package version/hash.
+- [x] Run `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke` and corresponding editor/roguelike commands; expected exit 0 with named smoke checks passed. Run live workflows separately. Commit `test: qualify Widgets through public application consumers`.
 
 ## W1013 — hardening, API/docs/package freeze and RC (M4 closure)
 
@@ -261,9 +261,9 @@ consumer referencing the packed `.nupkg` only.
 **Interfaces:** consumes implemented candidate/evidence. Produces the frozen
 contract, qualified package boundary and RC source, not publication.
 
-- [ ] Add repeated open/close/dispose/capture tests, action-queue limit/failure atomicity, 100,000-item work measurements, and stale provider tests after host shutdown. Confirm leaks/invalid focus are caught before fixing any failures.
-- [ ] Inspect source headers, explicit compile items, nuspec license/direct dependencies, package payload and public XML docs. Freeze fingerprint from built assembly; verify the package-only consumer against that same package.
-- [ ] Expand man-page-style README and full CHANGELOG; ensure every required widget has examples/keys/errors/limitations. Remove planning-only install status only when a usable package actually exists.
+- [x] Add repeated open/close/dispose/capture tests, action-queue limit/failure atomicity, 100,000-item work measurements, and stale provider tests after host shutdown. Confirm leaks/invalid focus are caught before fixing any failures.
+- [x] Inspect source headers, explicit compile items, nuspec license/direct dependencies, package payload and public XML docs. Freeze fingerprint from built assembly; verify the package-only consumer against that same package.
+- [x] Expand man-page-style README and full CHANGELOG; ensure every required widget has examples/keys/errors/limitations. Remove planning-only install status only when a usable package actually exists.
 - [ ] Run full Staging tests across frameworks and Release pack/validate on all CI hosts; record evidence. Advance to `1.0.0-rc.N` only after M1–M4 automated/sample gates. Commit `docs: freeze Widgets API package and release candidate`.
 
 ## W1014 — live/stable-source readiness

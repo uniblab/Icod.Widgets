@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Icod.Widgets shared build properties.
+	Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>
+	SPDX-License-Identifier: LGPL-3.0-or-later
+-->
+<Project>
+	<PropertyGroup>
+		<LangVersion>13.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Configurations>Debug;Staging;Release</Configurations>
+		<Deterministic>true</Deterministic>
+		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+</Project>

@@ -1,0 +1,68 @@
+/*
+	Icod.Widgets.Tests
+	Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>
+	SPDX-License-Identifier: GPL-3.0-or-later
+*/
+namespace Icod.Widgets.Tests.Dialogs;
+
+using Icod.DCurses;
+using Xunit;
+
+public sealed class WidgetDialogTests {
+	[Fact]
+	public void NoDiffersFromCancel() {
+		using WidgetHost host = HostWithBackground( out _ );
+		WidgetMessageDialog noDialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( noDialog );
+		host.Process( WidgetInput.Key( WidgetKey.Right ), TimeSpan.Zero );
+		WidgetDialogCompletedAction no = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+		WidgetMessageDialog cancelDialog = WidgetMessageDialog.YesNo( "question2", "Question", "Continue?" ); host.ShowModal( cancelDialog );
+		WidgetDialogCompletedAction cancel = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.FromMilliseconds( 2 ) ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.No, no.Result.Outcome ); Assert.Equal( WidgetDialogOutcome.Cancel, cancel.Result.Outcome );
+	}
+
+	[Fact]
+	public void SafeDefaultActions() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
+		WidgetDialogCompletedAction action = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.No, action.Result.Outcome );
+	}
+
+	[Fact]
+	public void EscapeCancelsOnceAndRestoresFocus() {
+		using WidgetHost host = HostWithBackground( out WidgetButton background ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.Zero );
+		Assert.Single( result.Actions ); Assert.Empty( host.DrainActions() ); Assert.Same( background, host.FocusedWidget );
+	}
+
+	[Fact]
+	public void ModalBlocksBackgroundCommands() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.Zero );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void ParentCloseCancelsDescendantsOnce() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetModalLease parent = host.ShowModal( WidgetMessageDialog.OkCancel( "parent", "P", "P" ) ); host.ShowModal( WidgetMessageDialog.OkCancel( "child", "C", "C" ) );
+		parent.Dispose(); IReadOnlyList<WidgetAction> actions = host.DrainActions();
+		Assert.Equal( 2, actions.Count ); Assert.All( actions.Cast<WidgetDialogCompletedAction>(), action => Assert.Equal( WidgetDialogOutcome.Cancel, action.Result.Outcome ) );
+	}
+
+	[Fact]
+	public void WizardValidationRejectionKeepsPage() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetWizardDialog wizard = new( "wizard", "Setup", [ "One", "Two" ] ); host.ShowModal( wizard );
+		Assert.False( wizard.CanPrevious );
+		WidgetWizardNavigationRequestedAction request = Assert.IsType<WidgetWizardNavigationRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( 1, request.ToPage ); wizard.RejectNavigation( "Invalid" ); Assert.Equal( 0, wizard.PageIndex ); Assert.Equal( "Invalid", wizard.Error ); Assert.True( wizard.IsOpen );
+	}
+
+	[Fact]
+	public void ModalDepthRejectsSeventeen() {
+		using WidgetHost host = HostWithBackground( out _ );
+		for ( int i = 0; i < WidgetLimits.MaximumModalDepth; i++ ) host.ShowModal( WidgetMessageDialog.OkCancel( $"d{i}", "D", "D" ) );
+		Assert.Throws<InvalidOperationException>( () => host.ShowModal( WidgetMessageDialog.OkCancel( "overflow", "D", "D" ) ) );
+		Assert.Equal( WidgetLimits.MaximumModalDepth, host.ModalDepth );
+	}
+
+	private static WidgetHost HostWithBackground( out WidgetButton button ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); button = new WidgetButton( "background", "Run", "run" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button ); return host; }
+}

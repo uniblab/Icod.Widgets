@@ -2,7 +2,7 @@
 
 **Decision date:** 2026-10-09 (America/New_York)\
 **Target:** first stable release `1.0.0`\
-**State:** approach and feature scope approved; detailed design/plan submitted for review\
+**State:** W1001–W1013 implemented; 1.0.0-rc.1 automated qualification complete; live W1014 pending\
 **Repository baseline:** `d86e56deeac37b8faeadc2986c597634424ab07b` on `main`
 
 ## Purpose and recorded choices
@@ -69,10 +69,12 @@ belong in this library.
 
 ## Evidence and next action
 
-This PR delivers planning and licensing only. No implementation tranche is
-complete and no build/test/publication evidence is claimed.
+W1001–W1013 established and automated the complete planned control set, public
+samples, package-only consumer, API baseline, and release-candidate packaging.
+Evidence is recorded in `docs/W1001-*.md` through `docs/W1013-*.md`. No package
+has been published.
 
-The next action after review is W1001 in the
+The remaining stable-release task is W1014 in the
 [development roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), using the
 [design](docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md) and
 [implementation plan](docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).

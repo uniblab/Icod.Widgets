@@ -1,0 +1,95 @@
+/*
+	Icod.Widgets
+	Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>
+	SPDX-License-Identifier: LGPL-3.0-or-later
+*/
+namespace Icod.Widgets;
+
+using Icod.DCurses;
+
+/// <summary>Provides keyboard-operated bounded popup and submenu navigation.</summary>
+public class WidgetPopupMenu : Widget {
+	private sealed class Level( IReadOnlyList<WidgetMenuItem> items ) { public IReadOnlyList<WidgetMenuItem> Items { get; } = items; public int Cursor { get; set; } }
+	private readonly WidgetMenuItem[] rootItems;
+	private readonly List<Level> levels = [];
+
+	public WidgetPopupMenu( string id, IReadOnlyList<WidgetMenuItem> items ) : base( id ) {
+		ArgumentNullException.ThrowIfNull( items ); if ( 0 == items.Count ) throw new ArgumentException( "A menu requires at least one item.", nameof( items ) );
+		this.rootItems = items.ToArray();
+		if ( MaximumDepth( this.rootItems ) > WidgetLimits.MaximumSubmenuDepth ) throw new ArgumentException( $"A menu cannot exceed {WidgetLimits.MaximumSubmenuDepth} levels.", nameof( items ) );
+		HashSet<WidgetMenuShortcut> shortcuts = [];
+		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut.HasValue && !shortcuts.Add( item.Shortcut.Value ) ) throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
+	}
+
+	public override bool IsFocusable => true;
+	public bool IsOpen { get; private set; }
+	public int Depth => this.levels.Count;
+	public WidgetMenuItem? CurrentItem => 0 == this.levels.Count ? null : this.levels[ ^1 ].Items[ this.levels[ ^1 ].Cursor ];
+	public CursesRectangle RenderBounds { get; private set; }
+
+	public void Open() { this.levels.Clear(); this.levels.Add( new Level( this.rootItems ) ); this.IsOpen = true; }
+	public void Close() { this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+
+	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
+		if ( WidgetInputKind.Key != input.Kind ) return false;
+		if ( !this.IsOpen ) { if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; } return false; }
+		if ( this.TryShortcut( input, host ) ) return true;
+		if ( input.KeyCode is WidgetKey.Down or WidgetKey.Up ) return this.Move( WidgetKey.Down == input.KeyCode ? 1 : -1 );
+		if ( WidgetKey.Right == input.KeyCode ) return this.OpenSubmenu();
+		if ( WidgetKey.Left == input.KeyCode || WidgetKey.Escape == input.KeyCode ) {
+			if ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 ); else this.Close(); return true;
+		}
+		if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space ) return this.Activate( host );
+		return false;
+	}
+
+	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
+		if ( !this.IsOpen || 0 == this.levels.Count ) { this.RenderBounds = default; return; }
+		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); this.RenderBounds = new CursesRectangle( area.Row, area.Column, Math.Min( area.Rows, this.levels[ ^1 ].Items.Count ), area.Columns );
+		for ( int row = 0; row < this.RenderBounds.Rows; row++ ) {
+			WidgetMenuItem item = this.levels[ ^1 ].Items[ row ];
+			string prefix = WidgetMenuItemKind.CheckableCommand == item.Kind ? ( item.IsChecked ? "[x] " : "[ ] " ) : string.Empty;
+			string suffix = WidgetMenuItemKind.Submenu == item.Kind ? " >" : string.Empty;
+			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', this.RenderBounds.Columns ) : CursesText.TruncateToColumns( prefix + item.Text + suffix, this.RenderBounds.Columns, screen.TextWidthProvider );
+			CursesStyle style = !item.IsEnabled ? theme.Disabled : row == this.levels[ ^1 ].Cursor && focused ? theme.Focused : theme.Normal;
+			screen.StandardWindow.Move( this.RenderBounds.Row + row, this.RenderBounds.Column ); screen.StandardWindow.Write( value, style );
+		}
+	}
+
+	private bool Move( int direction ) {
+		Level level = this.levels[ ^1 ];
+		for ( int count = 1; count <= level.Items.Count; count++ ) {
+			int index = ( level.Cursor + direction * count + level.Items.Count ) % level.Items.Count;
+			WidgetMenuItem item = level.Items[ index ]; if ( item.IsEnabled && WidgetMenuItemKind.Separator != item.Kind ) { level.Cursor = index; return true; }
+		}
+		return false;
+	}
+
+	private bool OpenSubmenu() {
+		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Submenu != item.Kind || 0 == item.Children.Count ) return false;
+		this.levels.Add( new Level( item.Children ) ); return true;
+	}
+
+	private bool Activate( WidgetHost host ) {
+		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Separator == item.Kind ) return false;
+		if ( WidgetMenuItemKind.Submenu == item.Kind ) return this.OpenSubmenu();
+		if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
+		else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
+		this.Close(); return true;
+	}
+
+	private bool TryShortcut( WidgetInput input, WidgetHost host ) {
+		foreach ( WidgetMenuItem item in Flatten( this.levels[ ^1 ].Items ) ) {
+			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || ( shortcut.Character.HasValue && input.Character?.Value != shortcut.Character.Value ) ) continue;
+			if ( !item.IsEnabled || item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
+			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
+			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
+			this.Close(); return true;
+		}
+		return false;
+	}
+
+	private static IEnumerable<WidgetMenuItem> Flatten( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { yield return item; foreach ( WidgetMenuItem child in Flatten( item.Children ) ) yield return child; } }
+	private static int MaximumDepth( IReadOnlyList<WidgetMenuItem> items ) { int depth = 1; foreach ( WidgetMenuItem item in items ) if ( 0 < item.Children.Count ) depth = Math.Max( depth, 1 + MaximumDepth( item.Children ) ); return depth; }
+}
+

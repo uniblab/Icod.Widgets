@@ -6,9 +6,10 @@ Icod.Widgets — reusable .NET terminal UI controls for applications and games.
 
 ## STATUS
 
-Planning for the first stable release, **1.0.0**. This planning PR defines scope,
-architecture, licensing, and implementation gates; it does not provide a working
-DLL, runnable samples, or a published NuGet package.
+The full planned 1.0 control set is implemented as **1.0.0-rc.1** for .NET 8,
+9, and 10. Automated Linux qualification and package-only consumption pass.
+Live Windows, macOS, Linux terminal, and applicable ARM64 evidence remains the
+final stable-release gate. No NuGet package has been published.
 
 ## DESCRIPTION
 
@@ -31,6 +32,54 @@ Icod.DCurses. Planned targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
   and scroll indicators.
 - Inventory/action lists, bounded message history, status bars, help overlays,
   and text/number prompts.
+
+## INSTALLATION
+
+Until publication, build the repository or restore the package produced by
+`dotnet pack Icod.Widgets.csproj -c Release -o artifacts/packages`. The package
+declares `Icod.DCurses 2.3.1` as its sole direct runtime dependency.
+
+## USAGE
+
+Applications create a `WidgetHost` over their DCurses session or screen, attach
+a widget tree, and keep ownership of the loop:
+
+```csharp
+using WidgetHost host = new(session, WidgetTheme.Default);
+WidgetButton save = new("save", "Save", "file.save");
+host.Attach(save);
+host.Arrange(session.Screen.Bounds);
+
+WidgetDispatchResult result = host.Process(inputEvent, elapsed);
+foreach (WidgetAction action in result.Actions) {
+    // Execute application commands or update application state.
+}
+host.Render();
+await session.RefreshAsync();
+```
+
+Tab and Shift+Tab traverse controls. Arrows navigate lists, radio groups, menus,
+and drop-downs. Enter activates or commits, Space toggles, and Escape cancels the
+top dialog/menu. Applications supply monotonic timestamps for list search.
+
+Filesystem loading and selection validation are asynchronous provider calls.
+Apply returned browser/validation results on the application loop; stale,
+foreign, canceled, and disposed-controller results are ignored. Pickers return
+paths and never open, create, delete, or write files.
+
+## LIMITS
+
+One host accepts 1,024 widgets, 4,096 pending actions, 16 modal levels, and 16
+submenu levels. Lists and directory snapshots accept 100,000 items. Extremely
+small viewports retain keyboard cancellation and clip rendering. DCurses
+immediate-raster presentation cannot compose overlapping retained panels, so an
+application using raster content must select its text presentation while an
+overlay is visible.
+
+## EXAMPLES
+
+Run the GPL gallery, editor, and roguelike witnesses with `--smoke`; see
+[`samples/README.md`](samples/README.md) for commands and ownership boundaries.
 
 ## ROADMAPS
 
