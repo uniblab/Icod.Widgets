@@ -24,6 +24,20 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void PlainMnemonicInvokesCommandInOpenMenuLevel() {
+		WidgetMenuBar menu = new( "menu", [
+			WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "find", "Find", "file.find", 'f' ) ], 'f' ),
+			WidgetMenuItem.Submenu( "view", "View", [ WidgetMenuItem.Command( "go-file", "Go to File...", "view.file", 'f' ) ], 'v' )
+		] );
+		using WidgetHost host = Focus( menu );
+		host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'v' ) ), TimeSpan.Zero );
+
+		WidgetInvokedAction action = Assert.IsType<WidgetInvokedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Character, character: new( 'F' ) ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+
+		Assert.Equal( "view.file", action.CommandId ); Assert.False( menu.IsOpen );
+	}
+
+	[Fact]
 	public void DisabledAndSeparatorsAreInert() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "off", "Disabled", "off", isEnabled: false ), WidgetMenuItem.Separator( "sep" ), WidgetMenuItem.Command( "on", "Enabled", "on" ) ] );
 		using WidgetHost host = Focus( menu ); menu.Open();
