@@ -24,6 +24,17 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void DisabledTopLevelMnemonicIsInert() {
+		WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "edit", "Edit", [ WidgetMenuItem.Command( "copy", "Copy", "edit.copy" ) ], 'e', isEnabled: false ) ] );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetButton editor = new( "editor", "Editor", "editor.focus" ); host.Attach( editor ); host.Attach( menu ); host.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'e' ) ), TimeSpan.Zero );
+
+		Assert.False( result.Handled ); Assert.Empty( result.Actions ); Assert.False( menu.IsOpen ); Assert.Same( editor, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void PlainMnemonicInvokesCommandInOpenMenuLevel() {
 		WidgetMenuBar menu = new( "menu", [
 			WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "find", "Find", "file.find", 'f' ) ], 'f' ),
