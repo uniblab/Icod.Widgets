@@ -16,6 +16,7 @@ public sealed class WidgetMessageDialog : WidgetDialog {
 	}
 	public string Message { get; }
 	public WidgetDialogOutcome SelectedOutcome => this.choices[ this.selectedIndex ].Outcome;
+	public static WidgetMessageDialog Ok( string id, string title, string message ) => new( id, title, message, [ ( "OK", WidgetDialogOutcome.Ok ) ], 0 );
 	public static WidgetMessageDialog YesNo( string id, string title, string message ) => new( id, title, message, [ ( "Yes", WidgetDialogOutcome.Yes ), ( "No", WidgetDialogOutcome.No ) ], 1 );
 	public static WidgetMessageDialog OkCancel( string id, string title, string message ) => new( id, title, message, [ ( "OK", WidgetDialogOutcome.Ok ), ( "Cancel", WidgetDialogOutcome.Cancel ) ], 1 );
 
