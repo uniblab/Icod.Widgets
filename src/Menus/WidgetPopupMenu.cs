@@ -98,7 +98,7 @@ public class WidgetPopupMenu : Widget {
 	protected bool TryRootMnemonic( WidgetInput input, WidgetHost host ) {
 		if ( WidgetInputKind.Key != input.Kind || WidgetKey.Character != input.KeyCode || input.Character is not { Value: <= char.MaxValue } character ||
 			0 == ( input.Modifiers & WidgetInputModifiers.Alt ) || 0 != ( input.Modifiers & WidgetInputModifiers.Control ) ) return false;
-		int index = Array.FindIndex( this.rootItems, item => item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
+		int index = Array.FindIndex( this.rootItems, item => item.IsEnabled && item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
 		if ( 0 > index ) return false;
 		if ( !this.IsOpen ) this.Open();
 		this.levels[ 0 ].Cursor = index;
@@ -110,7 +110,7 @@ public class WidgetPopupMenu : Widget {
 		if ( WidgetKey.Character != input.KeyCode || input.Character is not { Value: <= char.MaxValue } character ||
 			0 != ( input.Modifiers & ( WidgetInputModifiers.Control | WidgetInputModifiers.Alt ) ) ) return false;
 		Level level = this.levels[ ^1 ];
-		int index = level.Items.ToList().FindIndex( item => item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
+		int index = level.Items.ToList().FindIndex( item => item.IsEnabled && item.Mnemonic.HasValue && char.ToUpperInvariant( item.Mnemonic.Value ) == char.ToUpperInvariant( (char)character.Value ) );
 		if ( 0 > index ) return false;
 		level.Cursor = index;
 		return this.Activate( host );
