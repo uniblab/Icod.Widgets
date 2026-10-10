@@ -17,6 +17,7 @@ public class WidgetPopupMenu : Widget {
 		ArgumentNullException.ThrowIfNull( items ); if ( 0 == items.Count ) throw new ArgumentException( "A menu requires at least one item.", nameof( items ) );
 		this.rootItems = items.ToArray();
 		if ( MaximumDepth( this.rootItems ) > WidgetLimits.MaximumSubmenuDepth ) throw new ArgumentException( $"A menu cannot exceed {WidgetLimits.MaximumSubmenuDepth} levels.", nameof( items ) );
+		ValidateMnemonics( this.rootItems, nameof( items ) );
 		HashSet<WidgetMenuShortcut> shortcuts = [];
 		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut.HasValue && !shortcuts.Add( item.Shortcut.Value ) ) throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
 	}
@@ -148,6 +149,13 @@ public class WidgetPopupMenu : Widget {
 	}
 
 	private static IEnumerable<WidgetMenuItem> Flatten( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { yield return item; foreach ( WidgetMenuItem child in Flatten( item.Children ) ) yield return child; } }
+	private static void ValidateMnemonics( IReadOnlyList<WidgetMenuItem> items, string parameterName ) {
+		HashSet<char> mnemonics = [];
+		foreach ( WidgetMenuItem item in items ) {
+			if ( item.Mnemonic.HasValue && !mnemonics.Add( char.ToUpperInvariant( item.Mnemonic.Value ) ) ) throw new ArgumentException( "Menu mnemonics must be unique within a level.", parameterName );
+			if ( 0 < item.Children.Count ) ValidateMnemonics( item.Children, parameterName );
+		}
+	}
 	private static int MaximumDepth( IReadOnlyList<WidgetMenuItem> items ) { int depth = 1; foreach ( WidgetMenuItem item in items ) if ( 0 < item.Children.Count ) depth = Math.Max( depth, 1 + MaximumDepth( item.Children ) ); return depth; }
 }
 
