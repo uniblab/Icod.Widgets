@@ -2,7 +2,7 @@
 
 **Planning date:** 2026-10-09 (America/New_York)\
 **Target:** `1.0.0`, with `1.0.0-alpha.N` and `1.0.0-rc.N` qualification stages\
-**State:** W1001–W1013 complete; release candidate awaiting W1014 live qualification\
+**State:** W1001–W1013 complete; stable 1.0.0 source prepared; W1014 live qualification pending\
 **Runtime:** managed C# 13, `net8.0;net9.0;net10.0`, AnyCPU\
 **Direct runtime dependency:** proposed `Icod.DCurses 2.3.1`, availability checked at W1001\
 **License:** library LGPL-3.0-or-later; samples/tests GPL-3.0-or-later
@@ -40,8 +40,8 @@ Widgets returns actions and draws into DCurses-owned retained presentation.
 
 W1000–W1013 are implemented with per-tranche evidence in `docs/`. M1–M4
 automated gates are complete. W1014 live platform/terminal qualification and
-stable metadata remain pending and are not replaced by automated runner
-evidence. Record that work in
+stable metadata and curated notes are prepared. The live gate remains open and
+is not replaced by automated runner evidence. Record that work in
 [`docs/W1014-Stable-Qualification.md`](docs/W1014-Stable-Qualification.md).
 
 ## Dependency and review order
