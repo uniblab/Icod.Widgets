@@ -58,7 +58,7 @@ public class WidgetPopupMenu : Widget {
 			WidgetMenuItem item = this.levels[ ^1 ].Items[ index ];
 			string prefix = WidgetMenuItemKind.CheckableCommand == item.Kind ? ( item.IsChecked ? "[x] " : "[ ] " ) : string.Empty;
 			string suffix = WidgetMenuItemKind.Submenu == item.Kind ? " >" : string.Empty;
-			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', contentColumns ) : CursesText.TruncateToColumns( prefix + item.Text + suffix, contentColumns, screen.TextWidthProvider );
+			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', contentColumns ) : ComposeRow( item, prefix + item.Text + suffix, contentColumns, screen );
 			CursesStyle style = !item.IsEnabled ? theme.Disabled : index == this.levels[ ^1 ].Cursor && focused ? theme.Focused : theme.Normal;
 			screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset ); screen.StandardWindow.Write( value, style );
 		}
@@ -128,6 +128,24 @@ public class WidgetPopupMenu : Widget {
 
 	private static bool ShortcutCharacterMatches( WidgetMenuShortcut shortcut, WidgetInput input ) => !shortcut.Character.HasValue ||
 		input.Character is { Value: <= char.MaxValue } character && char.ToUpperInvariant( shortcut.Character.Value ) == char.ToUpperInvariant( (char)character.Value );
+
+	private static string ComposeRow( WidgetMenuItem item, string label, int columns, CursesScreen screen ) {
+		if ( item.Shortcut is not { } shortcut ) return CursesText.TruncateToColumns( label, columns, screen.TextWidthProvider );
+		string gesture = FormatShortcut( shortcut ); int gestureColumns = CursesText.MeasureColumns( gesture, screen.TextWidthProvider );
+		if ( columns < gestureColumns + 2 ) return CursesText.TruncateToColumns( label, columns, screen.TextWidthProvider );
+		string clippedLabel = CursesText.TruncateToColumns( label, columns - gestureColumns - 2, screen.TextWidthProvider );
+		int labelColumns = CursesText.MeasureColumns( clippedLabel, screen.TextWidthProvider );
+		return clippedLabel + new string( ' ', columns - labelColumns - gestureColumns ) + gesture;
+	}
+
+	private static string FormatShortcut( WidgetMenuShortcut shortcut ) {
+		List<string> parts = [];
+		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Control ) ) parts.Add( "Ctrl" );
+		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Alt ) ) parts.Add( "Alt" );
+		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Shift ) ) parts.Add( "Shift" );
+		parts.Add( shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ).ToString() : shortcut.Key.ToString() );
+		return string.Join( "+", parts );
+	}
 
 	private static IEnumerable<WidgetMenuItem> Flatten( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { yield return item; foreach ( WidgetMenuItem child in Flatten( item.Children ) ) yield return child; } }
 	private static int MaximumDepth( IReadOnlyList<WidgetMenuItem> items ) { int depth = 1; foreach ( WidgetMenuItem item in items ) if ( 0 < item.Children.Count ) depth = Math.Max( depth, 1 + MaximumDepth( item.Children ) ); return depth; }
