@@ -26,7 +26,7 @@ Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 - Menu bars, popup menus, submenus, separators, disabled and checkable items.
 - Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs with explicit results.
-- Single-select and multi-select lists, and drop-down selection.
+- Single-select and multi-select lists, and framed drop-down selection popups.
 - Folder selection and single/multiple existing-file selection.
 - Labels, buttons, single-line text input, checkboxes, radio groups, borders,
   and scroll indicators.
