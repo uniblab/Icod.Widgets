@@ -55,6 +55,15 @@ public sealed class WidgetDropDownTests {
 	}
 
 	[Fact]
+	public void PointerSelectsFirstItemInsidePopupBorder() {
+		WidgetDropDown drop = new( "drop", [ new( "a", "Alpha" ), new( "b", "Beta" ), new( "c", "Gamma" ) ], "c" ); using WidgetHost host = Host( drop, row: 1, screenRows: 8 ); host.Focus( drop ); drop.Open();
+		int row = drop.PopupBounds.Row + 1; int column = drop.PopupBounds.Column + 1;
+		host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Press, CursesMouseButton.Primary, column, row ) ), TimeSpan.Zero );
+		WidgetDispatchResult result = host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, column, row ) ), TimeSpan.Zero );
+		Assert.Equal( "a", drop.SelectedKey ); Assert.False( drop.IsOpen ); Assert.Equal( "a", Assert.IsType<WidgetValueChangedAction<string>>( Assert.Single( result.Actions ) ).Value );
+	}
+
+	[Fact]
 	public void CompactPopupScrollsPreviewIntoView() {
 		WidgetDropDown drop = Create(); using WidgetHost host = Host( drop, row: 0, screenRows: 2 ); host.Focus( drop );
 		host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero );
