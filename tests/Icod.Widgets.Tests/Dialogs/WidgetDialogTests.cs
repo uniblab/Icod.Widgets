@@ -21,6 +21,18 @@ public sealed class WidgetDialogTests {
 	}
 
 	[Fact]
+	public void MessageDialogRendersCaptionedBorderAndInsetContent() {
+		using WidgetHost host = new( new CursesScreen( 20, 5 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "notice", "Notice", "Saved." ); host.ShowModal( dialog ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( dialog );
+
+		Assert.Equal( "┌─ Notice ─────────┐", Row( window, 0, 20 ) );
+		Assert.Equal( "│Saved.            │", Row( window, 1, 20 ) );
+		Assert.Equal( "│[OK] (Esc cancels)│", Row( window, 3, 20 ) );
+		Assert.Equal( "└──────────────────┘", Row( window, 4, 20 ) );
+	}
+
+	[Fact]
 	public void NoDiffersFromCancel() {
 		using WidgetHost host = HostWithBackground( out _ );
 		WidgetMessageDialog noDialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( noDialog );
@@ -100,4 +112,5 @@ public sealed class WidgetDialogTests {
 	}
 
 	private static WidgetHost HostWithBackground( out WidgetButton button ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); button = new WidgetButton( "background", "Run", "run" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button ); return host; }
+	private static string Row( CursesWindow window, int row, int columns ) => string.Concat( Enumerable.Range( 0, columns ).Select( column => window.GetCell( row, column ).Content ) );
 }
