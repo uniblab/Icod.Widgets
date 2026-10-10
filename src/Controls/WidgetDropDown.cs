@@ -71,10 +71,12 @@ public sealed class WidgetDropDown : Widget {
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		this.RenderSelection( screen, theme, focused );
 		if ( !this.IsOpen || this.PopupBounds.IsEmpty ) return;
-		for ( int row = 0; row < this.PopupBounds.Rows; row++ ) {
-			int index = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) ) + row;
-			WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, this.PopupBounds.Columns, screen.TextWidthProvider );
-			screen.StandardWindow.Move( this.PopupBounds.Row + row, this.PopupBounds.Column );
+		int inset = this.HasPopupBorder ? 1 : 0; int contentRows = this.PopupBounds.Rows - inset * 2; int contentColumns = this.PopupBounds.Columns - inset * 2;
+		if ( 0 != inset ) this.RenderPopupBorder( screen, theme );
+		for ( int row = 0; row < contentRows; row++ ) {
+			int index = Math.Clamp( this.previewIndex - contentRows + 1, 0, Math.Max( 0, this.items.Length - contentRows ) ) + row;
+			WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, contentColumns, screen.TextWidthProvider );
+			screen.StandardWindow.Move( this.PopupBounds.Row + row + inset, this.PopupBounds.Column + inset );
 			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : index == this.previewIndex ? theme.Focused : theme.Normal );
 		}
 	}
@@ -89,9 +91,19 @@ public sealed class WidgetDropDown : Widget {
 	private void UpdatePopupBounds() {
 		if ( this.Host is null ) return;
 		int below = Math.Max( 0, this.Host.Screen.Rows - this.Bounds.BottomExclusive ); int above = Math.Min( this.Bounds.Row, this.Host.Screen.Rows );
-		bool useBelow = below >= above; int available = useBelow ? below : above; int rows = Math.Min( this.items.Length, available );
-		int row = useBelow ? this.Bounds.BottomExclusive : this.Bounds.Row - rows;
 		int column = Math.Min( this.Bounds.Column, this.Host.Screen.Columns ); int columns = Math.Min( this.Bounds.Columns, Math.Max( 0, this.Host.Screen.Columns - column ) );
+		bool useBelow = below >= above; int available = useBelow ? below : above; bool border = available >= 3 && columns >= 3;
+		int rows = Math.Min( this.items.Length + ( border ? 2 : 0 ), available ); int row = useBelow ? this.Bounds.BottomExclusive : this.Bounds.Row - rows;
 		this.PopupBounds = new CursesRectangle( Math.Clamp( row, 0, this.Host.Screen.Rows ), column, rows, columns );
+	}
+
+	private bool HasPopupBorder => this.PopupBounds.Rows >= 3 && this.PopupBounds.Columns >= 3;
+
+	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme ) {
+		int right = this.PopupBounds.Column + this.PopupBounds.Columns - 1; int bottom = this.PopupBounds.BottomExclusive - 1;
+		string horizontal = new( '─', this.PopupBounds.Columns - 2 );
+		screen.StandardWindow.Move( this.PopupBounds.Row, this.PopupBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", theme.Border );
+		for ( int row = this.PopupBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.PopupBounds.Column ); screen.StandardWindow.Write( "│", theme.Border ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", theme.Border ); }
+		screen.StandardWindow.Move( bottom, this.PopupBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", theme.Border );
 	}
 }
