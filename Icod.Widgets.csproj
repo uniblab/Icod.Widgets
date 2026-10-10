@@ -47,7 +47,7 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<PackageTags>dotnet;csharp;terminal;terminal-ui;tui;text-ui;console-ui;console;widgets;terminal-widgets;controls;ui-controls;curses;dcurses;cross-platform;forms;form-controls;menu;menu-bar;popup-menu;submenu;mnemonics;keyboard-shortcuts;dialog;modal-dialog;message-box;alert;wizard;dropdown;list;listbox;multi-select;file-picker;folder-picker;directory-picker;file-browser;filesystem-browser;checkbox;radio-button;text-input;roguelike;game-ui;inventory;status-bar;help-overlay;icod</PackageTags>
+		<PackageTags>alert;checkbox;console;console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;directory-picker;dotnet;dropdown;file-browser;file-picker;filesystem-browser;folder-picker;form-controls;forms;game-ui;help-overlay;icod;keyboard-shortcuts;list;listbox;menu;menu-bar;message-box;mnemonics;modal-dialog;multi-select;ncurses;pcurses;popup-menu;radio-button;status-bar;submenu;terminal;terminal-ui;terminal-widgets;text-input;text-ui;tui;ui;ui-controls;widgets;wizard</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
 		<PlatformTarget>AnyCPU</PlatformTarget>
