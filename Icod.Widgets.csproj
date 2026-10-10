@@ -32,7 +32,7 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<PackageTags>console;controls;cross-platform;csharp;dialog;dotnet;dropdown;file-picker;folder-picker;forms;icod;list;menu;roguelike;terminal;terminal-ui;text-ui;tui;ui;widgets</PackageTags>
+		<PackageTags>dotnet;csharp;terminal;terminal-ui;tui;text-ui;console-ui;console;widgets;terminal-widgets;controls;ui-controls;curses;dcurses;cross-platform;forms;form-controls;menu;menu-bar;popup-menu;submenu;mnemonics;keyboard-shortcuts;dialog;modal-dialog;message-box;alert;wizard;dropdown;list;listbox;multi-select;file-picker;folder-picker;directory-picker;file-browser;filesystem-browser;checkbox;radio-button;text-input;roguelike;game-ui;inventory;status-bar;help-overlay;icod</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
 		<PlatformTarget>AnyCPU</PlatformTarget>
