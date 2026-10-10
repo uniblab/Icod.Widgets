@@ -18,8 +18,10 @@ public class WidgetPopupMenu : Widget {
 		this.rootItems = items.ToArray();
 		if ( MaximumDepth( this.rootItems ) > WidgetLimits.MaximumSubmenuDepth ) throw new ArgumentException( $"A menu cannot exceed {WidgetLimits.MaximumSubmenuDepth} levels.", nameof( items ) );
 		ValidateMnemonics( this.rootItems, nameof( items ) );
-		HashSet<WidgetMenuShortcut> shortcuts = [];
-		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut.HasValue && !shortcuts.Add( item.Shortcut.Value ) ) throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
+		HashSet<( WidgetKey Key, WidgetInputModifiers Modifiers, char? Character )> shortcuts = [];
+		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut is { } shortcut &&
+			!shortcuts.Add( ( shortcut.Key, shortcut.Modifiers, shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ) : null ) ) )
+			throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
 	}
 
 	public override bool IsFocusable => true;
@@ -34,10 +36,10 @@ public class WidgetPopupMenu : Widget {
 	protected override void OnArrange( CursesRectangle bounds ) { if ( this.IsOpen ) this.Host?.UpdatePopup( this, bounds ); }
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
-		if ( WidgetInputKind.Key != input.Kind ) return false;
-		if ( !this.IsOpen ) { if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; } return false; }
-		if ( this.TryShortcut( input, host ) ) return true;
+		if ( !this.IsOpen ) { if ( WidgetInputKind.Key == input.Kind && input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; } return false; }
+		if ( WidgetInputKind.Key == input.Kind && this.TryShortcut( input, host ) ) return true;
 		if ( this.TryCurrentMnemonic( input, host ) ) return true;
+		if ( WidgetInputKind.Key != input.Kind ) return false;
 		if ( input.KeyCode is WidgetKey.Down or WidgetKey.Up ) return this.Move( WidgetKey.Down == input.KeyCode ? 1 : -1 );
 		if ( WidgetKey.Right == input.KeyCode ) return this.OpenSubmenu();
 		if ( WidgetKey.Left == input.KeyCode || WidgetKey.Escape == input.KeyCode ) {
@@ -117,9 +119,9 @@ public class WidgetPopupMenu : Widget {
 	}
 
 	protected bool TryShortcut( WidgetInput input, WidgetHost host ) {
-		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) {
+		foreach ( WidgetMenuItem item in FlattenEnabled( this.rootItems ) ) {
 			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || !ShortcutCharacterMatches( shortcut, input ) ) continue;
-			if ( !item.IsEnabled || item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
+			if ( item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
 			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
 			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
 			this.Close(); return true;
@@ -149,6 +151,7 @@ public class WidgetPopupMenu : Widget {
 	}
 
 	private static IEnumerable<WidgetMenuItem> Flatten( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { yield return item; foreach ( WidgetMenuItem child in Flatten( item.Children ) ) yield return child; } }
+	private static IEnumerable<WidgetMenuItem> FlattenEnabled( IReadOnlyList<WidgetMenuItem> items ) { foreach ( WidgetMenuItem item in items ) { if ( !item.IsEnabled ) continue; yield return item; foreach ( WidgetMenuItem child in FlattenEnabled( item.Children ) ) yield return child; } }
 	private static void ValidateMnemonics( IReadOnlyList<WidgetMenuItem> items, string parameterName ) {
 		HashSet<char> mnemonics = [];
 		foreach ( WidgetMenuItem item in items ) {

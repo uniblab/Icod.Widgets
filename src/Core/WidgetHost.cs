@@ -109,7 +109,7 @@ public sealed partial class WidgetHost : IDisposable {
 
 	private bool TryMenuBarInput( WidgetInput input ) {
 		foreach ( WidgetMenuBar menu in this.roots.SelectMany( root => root.DescendantsAndSelf() ).OfType<WidgetMenuBar>() ) {
-			if ( menu.IsEffectivelyEnabled && menu.IsEffectivelyVisible && menu.TryGlobalInput( input, this ) ) return true;
+			if ( menu.IsEffectivelyEnabled && menu.IsEffectivelyVisible && !menu.Bounds.Intersect( this.Screen.Bounds ).IsEmpty && menu.TryGlobalInput( input, this ) ) return true;
 		}
 		return false;
 	}

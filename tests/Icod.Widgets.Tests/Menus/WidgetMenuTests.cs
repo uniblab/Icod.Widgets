@@ -43,7 +43,7 @@ public sealed class WidgetMenuTests {
 		using WidgetHost host = Focus( menu );
 		host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'v' ) ), TimeSpan.Zero );
 
-		WidgetInvokedAction action = Assert.IsType<WidgetInvokedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Character, character: new( 'F' ) ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+		WidgetInvokedAction action = Assert.IsType<WidgetInvokedAction>( Assert.Single( host.Process( WidgetInput.TextInput( new( 'F' ) ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
 
 		Assert.Equal( "view.file", action.CommandId ); Assert.False( menu.IsOpen );
 	}
@@ -58,6 +58,31 @@ public sealed class WidgetMenuTests {
 		WidgetInvokedAction action = Assert.IsType<WidgetInvokedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'L' ) ), TimeSpan.Zero ).Actions ) );
 
 		Assert.Equal( "view.line", action.CommandId ); Assert.False( menu.IsOpen ); Assert.Same( editor, host.FocusedWidget );
+	}
+
+	[Fact]
+	public void ShortcutUnderDisabledSubmenuIsInert() {
+		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'c' );
+		WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "edit", "Edit", [ WidgetMenuItem.Command( "copy", "Copy", "edit.copy", shortcut: shortcut ) ], 'e', isEnabled: false ) ] );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetButton editor = new( "editor", "Editor", "editor.focus" ); host.Attach( editor ); host.Attach( menu ); host.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'C' ) ), TimeSpan.Zero );
+
+		Assert.False( result.Handled ); Assert.Empty( result.Actions ); Assert.False( menu.IsOpen ); Assert.Same( editor, host.FocusedWidget );
+	}
+
+	[Fact]
+	public void ShortcutOnOffscreenMenuBarIsInert() {
+		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'r' );
+		WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Command( "run", "Run", "run", shortcut: shortcut ) ] );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetButton editor = new( "editor", "Editor", "editor.focus" ); host.Attach( editor ); host.Attach( menu );
+		editor.Arrange( host.Screen.Bounds ); menu.Arrange( new CursesRectangle( 8, 0, 1, 40 ) ); Assert.True( host.Focus( editor ) );
+
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'R' ) ), TimeSpan.Zero );
+
+		Assert.False( result.Handled ); Assert.Empty( result.Actions ); Assert.False( menu.IsOpen ); Assert.Same( editor, host.FocusedWidget );
 	}
 
 	[Fact]
@@ -89,6 +114,13 @@ public sealed class WidgetMenuTests {
 	public void DuplicateShortcutRejects() {
 		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'x' );
 		Assert.Throws<ArgumentException>( () => new WidgetPopupMenu( "menu", [ WidgetMenuItem.Command( "a", "A", "a", shortcut: shortcut ), WidgetMenuItem.Command( "b", "B", "b", shortcut: shortcut ) ] ) );
+	}
+
+	[Fact]
+	public void DuplicateCharacterShortcutRejectsCaseInsensitively() {
+		WidgetMenuShortcut lower = new( WidgetKey.Character, WidgetInputModifiers.Control, 'x' );
+		WidgetMenuShortcut upper = new( WidgetKey.Character, WidgetInputModifiers.Control, 'X' );
+		Assert.Throws<ArgumentException>( () => new WidgetPopupMenu( "menu", [ WidgetMenuItem.Command( "a", "A", "a", shortcut: lower ), WidgetMenuItem.Command( "b", "B", "b", shortcut: upper ) ] ) );
 	}
 
 	[Fact]
