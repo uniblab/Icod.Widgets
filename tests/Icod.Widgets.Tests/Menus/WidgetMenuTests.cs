@@ -87,6 +87,18 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void PopupRendersBorderAroundInsetItems() {
+		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "alpha", "Alpha", "alpha" ) ] );
+		using WidgetHost host = Focus( menu, columns: 20, rows: 5 ); menu.Open(); host.Render();
+		CursesWindow window = host.GetPresentationWindow( menu );
+
+		Assert.Equal( 3, menu.RenderBounds.Rows );
+		Assert.Equal( "┌", window.GetCell( 0, 0 ).Content ); Assert.Equal( "┐", window.GetCell( 0, 19 ).Content );
+		Assert.Equal( "└", window.GetCell( 2, 0 ).Content ); Assert.Equal( "┘", window.GetCell( 2, 19 ).Content );
+		Assert.Equal( "A", window.GetCell( 1, 1 ).Content );
+	}
+
+	[Fact]
 	public void CompactMenuScrollsCurrentItemIntoView() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "a", "Alpha", "a" ), WidgetMenuItem.Command( "b", "Beta", "b" ), WidgetMenuItem.Command( "c", "Gamma", "c" ) ] );
 		using WidgetHost host = Focus( menu, columns: 20, rows: 1 ); menu.Open();
