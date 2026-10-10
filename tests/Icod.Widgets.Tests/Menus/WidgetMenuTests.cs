@@ -72,6 +72,14 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void DuplicateMnemonicRejectsWithinOneLevelCaseInsensitively() {
+		Assert.Throws<ArgumentException>( () => new WidgetPopupMenu( "menu", [
+			WidgetMenuItem.Command( "find", "Find", "find", 'f' ),
+			WidgetMenuItem.Command( "file", "Go to File...", "file", 'F' )
+		] ) );
+	}
+
+	[Fact]
 	public void SubmenuCloseRestoresParentItem() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Submenu( "tools", "Tools", [ WidgetMenuItem.Command( "run", "Run", "run" ) ] ) ] ); using WidgetHost host = Focus( menu ); menu.Open();
 		host.Process( WidgetInput.Key( WidgetKey.Right ), TimeSpan.Zero );
