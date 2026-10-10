@@ -1,7 +1,7 @@
 # W1014 — Stable Qualification
 
-**Candidate:** `1.0.0-rc.2`
-**Stable gate:** open; no stable version/tag/publication authorized by this record.
+**Candidate:** stable-source `1.0.0` (prepared from `1.0.0-rc.2`)
+**Stable gate:** open; live results have not been recorded. No tag or publication is authorized by this record.
 
 ## Record the source before testing
 
@@ -34,10 +34,15 @@ A deterministic smoke or test PTY does not qualify a real terminal implementatio
   Home/End, Backspace/Delete; toggle checkbox and change radio choice.
 - Lists: single commit, multi toggles/ranges/Ctrl+A/search; navigation preserves
   selection. Drop-down preview cancels on Escape/outside press and commits once.
-- Menus: disabled/separator inert; checkable command toggles once; enter a submenu,
-  return with Left/Escape, invoke and close the chain.
-- Dialogs: distinguish No from Cancel; safe defaults; Tab stays in modal; Escape
-  restores focus. Wizard first rejects Next, then advances; Previous returns.
+- Menus: Alt+F/Alt+V opens the top-level menu, then an unmodified letter
+  activates its matching item; Ctrl shortcuts invoke commands independently.
+  Disabled/separator items remain inert; checkable command toggles once; enter
+  a submenu, return with Left/Escape, invoke and close the chain. Inspect the
+  popup border and caption on supported and compact terminal sizes.
+- Dialogs: distinguish No from Cancel; safe defaults; Enter on an OK-only
+  dialog reports Ok, and Escape on OK and Yes/No reports Cancel. Inspect borders
+  and title captions. Tab stays in modal; Escape restores focus. Wizard first
+  rejects Next, then advances; Previous returns.
   Text/number prompts render and validate; invalid number stays open with an error.
 - Pickers: start/current folder, parent, roots/drives, path input, single/multiple
   files, filters, basket across directories and explicit removal. **Ctrl+S accepts**;
@@ -57,7 +62,10 @@ results. Requalify affected controls at the corrected SHA after a reproducible f
 
 ## Stable-source completion
 
-Only after applicable live gates pass: set exact `1.0.0`, retain assembly
-`1.0.0.0`, rerun CI/pack/package-only consumption, refresh curated release notes,
-README and CHANGELOG, then report readiness. Tagging/NuGet/GitHub Release require
-a separate release instruction.
+The source and package versions are prepared as exact `1.0.0`, with assembly
+`1.0.0.0` and curated release notes. After applicable live gates pass on the
+final merged commit, verify main-branch CI, Release pack and package-only
+consumption at that SHA. Then the owner can create `v1.0.0` on that commit.
+The tag triggers the release workflow, including NuGet.org publication, GitHub
+Packages publication and a GitHub Release. Confirm the Release environment and
+NuGet OIDC user are configured before tagging; do not tag while this gate is open.

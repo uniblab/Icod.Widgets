@@ -2,7 +2,7 @@
 
 **Decision date:** 2026-10-09 (America/New_York)\
 **Target:** first stable release `1.0.0`\
-**State:** W1001–W1013 implemented; 1.0.0-rc.2 automated qualification complete; live W1014 pending\
+**State:** W1001–W1013 implemented; 1.0.0 stable source prepared; live W1014 pending\
 **Repository baseline:** `d86e56deeac37b8faeadc2986c597634424ab07b` on `main`
 
 ## Purpose and recorded choices
@@ -56,7 +56,7 @@ references or introduce a terminal capability database/input reader.
    realistic applications; freeze API/package/docs after acceptance.
 
 Use `1.0.0-alpha.N` for implementation previews and `1.0.0-rc.N` only after all
-four milestone gates pass. `1.0.0` is a release goal, not current package status.
+four milestone gates pass. The source package version is `1.0.0`; tagged publication remains gated by W1014 live qualification.
 No calendar estimate substitutes for a gate.
 
 ## Later candidates

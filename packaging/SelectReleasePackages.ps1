@@ -50,6 +50,17 @@ foreach ($package in $packages) {
     $destination = Join-Path $DestinationDirectory $package.Name
     Copy-Item -LiteralPath $package.FullName -Destination $destination
     $selected += $destination
+
+    # dotnet nuget push discovers the companion symbol package beside the nupkg.
+    $symbols = @(Get-ChildItem -LiteralPath $SourceDirectory -Filter '*.snupkg' -File |
+        Where-Object { $_.BaseName -eq $package.BaseName })
+    if ($package.BaseName -eq "Icod.Widgets.$ExpectedVersion" -and $symbols.Count -ne 1) {
+        throw "Expected one companion symbol package for '$($package.Name)'; found $($symbols.Count)."
+    }
+    foreach ($symbol in $symbols) {
+        Copy-Item -LiteralPath $symbol.FullName -Destination (Join-Path $DestinationDirectory $symbol.Name)
+        Write-Host "Selected symbols $($symbol.Name)."
+    }
     Write-Host "Selected $($metadata.Id) $($metadata.Version)."
 }
 

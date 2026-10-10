@@ -119,7 +119,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PACKAGE_ARTIFACT }}
-          path: ${{ env.SELECTED_PACKAGE_DIRECTORY }}/*.nupkg
+          path: |
+            ${{ env.SELECTED_PACKAGE_DIRECTORY }}/*.nupkg
+            ${{ env.SELECTED_PACKAGE_DIRECTORY }}/*.snupkg
           if-no-files-found: error
           retention-days: 7
 
@@ -229,6 +231,7 @@ jobs:
               dotnet nuget push $package.FullName `
                   --source $source `
                   --api-key $env:GITHUB_TOKEN `
+                  --no-symbols `
                   --skip-duplicate
               if (0 -ne $LASTEXITCODE) {
                   throw "GitHub Packages publication failed for '$($package.Name)' with status $LASTEXITCODE."
@@ -268,7 +271,7 @@ jobs:
           New-Item -ItemType Directory -Path $assetDirectory -Force | Out-Null
           $files = @(
               Get-ChildItem -LiteralPath $assetDirectory -File |
-                  Where-Object { $_.Extension -in @('.zip', '.nupkg') } |
+                  Where-Object { $_.Extension -in @('.zip', '.nupkg', '.snupkg') } |
                   Sort-Object Name
           )
           if (0 -eq $files.Count) {

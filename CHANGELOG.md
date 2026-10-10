@@ -2,6 +2,20 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.0.0 — first stable package
+
+- Delivered the reusable .NET 8/9/10 control set: forms, lists, drop-downs,
+  menus, dialogs, file and folder pickers, and domain-neutral game UI.
+- Added scoped menu mnemonics and independent command shortcuts, framed popups
+  and captioned dialogs, an OK-only acknowledgement, and consistent Escape
+  cancellation across message dialogs.
+- Hardened modal focus and lifecycle, Unicode editing, compact layouts,
+  pointer handling, and stale asynchronous picker results.
+- Included interactive gallery, editor, and roguelike samples; a package-only
+  consumer; and an LGPL library package with a separate symbol package.
+- This entry describes the prepared stable source. Live terminal qualification
+  and tagged publication are tracked separately in `docs/W1014-Stable-Qualification.md`.
+
 ## 1.0.0-rc.2 — interactive acceptance completion
 
 - Added real DCurses terminal loops and six gallery pages, file-open and roguelike

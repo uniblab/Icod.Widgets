@@ -6,10 +6,11 @@ Icod.Widgets — reusable .NET terminal UI controls for applications and games.
 
 ## STATUS
 
-The full planned 1.0 control set is implemented as **1.0.0-rc.2** for .NET 8,
-9, and 10. Interactive samples and deterministic qualification are available.
-Live Windows, macOS, Linux terminal, and applicable ARM64 evidence remains the
-final stable-release gate. No NuGet package has been published.
+The full planned 1.0 control set is implemented for .NET 8, 9, and 10.
+The source package version is **1.0.0**. Interactive samples and deterministic
+qualification are available. Before tagging and publishing, record live terminal
+results on Windows, macOS, Linux, and applicable architectures in
+[W1014](docs/W1014-Stable-Qualification.md).
 
 ## DESCRIPTION
 
@@ -37,8 +38,14 @@ Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 ## INSTALLATION
 
-Until publication, build the repository or restore the package produced by
-`dotnet pack Icod.Widgets.csproj -c Release -o artifacts/packages`. The package
+After publication, install the stable package with:
+
+```text
+dotnet add package Icod.Widgets --version 1.0.0
+```
+
+For a local build, use `dotnet pack Icod.Widgets.csproj -c Release -o
+artifacts/packages` and restore from that package directory. The package
 declares `Icod.DCurses 2.3.1` as its sole direct runtime dependency.
 
 ## USAGE
