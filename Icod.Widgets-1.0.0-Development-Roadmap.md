@@ -40,7 +40,9 @@ Widgets returns actions and draws into DCurses-owned retained presentation.
 
 W1000–W1013 are implemented with per-tranche evidence in `docs/`. M1–M4
 automated gates are complete. W1014 live platform/terminal qualification and
-stable metadata remain pending and are not replaced by Linux container evidence.
+stable metadata remain pending and are not replaced by automated runner
+evidence. Record that work in
+[`docs/W1014-Stable-Qualification.md`](docs/W1014-Stable-Qualification.md).
 
 ## Dependency and review order
 

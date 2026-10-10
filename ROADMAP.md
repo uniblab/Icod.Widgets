@@ -76,6 +76,7 @@ has been published.
 
 The remaining stable-release task is W1014 in the
 [development roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), using the
+[live qualification worksheet](docs/W1014-Stable-Qualification.md), the
 [design](docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md) and
 [implementation plan](docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
 Each implementation tranche records its exact commit, automated/manual evidence,

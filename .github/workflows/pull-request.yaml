@@ -71,6 +71,15 @@ jobs:
           --no-build
           --no-restore
           --logger trx
+      - name: Run sample smoke workflows
+        shell: pwsh
+        run: |
+          dotnet run --project samples/Icod.Widgets.Gallery.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
+          if (0 -ne $LASTEXITCODE) { throw 'Gallery sample smoke workflow failed.' }
+          dotnet run --project samples/Icod.Widgets.Editor.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
+          if (0 -ne $LASTEXITCODE) { throw 'Editor sample smoke workflow failed.' }
+          dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
+          if (0 -ne $LASTEXITCODE) { throw 'Roguelike sample smoke workflow failed.' }
       - name: Pack Staging artifacts
         if: matrix.verify_packages
         run: >-

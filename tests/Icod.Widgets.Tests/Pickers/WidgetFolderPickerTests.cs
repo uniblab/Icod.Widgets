@@ -13,7 +13,7 @@ public sealed class WidgetFolderPickerTests {
 	public void SelectCurrentFolderAtRoot() {
 		FakeProvider provider = new(); WidgetFolderPicker picker = new( "folder", provider, "/" ); using WidgetHost host = ModalHost( picker );
 		WidgetBrowserRequest load = picker.RequestDirectory( "/" ); picker.ApplyLoadResult( WidgetBrowserLoadResult.Success( load, new WidgetDirectorySnapshot( "/", null, [] ) ) );
-		WidgetPickerValidationRequest request = picker.RequestAccept(); WidgetDispatchResult before = host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.Zero ); Assert.Empty( before.Actions );
+		WidgetPickerValidationRequest request = Assert.IsType<WidgetPickerValidationRequestedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.Zero ).Actions ) ).Request;
 		Assert.True( picker.ApplyValidationResult( WidgetPickerValidationResult.Success( request ) ) );
 		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.DrainActions() ) );
 		Assert.Equal( WidgetDialogOutcome.Accepted, completed.Result.Outcome ); Assert.Equal( "/", Assert.Single( Assert.IsAssignableFrom<IReadOnlyList<string>>( completed.Result.Value ) ) );

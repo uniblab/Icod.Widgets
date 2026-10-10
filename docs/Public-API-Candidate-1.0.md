@@ -97,6 +97,9 @@ void WidgetWizardDialog.ApplyNavigation(int pageIndex)
 void WidgetWizardDialog.RejectNavigation(string error)
 WidgetDialogCompletedAction(string WidgetId, WidgetDialogResult Result)
 WidgetWizardNavigationRequestedAction(string WidgetId, int FromPage, int ToPage)
+WidgetBrowserLoadRequestedAction(string WidgetId, WidgetBrowserRequest Request)
+WidgetPickerValidationRequestedAction(string WidgetId,
+    WidgetPickerValidationRequest Request)
 
 interface IWidgetFileSystemProvider
 WidgetBrowserRequest WidgetBrowser.RequestDirectory(string location)

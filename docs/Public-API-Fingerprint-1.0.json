@@ -104,6 +104,21 @@
       ]
     },
     {
+      "name": "Icod.Widgets.WidgetBrowserLoadRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetBrowserRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetBrowserLoadRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetBrowserLoadRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetBrowserRequest ByRef)",
+        "Property: Icod.Widgets.WidgetBrowserRequest Request"
+      ]
+    },
+    {
       "name": "Icod.Widgets.WidgetBrowserLoadResult",
       "kind": "class",
       "members": [
@@ -709,6 +724,21 @@
         "Property: Int64 Generation",
         "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Paths",
         "Property: System.Guid PickerId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPickerValidationRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetPickerValidationRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetPickerValidationRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetPickerValidationRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetPickerValidationRequest ByRef)",
+        "Property: Icod.Widgets.WidgetPickerValidationRequest Request"
       ]
     },
     {

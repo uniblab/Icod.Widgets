@@ -33,3 +33,8 @@ All notable changes to Icod.Widgets are recorded here.
   prioritized status fields, effective-binding help, and text/number prompts.
 - Added deterministic gallery, editor, and roguelike sample smoke workflows and
   a package-only consumer restored from the produced NuGet artifact.
+- Added live terminal loops for the gallery, editor, and roguelike samples, with
+  resize handling, clean Q/Escape exits, and CI smoke execution on all PR hosts.
+- Hardened modal isolation and lifecycle, inherited disabled/hidden state,
+  pointer capture, action-queue atomicity, container cycles, compact scrolling,
+  wizard completion, caret editing, and async picker input/validation.
