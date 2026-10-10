@@ -10,6 +10,20 @@ using Xunit;
 
 public sealed class WidgetMenuTests {
 	[Fact]
+	public void AltMnemonicOpensTopLevelMenuFromAnotherFocusedWidget() {
+		WidgetMenuBar menu = new( "menu", [
+			WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "new", "New", "file.new" ) ], 'f' ),
+			WidgetMenuItem.Submenu( "view", "View", [ WidgetMenuItem.Command( "go-file", "Go to File...", "view.file" ) ], 'v' )
+		] );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetButton editor = new( "editor", "Editor", "editor.focus" ); host.Attach( editor ); host.Attach( menu ); host.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'V' ) ), TimeSpan.Zero );
+
+		Assert.True( result.Handled ); Assert.True( menu.IsOpen ); Assert.Equal( 2, menu.Depth ); Assert.Equal( "go-file", menu.CurrentItem?.Id ); Assert.Same( menu, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void DisabledAndSeparatorsAreInert() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "off", "Disabled", "off", isEnabled: false ), WidgetMenuItem.Separator( "sep" ), WidgetMenuItem.Command( "on", "Enabled", "on" ) ] );
 		using WidgetHost host = Focus( menu ); menu.Open();
