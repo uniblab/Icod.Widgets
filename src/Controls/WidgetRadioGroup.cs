@@ -31,15 +31,14 @@ public sealed class WidgetRadioGroup : Widget {
 			_ => this.selectedIndex
 		};
 		if ( next == this.selectedIndex ) return false;
-		host.EnsureActionCapacity();
+		host.Enqueue( new WidgetValueChangedAction<string>( this.Id, this.keys[ next ] ) );
 		this.selectedIndex = next;
-		host.Enqueue( new WidgetValueChangedAction<string>( this.Id, this.SelectedKey ) );
 		return true;
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string value = CursesText.TruncateToColumns( $"(*) {this.SelectedKey}", area.Columns, screen.TextWidthProvider );
-		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
+		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, focused ? theme.Focused : theme.Normal );
 	}
 }
 

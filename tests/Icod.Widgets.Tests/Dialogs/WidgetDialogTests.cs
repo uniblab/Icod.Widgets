@@ -75,7 +75,7 @@ public sealed class WidgetDialogTests {
 	public void WizardRendersPageAndCompletesFromFinalPage() {
 		using WidgetHost host = HostWithBackground( out _ ); WidgetWizardDialog wizard = new( "wizard", "Setup", [ "First page", "Final page" ] ); host.ShowModal( wizard ); wizard.ApplyNavigation( 1 );
 		host.Render();
-		Assert.Contains( "Final page", string.Concat( Enumerable.Range( 0, host.Screen.Columns ).Select( column => host.Screen.StandardWindow.GetCell( 1, column ).Content ) ) );
+		Assert.Contains( "Final page", string.Concat( Enumerable.Range( 0, host.Screen.Columns ).Select( column => host.GetPresentationWindow( wizard ).GetCell( 1, column ).Content ) ) );
 		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
 		Assert.Equal( WidgetDialogOutcome.Accepted, completed.Result.Outcome );
 	}

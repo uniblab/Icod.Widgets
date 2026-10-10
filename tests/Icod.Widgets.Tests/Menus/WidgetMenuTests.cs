@@ -53,7 +53,7 @@ public sealed class WidgetMenuTests {
 		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.Zero );
 		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 1 ) );
 		host.Render();
-		Assert.StartsWith( "Gamma", string.Concat( Enumerable.Range( 0, menu.RenderBounds.Columns ).Select( column => host.Screen.StandardWindow.GetCell( 0, column ).Content ) ) );
+		Assert.StartsWith( "Gamma", string.Concat( Enumerable.Range( 0, menu.RenderBounds.Columns ).Select( column => host.GetPresentationWindow( menu ).GetCell( 0, column ).Content ) ) );
 	}
 
 	private static WidgetMenuItem Chain( int levels ) => 1 == levels ? WidgetMenuItem.Command( "leaf", "Leaf", "leaf" ) : WidgetMenuItem.Submenu( $"level-{levels}", "More", [ Chain( levels - 1 ) ] );

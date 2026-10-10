@@ -14,14 +14,14 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.0.0-rc.1</Version>
-		<PackageVersion>1.0.0-rc.1</PackageVersion>
+		<Version>1.0.0-rc.2</Version>
+		<PackageVersion>1.0.0-rc.2</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
-		<PackageReleaseNotes>First release candidate with controls, dialogs, filesystem pickers, roguelike UI conveniences, and public consumer samples.</PackageReleaseNotes>
+		<PackageReleaseNotes>Release candidate with interactive provider-backed pickers and public terminal samples; corrected modal/popup isolation, Unicode editing, selection, validation and bounded lifecycle behavior. Live stable qualification remains pending.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

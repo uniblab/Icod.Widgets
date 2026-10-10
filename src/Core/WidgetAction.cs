@@ -21,7 +21,8 @@ public sealed record WidgetDialogCompletedAction( string WidgetId, WidgetDialogR
 
 public sealed record WidgetWizardNavigationRequestedAction( string WidgetId, int FromPage, int ToPage ) : WidgetAction( WidgetId );
 
+
+/// <summary>Requests provider I/O to load a picker directory; apply the result on the UI loop.</summary>
 public sealed record WidgetBrowserLoadRequestedAction( string WidgetId, WidgetBrowserRequest Request ) : WidgetAction( WidgetId );
-
+/// <summary>Requests provider validation before a picker can complete.</summary>
 public sealed record WidgetPickerValidationRequestedAction( string WidgetId, WidgetPickerValidationRequest Request ) : WidgetAction( WidgetId );
-

@@ -1,4 +1,6 @@
+<!-- Icod.Widgets samples; Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>; SPDX-License-Identifier: GPL-3.0-or-later -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks><IsPackable>false</IsPackable><PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression></PropertyGroup>
   <ItemGroup><ProjectReference Include="..\..\Icod.Widgets.csproj" /></ItemGroup>
+<ItemGroup><Compile Include="../Common/*.cs" Link="Common/%(Filename)%(Extension)" /></ItemGroup>
 </Project>

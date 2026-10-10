@@ -1,5 +1,5 @@
 {
-  "packageVersion": "1.0.0-rc.1",
+  "packageVersion": "1.0.0-rc.2",
   "assemblyVersion": "1.0.0.0",
   "generatedFrom": "public reflection surface",
   "types": [
@@ -70,6 +70,7 @@
         "Constructor: Void .ctor()",
         "Method: Boolean ApplyLoadResult(Icod.Widgets.WidgetBrowserLoadResult)",
         "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestRoots()",
         "Method: Void Dispose()",
         "Property: Icod.Widgets.WidgetBrowserError Error",
         "Property: Icod.Widgets.WidgetDirectorySnapshot Snapshot",
@@ -154,6 +155,7 @@
         "Method: Int32 GetHashCode()",
         "Method: System.String ToString()",
         "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, System.String ByRef)",
+        "Property: Boolean IsRoots",
         "Property: Int64 Generation",
         "Property: System.Guid BrowserId",
         "Property: System.String Location"
@@ -322,6 +324,7 @@
         "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
         "Method: Icod.Widgets.WidgetPickerValidationRequest RequestAccept()",
         "Method: Void SelectFilter(System.String)",
+        "Method: Void SetRoots(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry])",
         "Method: Void ToggleFile(System.String)",
         "Property: Boolean AllowMultiple",
         "Property: Icod.Widgets.IWidgetFileSystemProvider Provider",
@@ -397,6 +400,7 @@
         "Method: Boolean ApplyValidationResult(Icod.Widgets.WidgetPickerValidationResult)",
         "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
         "Method: Icod.Widgets.WidgetPickerValidationRequest RequestAccept()",
+        "Method: Void SetRoots(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry])",
         "Property: Icod.Widgets.IWidgetFileSystemProvider Provider",
         "Property: Icod.Widgets.WidgetBrowser Browser",
         "Property: System.String StartLocation",

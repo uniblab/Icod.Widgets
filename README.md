@@ -6,21 +6,21 @@ Icod.Widgets — reusable .NET terminal UI controls for applications and games.
 
 ## STATUS
 
-The full planned 1.0 control set is implemented as **1.0.0-rc.1** for .NET 8,
-9, and 10. Automated Linux qualification and package-only consumption pass.
+The full planned 1.0 control set is implemented as **1.0.0-rc.2** for .NET 8,
+9, and 10. Interactive samples and deterministic qualification are available.
 Live Windows, macOS, Linux terminal, and applicable ARM64 evidence remains the
 final stable-release gate. No NuGet package has been published.
 
 ## DESCRIPTION
 
-Icod.Widgets will provide menus, dialogs, lists, drop-downs, folder and file
+Icod.Widgets provides menus, dialogs, lists, drop-downs, folder and file
 pickers, basic form controls, and reusable roguelike presentation controls above
-Icod.DCurses. Applications will retain ownership of their event loop, commands,
+Icod.DCurses. Applications retain ownership of their event loop, commands,
 validation, game rules, file operations, and terminal lifecycle.
 
-The planned production graph is `Icod.Widgets -> Icod.DCurses -> Icod.Terminal ->
-Icod.TermInfo`. The sole direct runtime package dependency of Widgets will be
-Icod.DCurses. Planned targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
+The production graph is `Icod.Widgets -> Icod.DCurses -> Icod.Terminal ->
+Icod.TermInfo`. The sole direct runtime package dependency of Widgets is
+Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 ## CONTROLS
 
@@ -67,6 +67,30 @@ Apply returned browser/validation results on the application loop; stale,
 foreign, canceled, and disposed-controller results are ignored. Pickers return
 paths and never open, create, delete, or write files.
 
+## FILE PICKERS
+
+Picker input emits `WidgetBrowserLoadRequestedAction` and
+`WidgetPickerValidationRequestedAction`. The application performs provider I/O
+and applies its result on the loop, then drains completion actions. Root requests
+use `WidgetBrowserRequest.IsRoots` and the same loader/generation guard as directory
+requests. Initial loading is explicit: call `RequestDirectory(StartLocation)`.
+
+Arrows/Page keys move the cursor; Enter opens directories, selects/accepts a single file, or toggles files in multiple mode;
+Space toggles files; Ctrl+S (or Ctrl+Enter when reported) validates/accepts; Escape cancels. Backspace/Alt+Up
+moves to parent; Ctrl+L edits a path; Ctrl+R lists roots; Ctrl+F cycles file filters;
+Ctrl+B displays the basket (Enter/Space/Delete removes a selected file).
+Errors leave the last listing usable. Loads after picker closure and stale/foreign
+results are ignored. Applications may cancel outstanding provider work themselves.
+
+## ERRORS AND CONFIGURATION
+
+Configure styles through `WidgetTheme`, choose a filesystem provider, file filters,
+text limits and number culture/range at construction. Duplicate IDs/keys, invalid
+ownership and capacity violations throw before attachment. Provider loaders map
+expected I/O/path failures to typed browser errors; unexpected provider exceptions
+remain application errors. A DCurses session requires interactive input/output
+and a terminal profile supporting cursor motion.
+
 ## LIMITS
 
 One host accepts 1,024 widgets, 4,096 pending actions, 16 modal levels, and 16
@@ -78,7 +102,8 @@ overlay is visible.
 
 ## EXAMPLES
 
-Run the GPL gallery, editor, and roguelike witnesses with `--smoke`; see
+Run the GPL gallery, editor, and roguelike interactively; append `-- --smoke` for
+deterministic checks. See
 [`samples/README.md`](samples/README.md) for commands and ownership boundaries.
 
 ## ROADMAPS

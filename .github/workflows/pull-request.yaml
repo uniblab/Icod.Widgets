@@ -42,13 +42,13 @@ jobs:
         include:
           - os: windows-latest
             name: Windows
-            verify_packages: false
+            verify_packages: true
           - os: ubuntu-latest
             name: Linux
             verify_packages: true
           - os: macos-latest
             name: macOS
-            verify_packages: false
+            verify_packages: true
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -71,15 +71,13 @@ jobs:
           --no-build
           --no-restore
           --logger trx
-      - name: Run sample smoke workflows
+      - name: Public sample smoke workflows
         shell: pwsh
         run: |
-          dotnet run --project samples/Icod.Widgets.Gallery.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
-          if (0 -ne $LASTEXITCODE) { throw 'Gallery sample smoke workflow failed.' }
-          dotnet run --project samples/Icod.Widgets.Editor.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
-          if (0 -ne $LASTEXITCODE) { throw 'Editor sample smoke workflow failed.' }
-          dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c $env:CONFIGURATION -f net10.0 --no-build --no-restore -- --smoke
-          if (0 -ne $LASTEXITCODE) { throw 'Roguelike sample smoke workflow failed.' }
+          foreach ($sample in @('Gallery', 'Editor', 'Roguelike')) {
+            dotnet run --project "samples/Icod.Widgets.$sample.Sample" -c Staging -f net10.0 --no-build --no-restore -- --smoke
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Pack Staging artifacts
         if: matrix.verify_packages
         run: >-
@@ -97,3 +95,12 @@ jobs:
           -ArtifactDirectory artifacts
           -Configuration '${{ env.CONFIGURATION }}'
           -AllowNoPackages
+
+      - name: Package-only consumer
+        if: matrix.verify_packages
+        shell: pwsh
+        run: |
+          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --source artifacts --source https://api.nuget.org/v3/index.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Staging --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

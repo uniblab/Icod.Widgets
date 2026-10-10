@@ -2,6 +2,21 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.0.0-rc.2 — interactive acceptance completion
+
+- Added real DCurses terminal loops and six gallery pages, file-open and roguelike
+  UI samples; retained deterministic smoke modes using the same application flows.
+- Added shared picker listing/path/root/basket presentation, keyboard and pointer
+  selection, explicit provider-load/validation actions, and generation-guarded roots.
+- Moved overlays into retained DCurses panels so closing preserves borrowed background.
+- Fixed modal Tab isolation, modal detach/unwind, modeless lifecycle, hidden-container
+  focus/rendering, popup scope/focus restoration and outside dismissal.
+- Fixed Unicode caret editing, long drop-down/menu scrolling, Ctrl+A selection,
+  wrapped messages, visible wizard validation, and action-overflow mutation ordering.
+- Reject stale file validation after direct basket changes; closed pickers ignore loads.
+- Added regression and sample CI coverage. Stable multi-platform live qualification
+  remains open; this candidate has not been published.
+
 ## 1.0.0-rc.1 — release candidate
 
 - Established the managed `.NET 8`, `.NET 9`, and `.NET 10` library and test projects.

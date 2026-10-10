@@ -32,14 +32,22 @@ public sealed class WidgetDropDown : Widget {
 
 	public void Open() {
 		if ( this.Host is null ) throw new InvalidOperationException( "The drop-down must be attached before opening." );
-		this.previewIndex = this.selectedIndex; this.IsOpen = true; this.UpdatePopupBounds();
+		if ( this.IsOpen ) return;
+		this.previewIndex = this.selectedIndex; this.UpdatePopupBounds(); this.Host.OpenPopup( this, this.PopupBounds ); this.IsOpen = true;
 	}
 
-	public void Dismiss() { this.previewIndex = this.selectedIndex; this.IsOpen = false; this.PopupBounds = default; }
+	public void Dismiss() { this.Host?.ClosePopup( this ); this.previewIndex = this.selectedIndex; this.IsOpen = false; this.PopupBounds = default; }
 
-	protected override void OnArrange( CursesRectangle bounds ) { if ( this.IsOpen ) this.UpdatePopupBounds(); }
+	protected override void OnArrange( CursesRectangle bounds ) { if ( this.IsOpen ) { this.UpdatePopupBounds(); this.Host?.UpdatePopup( this, this.PopupBounds ); } }
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
+		if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Button: CursesMouseButton.Primary } pointer ) {
+			if ( !this.IsOpen ) { if ( pointer.Action == CursesMouseAction.Release && this.Bounds.Contains( pointer.Row, pointer.Column ) ) this.Open(); return true; }
+			if ( this.PopupBounds.Contains( pointer.Row, pointer.Column ) ) {
+				int index = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) ) + pointer.Row - this.PopupBounds.Row;
+				if ( this.items[ index ].IsEnabled ) { this.previewIndex = index; if ( pointer.Action == CursesMouseAction.Release ) return this.OnInput( WidgetInput.Key( WidgetKey.Enter ), host ); }
+			} return true;
+		}
 		if ( WidgetInputKind.Key != input.Kind ) return false;
 		if ( !this.IsOpen ) {
 			if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; }
@@ -47,8 +55,8 @@ public sealed class WidgetDropDown : Widget {
 		}
 		if ( WidgetKey.Escape == input.KeyCode ) { this.Dismiss(); return true; }
 		if ( WidgetKey.Enter == input.KeyCode ) {
-			bool changed = this.selectedIndex != this.previewIndex; if ( changed ) host.EnsureActionCapacity(); this.selectedIndex = this.previewIndex; this.IsOpen = false; this.PopupBounds = default;
-			if ( changed ) host.Enqueue( new WidgetValueChangedAction<string>( this.Id, this.SelectedKey ) );
+			bool changed = this.selectedIndex != this.previewIndex; if ( changed ) host.Enqueue( new WidgetValueChangedAction<string>( this.Id, this.PreviewKey ) );
+			this.selectedIndex = this.previewIndex; this.Host?.ClosePopup( this ); this.IsOpen = false; this.PopupBounds = default;
 			return true;
 		}
 		int direction = input.KeyCode is WidgetKey.Down or WidgetKey.Right ? 1 : input.KeyCode is WidgetKey.Up or WidgetKey.Left ? -1 : 0;
@@ -61,16 +69,20 @@ public sealed class WidgetDropDown : Widget {
 	}
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
+		this.RenderSelection( screen, theme, focused );
+		if ( !this.IsOpen || this.PopupBounds.IsEmpty ) return;
+		for ( int row = 0; row < this.PopupBounds.Rows; row++ ) {
+			int index = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) ) + row;
+			WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, this.PopupBounds.Columns, screen.TextWidthProvider );
+			screen.StandardWindow.Move( this.PopupBounds.Row + row, this.PopupBounds.Column );
+			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : index == this.previewIndex ? theme.Focused : theme.Normal );
+		}
+	}
+
+	internal void RenderSelection( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( !area.IsEmpty ) {
 			string value = CursesText.TruncateToColumns( this.items[ this.selectedIndex ].Text + " ▾", area.Columns, screen.TextWidthProvider );
 			screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, focused ? theme.Focused : theme.Normal );
-		}
-		if ( !this.IsOpen || this.PopupBounds.IsEmpty ) return;
-		int first = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) );
-		for ( int row = 0; row < this.PopupBounds.Rows; row++ ) {
-			int index = first + row; WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, this.PopupBounds.Columns, screen.TextWidthProvider );
-			screen.StandardWindow.Move( this.PopupBounds.Row + row, this.PopupBounds.Column );
-			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : index == this.previewIndex ? theme.Focused : theme.Normal );
 		}
 	}
 

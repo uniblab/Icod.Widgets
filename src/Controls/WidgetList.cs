@@ -15,6 +15,7 @@ public class WidgetList : Widget {
 	private int cursorIndex = -1;
 	private int anchorIndex = -1;
 	private int scrollOffset;
+	private string? pressedKey;
 	private string search = string.Empty;
 	private TimeSpan? lastSearchTime;
 
@@ -43,32 +44,36 @@ public class WidgetList : Widget {
 		int oldCursorIndex = this.cursorIndex;
 		string[] oldSelection = this.SelectedKeys.ToArray();
 		HashSet<string> enabled = replacement.Where( item => item.IsEnabled ).Select( item => item.Key ).ToHashSet( StringComparer.Ordinal );
-		HashSet<string> nextSelection = this.selected.Where( enabled.Contains ).ToHashSet( StringComparer.Ordinal );
-		if ( WidgetSelectionMode.Single == this.SelectionMode && 1 < nextSelection.Count ) {
-			string? first = replacement.FirstOrDefault( item => nextSelection.Contains( item.Key ) )?.Key;
-			nextSelection.Clear(); if ( first is not null ) nextSelection.Add( first );
+		string[] nextSelection = replacement.Where( item => enabled.Contains( item.Key ) && this.selected.Contains( item.Key ) ).Select( item => item.Key ).ToArray();
+		if ( !oldSelection.SequenceEqual( nextSelection ) ) this.Host?.EnsureActionCapacity();
+		this.selected.IntersectWith( enabled );
+		if ( WidgetSelectionMode.Single == this.SelectionMode && 1 < this.selected.Count ) {
+			string? first = replacement.FirstOrDefault( item => this.selected.Contains( item.Key ) )?.Key;
+			this.selected.Clear(); if ( first is not null ) this.selected.Add( first );
 		}
-		string[] orderedSelection = replacement.Where( item => nextSelection.Contains( item.Key ) ).Select( item => item.Key ).ToArray();
-		bool selectionChanged = !oldSelection.SequenceEqual( orderedSelection, StringComparer.Ordinal );
-		if ( selectionChanged ) this.Host?.EnsureActionCapacity();
-		this.selected.Clear(); this.selected.UnionWith( nextSelection );
 		this.items = replacement;
 		this.cursorIndex = oldCursor is null ? -1 : Array.FindIndex( replacement, item => item.IsEnabled && item.Key == oldCursor );
 		if ( 0 > this.cursorIndex ) this.cursorIndex = FindNearestEnabled( replacement, oldCursorIndex );
 		this.anchorIndex = this.cursorIndex;
 		this.EnsureVisible();
-		if ( selectionChanged && this.Host is not null ) this.EmitSelection();
+		if ( !oldSelection.SequenceEqual( this.SelectedKeys, StringComparer.Ordinal ) && this.Host is not null ) this.EmitSelection();
 	}
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
+		if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Button: CursesMouseButton.Primary } pointer ) {
+			int index = this.scrollOffset + pointer.Row - this.Bounds.Row;
+			if ( !this.Bounds.Contains( pointer.Row, pointer.Column ) || index < 0 || index >= this.items.Length || !this.items[ index ].IsEnabled ) { this.pressedKey = null; return false; }
+			if ( pointer.Action == CursesMouseAction.Press ) { this.cursorIndex = index; this.pressedKey = this.CursorKey; return true; }
+			if ( pointer.Action == CursesMouseAction.Release ) { bool matches = this.pressedKey == this.items[ index ].Key; this.pressedKey = null; if ( !matches ) return false; this.cursorIndex = index; return this.SelectionMode == WidgetSelectionMode.Single ? this.CommitCurrent() : this.ToggleCurrent(); }
+		}
 		if ( WidgetInputKind.Text == input.Kind && input.Character.HasValue ) return this.Search( input.Character.Value, host.CurrentTime );
 		if ( WidgetInputKind.Key != input.Kind ) return false;
+		if ( WidgetKey.Character == input.KeyCode && input.Character.HasValue && ( input.Modifiers & ( WidgetInputModifiers.Control | WidgetInputModifiers.Alt ) ) == 0 ) return this.Search( input.Character.Value, host.CurrentTime );
+		if ( WidgetKey.Space == input.KeyCode && WidgetSelectionMode.Multiple == this.SelectionMode ) return this.ToggleCurrent();
+		if ( WidgetKey.Enter == input.KeyCode && WidgetSelectionMode.Single == this.SelectionMode ) return this.CommitCurrent();
 		if ( WidgetKey.Character == input.KeyCode && 0 != ( input.Modifiers & WidgetInputModifiers.Control ) && input.Character is { Value: 65 or 97 } && WidgetSelectionMode.Multiple == this.SelectionMode ) {
 			host.EnsureActionCapacity(); this.selected.Clear(); foreach ( WidgetListItem item in this.items ) if ( item.IsEnabled ) this.selected.Add( item.Key ); this.EmitSelection(); return true;
 		}
-		if ( WidgetKey.Character == input.KeyCode && input.Character.HasValue ) return this.Search( input.Character.Value, host.CurrentTime );
-		if ( WidgetKey.Space == input.KeyCode && WidgetSelectionMode.Multiple == this.SelectionMode ) return this.ToggleCurrent();
-		if ( WidgetKey.Enter == input.KeyCode && WidgetSelectionMode.Single == this.SelectionMode ) return this.CommitCurrent();
 		int next = input.KeyCode switch {
 			WidgetKey.Up => this.FindEnabled( this.cursorIndex - 1, -1 ),
 			WidgetKey.Down => this.FindEnabled( this.cursorIndex + 1, 1 ),
@@ -91,7 +96,7 @@ public class WidgetList : Widget {
 			WidgetListItem item = this.items[ index ]; this.LastRenderVisitedCount++;
 			string marker = this.selected.Contains( item.Key ) ? "* " : "  ";
 			string text = CursesText.TruncateToColumns( marker + item.Text, area.Columns, screen.TextWidthProvider );
-			CursesStyle style = !item.IsEnabled ? theme.Disabled : index == this.cursorIndex && focused ? theme.Focused : this.selected.Contains( item.Key ) ? theme.Selected : theme.Normal;
+			CursesStyle style = !this.IsEffectivelyEnabled || !item.IsEnabled ? theme.Disabled : index == this.cursorIndex && focused ? theme.Focused : this.selected.Contains( item.Key ) ? theme.Selected : theme.Normal;
 			screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( text, style );
 		}
 	}
@@ -137,8 +142,10 @@ public class WidgetList : Widget {
 		return this.cursorIndex;
 	}
 
+	internal override void OnPointerCaptureCanceled() => this.pressedKey = null;
+
 	private static int FindNearestEnabled( WidgetListItem[] items, int priorIndex ) {
-		if ( 0 == items.Length ) return -1;
+		if ( items.Length == 0 ) return -1;
 		int origin = Math.Clamp( priorIndex, 0, items.Length - 1 );
 		for ( int distance = 0; distance < items.Length; distance++ ) {
 			int before = origin - distance; if ( before >= 0 && items[ before ].IsEnabled ) return before;

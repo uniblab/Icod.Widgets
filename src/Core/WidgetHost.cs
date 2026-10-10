@@ -20,6 +20,7 @@ public sealed partial class WidgetHost : IDisposable {
 	private TimeSpan? currentTime;
 	private Widget? pointerCapture;
 	private bool disposed;
+	private CursesInteractionScope? attachmentScope;
 
 	public WidgetHost( CursesSession session, WidgetTheme theme )
 		: this( ( session ?? throw new ArgumentNullException( nameof( session ) ) ).Screen, theme ) { }
@@ -49,17 +50,19 @@ public sealed partial class WidgetHost : IDisposable {
 		if ( widget.Parent is not null || widget.Host is not null ) throw new InvalidOperationException( "The widget already belongs to a tree." );
 		Widget[] subtree = widget.DescendantsAndSelf().ToArray();
 		this.ValidateAddition( subtree );
-		this.AttachValidated( subtree );
-		this.roots.Add( widget );
+		CursesPanel? panel = widget is WidgetDialog ? this.Screen.CreatePanel( 0, 0, this.Screen.Rows, this.Screen.Columns ) : null;
+		try {
+			this.attachmentPanel = panel; this.AttachValidated( subtree ); this.roots.Add( widget );
+			if ( widget is WidgetDialog dialog ) { this.dialogPanels.Add( dialog, panel! ); dialog.IsOpen = true; dialog.HasCompleted = false; dialog.OnOpened(); this.Synchronize( dialog ); }
+		} catch { panel?.Dispose(); throw; }
+		finally { this.attachmentPanel = null; }
 	}
 
 	public bool Detach( Widget widget ) {
 		ArgumentNullException.ThrowIfNull( widget );
 		this.ThrowIfDisposed();
-		if ( widget is WidgetDialog dialog && this.IsModalOpen( dialog ) ) {
-			this.CloseModal( dialog, WidgetDialogOutcome.Cancel );
-			return true;
-		}
+		if ( widget is WidgetDialog dialog && this.modalFrames.Any( frame => ReferenceEquals( frame.Dialog, dialog ) ) ) { this.CloseModal( dialog, WidgetDialogOutcome.Cancel ); return true; }
+		if ( widget is WidgetDialog modeless && modeless.IsOpen && !modeless.HasCompleted ) { this.CompleteDialog( modeless, WidgetDialogOutcome.Cancel ); return true; }
 		if ( !this.roots.Remove( widget ) ) return false;
 		this.DetachValidated( widget.DescendantsAndSelf().ToArray() );
 		return true;
@@ -74,6 +77,7 @@ public sealed partial class WidgetHost : IDisposable {
 		ArgumentNullException.ThrowIfNull( widget );
 		this.ThrowIfDisposed();
 		if ( !ReferenceEquals( widget.Host, this ) ) throw new ArgumentException( "The widget is not attached to this host.", nameof( widget ) );
+		if ( this.popup?.Owner == widget ) return this.router.Focus( this.popup.Region );
 		return this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) && this.router.Focus( region );
 	}
 
@@ -87,19 +91,19 @@ public sealed partial class WidgetHost : IDisposable {
 		}
 		this.currentTime = timestamp;
 		bool handled = false;
-		bool modalActive = this.ActiveModal is not null;
 
-		if ( !modalActive && WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
+		if ( WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
 			CursesFocusDirection direction = 0 != ( input.Modifiers & WidgetInputModifiers.Shift )
 				? CursesFocusDirection.Backward : CursesFocusDirection.Forward;
-			handled = this.router.MoveFocus( direction ) is not null;
+			if ( this.popup is not null ) this.DismissPopup();
+			handled = this.ActiveModal?.OnInput( input, this ) ?? false;
+			if ( !handled ) handled = this.router.MoveFocus( direction ) is not null;
 		} else {
 			Widget? target = this.ResolveTarget( input );
 			if ( target is not null && target.IsEffectivelyEnabled && target.IsEffectivelyVisible ) handled = target.OnInput( input, this );
 		}
-		if ( modalActive && input.Kind is not WidgetInputKind.Focus and not WidgetInputKind.EndOfInput ) handled = true;
 
-		return new WidgetDispatchResult( handled, this.DrainActions() );
+		return new WidgetDispatchResult( handled || this.ActiveModal is not null, this.DrainActions() );
 	}
 
 	public IReadOnlyList<WidgetAction> DrainActions() {
@@ -115,21 +119,22 @@ public sealed partial class WidgetHost : IDisposable {
 		Widget? focused = this.FocusedWidget;
 		foreach ( Widget root in this.roots ) {
 			foreach ( Widget widget in root.DescendantsAndSelf() ) {
-				if ( widget.IsEffectivelyVisible ) widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
+				if ( !widget.IsEffectivelyVisible || widget is WidgetDialog ) continue;
+				if ( this.popup?.Owner == widget ) { if ( widget is WidgetDropDown drop ) drop.RenderSelection( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); continue; }
+				widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
 			}
 		}
+		foreach ( ( WidgetDialog dialog, CursesPanel panel ) in this.dialogPanels ) this.RenderPanel( dialog, panel );
+		if ( this.popup is { } popupFrame ) this.RenderPanel( popupFrame.Owner, popupFrame.Panel );
 	}
+
+	internal void EnsureActionCapacity( int count = 1 ) { this.ThrowIfDisposed(); if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." ); }
 
 	internal void Enqueue( WidgetAction action ) {
 		ArgumentNullException.ThrowIfNull( action );
 		this.ThrowIfDisposed();
-		this.EnsureActionCapacity();
+		if ( WidgetLimits.MaximumPendingActions <= this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." );
 		this.actions.Enqueue( action );
-	}
-
-	internal void EnsureActionCapacity( int count = 1 ) {
-		this.ThrowIfDisposed();
-		if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." );
 	}
 
 	internal void AttachChild( Widget child ) {
@@ -145,17 +150,29 @@ public sealed partial class WidgetHost : IDisposable {
 	}
 
 	internal void Synchronize( Widget widget ) {
-		if ( this.disposed || !this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) ) return;
-		region.SetBounds( widget.Bounds );
+		if ( this.disposed ) return;
+		foreach ( Widget child in widget.DescendantsAndSelf().Skip( 1 ) ) this.SynchronizeRegion( child );
+		this.SynchronizeRegion( widget );
+	}
+	private void SynchronizeRegion( Widget widget ) {
+		if ( !this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) ) return;
+		if ( widget is WidgetDialog dialog && this.dialogPanels.TryGetValue( dialog, out CursesPanel? panel ) ) {
+			CursesRectangle clipped = widget.Bounds.Intersect( this.Screen.Bounds );
+			if ( !clipped.IsEmpty ) { panel.SetBounds( clipped ); panel.Show(); } else panel.Hide();
+			region.SetBounds( new CursesRectangle( 0, 0, clipped.Rows, clipped.Columns ) );
+		} else region.SetBounds( widget.Bounds.Intersect( this.Screen.Bounds ) );
 		region.IsEnabled = widget.IsEffectivelyEnabled && widget.IsEffectivelyVisible && !widget.Bounds.IsEmpty;
 		region.IsFocusable = widget.IsFocusable && region.IsEnabled;
+		if ( !region.IsEnabled && this.popup?.Owner == widget ) this.DismissPopup();
 		if ( !region.IsEnabled && ReferenceEquals( this.pointerCapture, widget ) ) this.CancelPointerCapture();
 	}
 
-	internal void SynchronizeTree( Widget widget ) { foreach ( Widget item in widget.DescendantsAndSelf() ) this.Synchronize( item ); }
-
 	private Widget? ResolveTarget( WidgetInput input ) {
 		if ( this.ActiveModal is not null ) return this.ActiveModal;
+		if ( this.popup is { } frame ) {
+			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.DismissPopup(); return null; }
+			if ( input.Kind != WidgetInputKind.Pointer ) return frame.Owner;
+		}
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null ) {
 			if ( CursesMouseAction.Release == input.Pointer.Action && this.pointerCapture is not null ) {
 				Widget captured = this.pointerCapture; this.pointerCapture = null; return captured;
@@ -191,6 +208,8 @@ public sealed partial class WidgetHost : IDisposable {
 				completed.Add( item );
 				if ( item.IsFocusable ) {
 					CursesInteractionRegion region = this.router.RegisterRegion( new CursesInteractionRegionOptions( item.Bounds ) {
+						Scope = this.attachmentScope,
+						Panel = this.attachmentPanel,
 						IsEnabled = item.IsEffectivelyEnabled && item.IsEffectivelyVisible && !item.Bounds.IsEmpty,
 						IsFocusable = item.IsEffectivelyEnabled && item.IsEffectivelyVisible && !item.Bounds.IsEmpty,
 						TraversalOrder = this.nextTraversalOrder++
@@ -207,11 +226,13 @@ public sealed partial class WidgetHost : IDisposable {
 
 	private void DetachValidated( Widget[] subtree ) {
 		foreach ( Widget item in subtree ) {
+			if ( this.popup?.Owner == item ) this.DismissPopup();
 			if ( ReferenceEquals( this.pointerCapture, item ) ) this.CancelPointerCapture();
 			if ( this.regions.Remove( item, out CursesInteractionRegion? region ) ) {
 				this.widgetsByRegion.Remove( region );
 				region.Dispose();
 			}
+			if ( item is WidgetDialog dialog && this.dialogPanels.Remove( dialog, out CursesPanel? panel ) ) panel.Dispose();
 			if ( ReferenceEquals( item.Host, this ) ) {
 				item.Host = null;
 				this.attachedCount--;
@@ -222,11 +243,13 @@ public sealed partial class WidgetHost : IDisposable {
 
 	public void Dispose() {
 		if ( this.disposed ) return;
+		this.DismissPopup();
 		this.ClearModalsSilently();
 		foreach ( CursesInteractionRegion region in this.regions.Values.ToArray() ) region.Dispose();
 		this.regions.Clear();
 		this.widgetsByRegion.Clear();
-		foreach ( Widget root in this.roots ) foreach ( Widget widget in root.DescendantsAndSelf() ) widget.Host = null;
+		foreach ( CursesPanel panel in this.dialogPanels.Values ) panel.Dispose(); this.dialogPanels.Clear();
+		foreach ( Widget root in this.roots ) foreach ( Widget widget in root.DescendantsAndSelf() ) { widget.Host = null; if ( widget is WidgetDialog dialog ) { dialog.IsOpen = false; dialog.OnClosed(); } }
 		this.roots.Clear();
 		this.attachedCount = 0;
 		this.actions.Clear();
@@ -235,6 +258,7 @@ public sealed partial class WidgetHost : IDisposable {
 		this.disposed = true;
 	}
 
-	private void ThrowIfDisposed() { if ( this.disposed ) throw new ObjectDisposedException( nameof( WidgetHost ) ); }
+	internal void SynchronizeTree( Widget widget ) => this.Synchronize( widget );
 	private void CancelPointerCapture() { Widget? captured = this.pointerCapture; this.pointerCapture = null; captured?.OnPointerCaptureCanceled(); }
+	private void ThrowIfDisposed() { if ( this.disposed ) throw new ObjectDisposedException( nameof( WidgetHost ) ); }
 }

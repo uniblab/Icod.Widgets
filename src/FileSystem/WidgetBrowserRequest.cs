@@ -5,5 +5,8 @@
 */
 namespace Icod.Widgets;
 
-public sealed record WidgetBrowserRequest( Guid BrowserId, long Generation, string Location );
+public sealed record WidgetBrowserRequest( Guid BrowserId, long Generation, string Location ) {
+	/// <summary>True for root/drive enumeration instead of a directory read.</summary>
+	public bool IsRoots { get; init; }
+}
 

@@ -2,7 +2,7 @@
 
 **Decision date:** 2026-10-09 (America/New_York)\
 **Target:** first stable release `1.0.0`\
-**State:** W1001–W1013 implemented; 1.0.0-rc.1 automated qualification complete; live W1014 pending\
+**State:** W1001–W1013 implemented; 1.0.0-rc.2 automated qualification complete; live W1014 pending\
 **Repository baseline:** `d86e56deeac37b8faeadc2986c597634424ab07b` on `main`
 
 ## Purpose and recorded choices

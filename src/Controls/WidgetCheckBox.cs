@@ -13,9 +13,8 @@ public sealed class WidgetCheckBox( string id, string text, bool isChecked = fal
 	public bool IsChecked { get; private set; } = isChecked;
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
 		if ( WidgetInputKind.Key != input.Kind || input.KeyCode is not ( WidgetKey.Space or WidgetKey.Enter ) ) return false;
-		host.EnsureActionCapacity();
+		host.Enqueue( new WidgetValueChangedAction<bool>( this.Id, !this.IsChecked ) );
 		this.IsChecked = !this.IsChecked;
-		host.Enqueue( new WidgetValueChangedAction<bool>( this.Id, this.IsChecked ) );
 		return true;
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {

@@ -273,3 +273,16 @@ CHANGELOG and sample instructions at RC. Require fresh exact-head CI and live
 Windows/macOS/Linux witnesses with recorded terminal/architecture/version.
 Publication requires the separate authorized release step described in the
 [development roadmap](../../../Icod.Widgets-1.0.0-Development-Roadmap.md).
+
+## 11. Finalized rc.2 interaction contracts
+
+The public candidate and reflection fingerprint record the finalized signatures,
+including the non-generic explicit dialog outcomes, parameterless retained Render,
+and typed browse/validation request actions. Picker input emits requests;
+applications load/validate and apply results on their own loop. Root requests use
+WidgetBrowser.RequestRoots and WidgetBrowserRequest.IsRoots with the same loader
+and generation guard as directory reads. Ctrl+S is the portable acceptance gesture;
+Ctrl+Enter also accepts when the terminal reports its modifier. The six-page
+live gallery and editor/roguelike consumers are required witnesses; their smoke
+paths alone do not close W1014. See W1013-Interactive-Acceptance.md for the
+resumption corrections and W1014-Stable-Qualification.md for live evidence.

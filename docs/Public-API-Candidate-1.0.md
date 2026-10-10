@@ -136,4 +136,17 @@ WidgetNumberPrompt(string id, string title, CultureInfo culture,
     double minimum, double maximum, string value = "")
 ```
 
-Later tranches add the controls and behaviors named in the approved design.
+The rc.2 correction extends picker loading with roots:
+
+```csharp
+WidgetBrowserRequest WidgetBrowser.RequestRoots()
+bool WidgetBrowserRequest.IsRoots { get; init; }
+void WidgetFolderPicker.SetRoots(IReadOnlyList<WidgetFileSystemEntry> roots)
+void WidgetFilePicker.SetRoots(IReadOnlyList<WidgetFileSystemEntry> roots)
+```
+
+Normal asynchronous roots loading uses RequestRoots/WidgetBrowserLoader and
+ApplyLoadResult, preserving the identity/generation guard. SetRoots is explicit
+application-controlled presentation replacement. Picker input emits load and
+validation requests rather than performing I/O. Applications drain completion
+results after applying validation on their loop.

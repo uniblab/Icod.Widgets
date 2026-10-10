@@ -1,46 +1,63 @@
 # W1014 — Stable Qualification
 
-**Status:** live qualification pending  
-**Candidate:** `1.0.0-rc.1`  
-**Exact commit:** record the tested PR head before starting
+**Candidate:** `1.0.0-rc.2`
+**Stable gate:** open; no stable version/tag/publication authorized by this record.
 
-Automated pull-request jobs build and test net8/net9/net10 and run all three
-net10 sample smoke workflows on Windows, macOS, and Linux. Those checks do not
-replace a human-operated terminal pass.
+## Record the source before testing
 
-## Live commands
+From the repository root:
 
 ```text
-dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
-dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0
-dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0
+git checkout docs/1.0.0-roadmap
+git pull --ff-only
+git rev-parse HEAD
+dotnet --info
+dotnet build Icod.Widgets.sln -c Release
+dotnet test tests/Icod.Widgets.Tests/Icod.Widgets.Tests.csproj -c Release --no-build
 ```
 
-For each platform, record the exact commit, OS/architecture, terminal and
-version, .NET SDK version, and result. Keep failures and reruns in the notes.
+Record the SHA, operating system/build, architecture, terminal/version, runtime,
+steps and outcomes. Run the live commands in `samples/README.md` without `--smoke`.
+A deterministic smoke or test PTY does not qualify a real terminal implementation.
 
-| Platform | Architecture | Terminal/version | Commit | Result | Notes |
-|---|---|---|---|---|---|
-| Windows | x64 or ARM64 | pending | pending | pending | |
-| macOS | x64 or ARM64 | pending | pending | pending | |
-| Linux | x64 or ARM64 | pending | pending | pending | |
+| Environment | Live result | Required record |
+|---|---|---|
+| Windows x64 | Pending | Windows Terminal plus any additional terminals actually used |
+| macOS ARM64/x64 as applicable | Pending | Terminal/version, architecture, exact SHA |
+| Linux x64/ARM64 as applicable | Pending | Terminal/version, architecture, exact SHA; WSL identified separately |
 
-## Operator checklist
+## Acceptance checklist
 
-- Exercise every gallery control by keyboard, including Shift+Tab and Ctrl+A.
-- Open/close nested modal paths and confirm background input is isolated and
-  focus returns to the prior control.
-- Resize repeatedly, including compact and zero-height/zero-width transitions.
-- Enter and edit Unicode text, including a width-two character and a combining
-  sequence; verify caret movement, insertion, Backspace, Delete, Home, and End.
-- Use supported pointer input, including press/open-modal/release sequences.
-- In the editor, navigate directories, trigger an inaccessible or disappearing
-  location, change filters, select a file, validate it, and confirm the
-  application reads only the returned path.
-- In the roguelike sample, invoke inventory/actions, help, text prompt, and
-  culture-aware number prompt.
-- Confirm Escape cancels the active modal and Ctrl+Q/unhandled top-level Escape
-  exits cleanly.
+- Gallery: visit all six pages with Ctrl+N/P. Tab/Shift+Tab traverse eligible
+  controls. Hidden/disabled items cannot activate. Read footer actions.
+- Forms: type/paste combining and wide characters; edit in the middle with arrows,
+  Home/End, Backspace/Delete; toggle checkbox and change radio choice.
+- Lists: single commit, multi toggles/ranges/Ctrl+A/search; navigation preserves
+  selection. Drop-down preview cancels on Escape/outside press and commits once.
+- Menus: disabled/separator inert; checkable command toggles once; enter a submenu,
+  return with Left/Escape, invoke and close the chain.
+- Dialogs: distinguish No from Cancel; safe defaults; Tab stays in modal; Escape
+  restores focus. Wizard first rejects Next, then advances; Previous returns.
+  Text/number prompts render and validate; invalid number stays open with an error.
+- Pickers: start/current folder, parent, roots/drives, path input, single/multiple
+  files, filters, basket across directories and explicit removal. **Ctrl+S accepts**;
+  Ctrl+Enter is also available when the terminal reports the modifier. Failed loads
+  keep the previous listing usable; deleted selection fails validation.
+- While I/O is pending, cancel; later completion cannot reopen/accept a closed picker.
+- Editor: Ctrl+O opens, selected file content appears, cancellation preserves content.
+  The application performs reading and never writes files.
+- Roguelike UI: inventory/actions/messages/status/help; commands arrive once;
+  help closes and restores focus.
+- Repeated shrink/grow, compact/zero geometry, Unicode, keyboard-only input,
+  supported mouse press/release, clean Q/Escape exits, Ctrl+Q from a text field.
 
-Stable `1.0.0` metadata, tag, release notes, and any publication remain blocked
-until this table and checklist contain reviewed exact-head evidence.
+Report each result as Pass / Fail / Unsupported / Not tested. Identify exact steps
+for failures and which terminal was used. Do not substitute a green CI run for live
+results. Requalify affected controls at the corrected SHA after a reproducible fix.
+
+## Stable-source completion
+
+Only after applicable live gates pass: set exact `1.0.0`, retain assembly
+`1.0.0.0`, rerun CI/pack/package-only consumption, refresh curated release notes,
+README and CHANGELOG, then report readiness. Tagging/NuGet/GitHub Release require
+a separate release instruction.

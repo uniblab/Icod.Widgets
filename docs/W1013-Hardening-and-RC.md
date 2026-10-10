@@ -1,7 +1,11 @@
 # W1013 — Hardening, API Freeze, and Release Candidate
 
 **Status:** complete  
-**Candidate:** `1.0.0-rc.1`
+**Historical candidate:** `1.0.0-rc.1`
+
+Current rc.2 continuation and reconciled verification are recorded in
+[W1013 interactive acceptance](W1013-Interactive-Acceptance.md). The counts and
+package version below describe the earlier checkpoint.
 
 The complete solution builds in Staging for net8/net9/net10 with zero warnings
 and errors. All 86 deterministic tests pass independently on each framework.

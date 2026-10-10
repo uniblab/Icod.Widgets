@@ -4,63 +4,53 @@
 	SPDX-License-Identifier: GPL-3.0-or-later
 */
 namespace Icod.Widgets.Editor.Sample;
-
-using System.Diagnostics;
 using Icod.DCurses;
-using Icod.Widgets;
+using Icod.Widgets.Samples;
 
 internal static class Program {
-	private static async Task<int> Main( string[] args ) => args.Contains( "--smoke", StringComparer.Ordinal ) ? await RunSmokeAsync() : await RunInteractiveAsync();
-
-	private static async Task<int> RunSmokeAsync() {
-		string directory = Path.Combine( Path.GetTempPath(), $"icod-widgets-{Guid.NewGuid():N}" );
-		Directory.CreateDirectory( directory ); string path = Path.Combine( directory, "sample.txt" ); await File.WriteAllTextAsync( path, "sample" );
+	private static async Task<int> Main( string[] args ) {
+		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync( screen => new Editor( screen, Environment.CurrentDirectory ) );
+		string directory = Path.Combine( Path.GetTempPath(), $"icod-editor-{Guid.NewGuid():N}" ); Directory.CreateDirectory( directory );
 		try {
-			LocalWidgetFileSystemProvider provider = new(); WidgetFilePicker picker = new( "file", provider, directory, false, [ WidgetFileFilter.AllFiles ] );
-			using WidgetHost host = new( new CursesScreen( 80, 20 ), WidgetTheme.Default ); _ = host.ShowModal( picker );
-			WidgetBrowserRequest request = picker.RequestDirectory( directory ); picker.ApplyLoadResult( await WidgetBrowserLoader.LoadAsync( provider, request, CancellationToken.None ) ); picker.ToggleFile( path );
-			WidgetPickerValidationRequest validation = picker.RequestAccept(); picker.ApplyValidationResult( await WidgetPickerValidationLoader.ValidateAsync( provider, validation, CancellationToken.None ) );
-			WidgetDialogCompletedAction completed = ( WidgetDialogCompletedAction )host.DrainActions().Single(); string selected = ( ( IReadOnlyList<string> )completed.Result.Value! ).Single();
-			if ( "sample" != await File.ReadAllTextAsync( selected ) ) return 1; Console.WriteLine( "PASS picker returned a path; the application opened it" ); return 0;
+			await File.WriteAllTextAsync( Path.Combine( directory, "note.txt" ), "hello widgets" );
+			using Editor app = new( new CursesScreen( 60, 12 ), directory ); app.Arrange(); app.Open(); await app.PollAsync( true );
+			app.Input( WidgetInput.Key( WidgetKey.Enter ) );
+			await app.PollAsync( true ); await app.PollAsync( true ); app.Draw();
+			if ( app.Text != "hello widgets" || app.Host.ModalDepth != 0 ) return 1;
+			app.Open(); await app.PollAsync( true ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
+			if ( app.Text != "hello widgets" ) return 2;
+			Console.WriteLine( "PASS keyboard file selection, application-owned file reading, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
-
-	private static async Task<int> RunInteractiveAsync() {
-		LocalWidgetFileSystemProvider provider = new(); WidgetFilePicker picker = new( "file", provider, Environment.CurrentDirectory, false, [ WidgetFileFilter.AllFiles ] );
-		string? selectedPath = null; string? failure = null;
-		await using ( CursesSession session = await CursesSession.OpenAsync() ) {
-			using WidgetHost host = new( session, WidgetTheme.Default ); Stopwatch clock = Stopwatch.StartNew(); _ = host.ShowModal( picker ); host.Arrange( session.Screen.Bounds );
-			WidgetBrowserRequest initial = picker.RequestDirectory( picker.StartLocation ); picker.ApplyLoadResult( await WidgetBrowserLoader.LoadAsync( provider, initial, CancellationToken.None ) );
-			bool running = true;
-			while ( running ) {
-				session.StandardScreen.Clear(); host.Render(); await session.RefreshAsync();
-				CursesEvent terminalEvent = await session.ReadEventAsync();
-				if ( terminalEvent.RequiresRepaint ) { _ = session.SynchronizeDimensions(); host.Arrange( session.Screen.Bounds ); }
-				if ( terminalEvent.Input is not { } input ) continue;
-				if ( IsQuit( input ) ) break;
-				WidgetDispatchResult result = host.Process( input, clock.Elapsed );
-				foreach ( WidgetAction action in result.Actions ) {
-					if ( action is WidgetBrowserLoadRequestedAction load ) picker.ApplyLoadResult( await WidgetBrowserLoader.LoadAsync( provider, load.Request, CancellationToken.None ) );
-					else if ( action is WidgetPickerValidationRequestedAction validation ) {
-						picker.ApplyValidationResult( await WidgetPickerValidationLoader.ValidateAsync( provider, validation.Request, CancellationToken.None ) );
-						foreach ( WidgetAction followUp in host.DrainActions() ) running = HandleCompletion( followUp, ref selectedPath );
-					} else running = HandleCompletion( action, ref selectedPath );
-				}
-			}
+	private sealed class Editor : WidgetSampleApplication {
+		private readonly string start;
+		private readonly WidgetButton open = new( "open", "Open file (Ctrl+O)", "file.open" );
+		private readonly WidgetList lines = new( "lines", WidgetSelectionMode.Single );
+		private int nextId;
+		internal string Text { get; private set; } = "";
+		protected override string Heading => "Icod.Widgets editor open-file example";
+		protected override string Keys => "Ctrl+O opens a file | Arrows/PageUp/PageDown browse document | This example never writes files";
+		internal Editor( CursesScreen screen, string start ) : base( screen ) { this.start = start; this.Host.Attach( this.open ); this.Host.Attach( this.lines ); }
+		internal override void Arrange() {
+			CursesScreen screen = this.Host.Screen;
+			this.open.Arrange( new CursesRectangle( Math.Min( 2, screen.Rows ), 0, Math.Min( 1, Math.Max( 0, screen.Rows - 2 ) ), screen.Columns ) );
+			this.lines.Arrange( new CursesRectangle( Math.Min( 3, screen.Rows ), 0, Math.Max( 0, screen.Rows - 5 ), screen.Columns ) );
+			if ( this.Dialog is { IsOpen: true } dialog ) dialog.Arrange( screen.Bounds );
+			if ( this.Host.FocusedWidget is null ) this.Host.Focus( this.open );
 		}
-		if ( selectedPath is not null ) {
-			try { string text = await File.ReadAllTextAsync( selectedPath ); Console.WriteLine( $"Selected: {selectedPath}\nCharacters read by the application: {text.Length}" ); }
-			catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException ) { failure = exception.Message; }
+		internal void Open() => this.Show( new WidgetFilePicker( "open." + ++this.nextId, new LocalWidgetFileSystemProvider(), this.start, false, [ new WidgetFileFilter( "Text", [ ".txt", ".md", ".cs", ".json" ] ), WidgetFileFilter.AllFiles ] ) );
+		protected override bool OnShortcut( WidgetInput input ) { if ( ( input.Modifiers & WidgetInputModifiers.Control ) != 0 && input.Character?.Value is 'o' or 'O' ) { this.Open(); return true; } return false; }
+		protected override void OnAction( WidgetAction action ) {
+			if ( action is WidgetInvokedAction { CommandId: "file.open" } ) this.Open();
+			else if ( action is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Accepted } completed && completed.Result.Value is IReadOnlyList<string> { Count: 1 } paths ) {
+				string path = paths[ 0 ]; this.Status = "Reading " + path;
+				this.QueueWork( async token => {
+					// Size bound keeps this small demonstration responsive and memory bounded.
+					if ( new FileInfo( path ).Length > 1_048_576 ) throw new IOException( "Sample supports files up to 1 MiB." );
+					string text = await File.ReadAllTextAsync( path, token );
+					return () => { this.Text = text; this.lines.SetItems( text.Replace( "\r", "" ).Split( '\n' ).Take( WidgetLimits.MaximumItems ).Select( ( line, index ) => new WidgetListItem( index.ToString(), line.Replace( '\t', ' ' ) ) ).ToArray() ); this.Status = path; this.Host.Focus( this.lines ); };
+				} );
+			} else base.OnAction( action );
 		}
-		if ( failure is not null ) { Console.Error.WriteLine( failure ); return 1; }
-		return 0;
 	}
-
-	private static bool HandleCompletion( WidgetAction action, ref string? selectedPath ) {
-		if ( action is not WidgetDialogCompletedAction completed ) return true;
-		if ( WidgetDialogOutcome.Accepted == completed.Result.Outcome && completed.Result.Value is IReadOnlyList<string> paths ) selectedPath = paths.Single();
-		return false;
-	}
-
-	private static bool IsQuit( CursesInputEvent input ) => input.Character is { Value: 81 or 113 } && 0 != ( input.Modifiers & CursesKeyModifiers.Control );
 }

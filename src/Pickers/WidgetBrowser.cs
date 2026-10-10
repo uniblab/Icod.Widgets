@@ -20,13 +20,18 @@ public sealed class WidgetBrowser : IDisposable {
 		this.PendingLocation = location; this.Error = null; return new WidgetBrowserRequest( this.id, checked( ++this.generation ), location );
 	}
 
+	/// <summary>Requests provider roots, sharing the directory generation guard.</summary>
+	public WidgetBrowserRequest RequestRoots() { if ( this.disposed ) throw new ObjectDisposedException( nameof( WidgetBrowser ) ); this.PendingLocation = "Roots / drives"; this.Error = null; return new WidgetBrowserRequest( this.id, checked( ++this.generation ), "" ) { IsRoots = true }; }
+
 	public bool ApplyLoadResult( WidgetBrowserLoadResult result ) {
 		ArgumentNullException.ThrowIfNull( result );
 		if ( this.disposed || result.Request.BrowserId != this.id || result.Request.Generation != this.generation ) return false;
 		this.PendingLocation = null; this.Error = result.Error;
-		if ( result.Error is null && result.Snapshot is not null ) this.Snapshot = result.Snapshot;
+		if ( !result.Request.IsRoots && result.Error is null && result.Snapshot is not null ) this.Snapshot = result.Snapshot;
 		return true;
 	}
+
+	internal void InvalidatePending() { if ( this.disposed ) return; this.generation = checked( this.generation + 1 ); this.PendingLocation = null; }
 
 	public void Dispose() { this.disposed = true; this.PendingLocation = null; }
 }

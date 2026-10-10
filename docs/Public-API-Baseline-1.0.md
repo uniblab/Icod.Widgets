@@ -1,7 +1,7 @@
 # Icod.Widgets 1.0 Public API Baseline
 
-**Candidate:** `1.0.0-rc.1`  
-**Assembly version:** `1.0.0.0`  
+**Candidate:** `1.0.0-rc.2`
+**Assembly version:** `1.0.0.0`
 **Targets:** `net8.0`, `net9.0`, `net10.0`
 
 The 1.0 candidate exposes a retained `Widget` tree hosted by `WidgetHost`,

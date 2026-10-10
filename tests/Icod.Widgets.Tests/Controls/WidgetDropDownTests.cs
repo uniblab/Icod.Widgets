@@ -49,7 +49,7 @@ public sealed class WidgetDropDownTests {
 		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 1 ) );
 		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 2 ) );
 		host.Render();
-		Assert.StartsWith( "Gamma", ReadRow( host.Screen, drop.PopupBounds.Row, drop.PopupBounds.Columns ) );
+		Assert.StartsWith( "Gamma", string.Concat( Enumerable.Range( 0, drop.PopupBounds.Columns ).Select( column => host.GetPresentationWindow( drop ).GetCell( 0, column ).Content ) ) );
 	}
 
 	private static WidgetDropDown Create() => new( "drop", [ new( "a", "Alpha" ), new( "b", "Beta" ), new( "c", "Gamma" ) ], "a" );

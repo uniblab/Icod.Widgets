@@ -38,6 +38,12 @@ public sealed class WidgetBrowserTests {
 		Assert.Equal( WidgetBrowserErrorKind.TooManyEntries, result.Error?.Kind );
 	}
 
+	[Fact]
+	public async Task RootsUseSameGenerationAndCapacityGuards() {
+		WidgetBrowser browser = new(); WidgetBrowserRequest roots = browser.RequestRoots(); WidgetBrowserLoadResult result = await WidgetBrowserLoader.LoadAsync( new FakeProvider( 1 ), roots, CancellationToken.None );
+		Assert.True( roots.IsRoots ); WidgetBrowserRequest directory = browser.RequestDirectory( "/latest" );
+		Assert.False( browser.ApplyLoadResult( result ) ); Assert.Equal( "/latest", browser.PendingLocation );
+	}
 	private sealed class FakeProvider( int count ) : IWidgetFileSystemProvider {
 		public StringComparer PathComparer => StringComparer.Ordinal;
 		public ValueTask<IReadOnlyList<WidgetFileSystemEntry>> GetRootsAsync( CancellationToken token ) => ValueTask.FromResult<IReadOnlyList<WidgetFileSystemEntry>>( [] );

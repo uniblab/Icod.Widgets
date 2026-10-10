@@ -10,7 +10,10 @@ public static class WidgetBrowserLoader {
 	public static async ValueTask<WidgetBrowserLoadResult> LoadAsync( IWidgetFileSystemProvider provider, WidgetBrowserRequest request, CancellationToken token ) {
 		ArgumentNullException.ThrowIfNull( provider ); ArgumentNullException.ThrowIfNull( request );
 		try {
-			WidgetDirectorySnapshot snapshot = await provider.ReadDirectoryAsync( request.Location, token ).ConfigureAwait( false );
+			WidgetDirectorySnapshot snapshot = request.IsRoots
+				? new WidgetDirectorySnapshot( "", null, await provider.GetRootsAsync( token ).ConfigureAwait( false ) )
+				: await provider.ReadDirectoryAsync( request.Location, token ).ConfigureAwait( false );
+			token.ThrowIfCancellationRequested();
 			if ( snapshot.Entries.Count > WidgetLimits.MaximumItems ) return WidgetBrowserLoadResult.Failure( request, new WidgetBrowserError( WidgetBrowserErrorKind.TooManyEntries, $"A directory cannot contain more than {WidgetLimits.MaximumItems} entries." ) );
 			return WidgetBrowserLoadResult.Success( request, snapshot );
 		} catch ( OperationCanceledException ) { throw; }

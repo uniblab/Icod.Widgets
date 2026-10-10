@@ -23,16 +23,21 @@ public sealed class WidgetMessageDialog : WidgetDialog {
 		if ( WidgetInputKind.Key != input.Kind ) return false;
 		if ( WidgetKey.Escape == input.KeyCode ) { this.Finish( host, WidgetDialogOutcome.Cancel ); return true; }
 		if ( input.KeyCode is WidgetKey.Left or WidgetKey.Up ) { this.selectedIndex = Math.Max( 0, this.selectedIndex - 1 ); return true; }
+		if ( input.KeyCode == WidgetKey.Tab ) { this.selectedIndex = ( this.selectedIndex + 1 ) % this.choices.Length; return true; }
 		if ( input.KeyCode is WidgetKey.Right or WidgetKey.Down ) { this.selectedIndex = Math.Min( this.choices.Length - 1, this.selectedIndex + 1 ); return true; }
 		if ( WidgetKey.Enter == input.KeyCode ) { this.Finish( host, this.SelectedOutcome ); return true; }
 		return false;
 	}
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
-		base.OnRender( screen, theme, focused ); CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.Rows < 2 || area.Columns == 0 ) return;
-		string message = CursesText.TruncateToColumns( this.Message, area.Columns, screen.TextWidthProvider ); screen.StandardWindow.Move( area.Row + 1, area.Column ); screen.StandardWindow.Write( message, theme.Normal );
-		if ( area.Rows < 3 ) return; string choices = string.Join( "  ", this.choices.Select( ( choice, index ) => index == this.selectedIndex ? $"[{choice.Label}]" : choice.Label ) );
-		screen.StandardWindow.Move( area.Row + 2, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( choices, area.Columns, screen.TextWidthProvider ), theme.Focused );
+		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
+		for ( int row = 0; row < area.Rows; row++ ) WidgetBrowserView.WriteLine( screen, area, row, "", theme.Normal );
+		WidgetBrowserView.WriteLine( screen, area, 0, this.Title, theme.Border );
+		if ( area.Rows < 2 ) return;
+		CursesTextLayout layout = CursesTextLayout.Create( this.Message, new CursesTextLayoutOptions( area.Columns ) { WrapMode = CursesTextWrapMode.Word, WidthProvider = screen.TextWidthProvider, DefaultStyle = theme.Normal } );
+		screen.StandardWindow.PresentTextLayout( layout, 0, Math.Min( layout.Lines.Count, Math.Max( 0, area.Rows - 2 ) ), area.Row + 1, area.Column );
+		string choices = string.Join( "  ", this.choices.Select( ( choice, index ) => index == this.selectedIndex ? $"[{choice.Label}]" : choice.Label ) );
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, choices + " (Esc cancels)", theme.Focused );
 	}
 }
 
