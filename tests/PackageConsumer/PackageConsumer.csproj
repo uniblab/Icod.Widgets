@@ -1,5 +1,5 @@
 <!-- Icod.Widgets package-only tests; Copyright (C) 2026 Timothy J. Bruce; SPDX-License-Identifier: GPL-3.0-or-later -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><IsPackable>false</IsPackable><PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression><TargetFramework>net10.0</TargetFramework><RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile></PropertyGroup>
-  <ItemGroup><PackageReference Include="Icod.Widgets" Version="1.0.0-rc.2" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Icod.Widgets" Version="1.0.0" /></ItemGroup>
 </Project>

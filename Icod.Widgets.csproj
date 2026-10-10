@@ -29,14 +29,14 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.0.0-rc.2</Version>
-		<PackageVersion>1.0.0-rc.2</PackageVersion>
+		<Version>1.0.0</Version>
+		<PackageVersion>1.0.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Release candidate with interactive provider-backed pickers and public terminal samples; distinct menu mnemonics and visible command shortcuts; framed drop-down/menu popups; captioned framed dialogs and an OK-only acknowledgement; corrected modal/popup isolation, Unicode editing, selection, validation and bounded lifecycle behavior. Live stable qualification remains pending.</PackageReleaseNotes>
+		<PackageReleaseNotes>Initial stable package for .NET 8, 9 and 10. Includes reusable forms, lists, drop-downs, menus with distinct mnemonics and command shortcuts, captioned dialogs with consistent Cancel outcomes, provider-backed file and folder pickers, and game UI controls. Includes gallery, editor and roguelike sample applications.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
