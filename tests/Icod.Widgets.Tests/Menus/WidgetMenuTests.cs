@@ -66,6 +66,15 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void CheckableMnemonicReportsNewStateOnce() {
+		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Checkable( "grid", "Grid", "view.grid", 'g' ) ] ); using WidgetHost host = Focus( menu ); menu.Open();
+
+		WidgetCheckedInvokedAction action = Assert.IsType<WidgetCheckedInvokedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Character, character: new( 'G' ) ), TimeSpan.Zero ).Actions ) );
+
+		Assert.True( action.IsChecked ); Assert.Empty( host.DrainActions() );
+	}
+
+	[Fact]
 	public void DuplicateShortcutRejects() {
 		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'x' );
 		Assert.Throws<ArgumentException>( () => new WidgetPopupMenu( "menu", [ WidgetMenuItem.Command( "a", "A", "a", shortcut: shortcut ), WidgetMenuItem.Command( "b", "B", "b", shortcut: shortcut ) ] ) );
