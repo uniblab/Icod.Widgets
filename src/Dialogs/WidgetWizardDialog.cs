@@ -31,7 +31,8 @@ public sealed class WidgetWizardDialog : WidgetDialog {
 		CursesRectangle area = this.RenderFrame( screen, theme, this.Title + $" ({this.PageIndex + 1}/{this.pages.Length})" ); if ( area.IsEmpty ) return;
 		WidgetBrowserView.WriteLine( screen, area, 0, this.Page, theme.Normal );
 		WidgetBrowserView.WriteLine( screen, area, 1, this.Error ?? "", theme.Error );
-		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, ( this.CanPrevious ? "Left: Previous | " : "" ) + ( this.CanNext ? "Enter/Right: Next | " : "Enter: Finish | " ) + "Esc: Cancel", theme.Focused );
+		int firstFreeRow = this.Error is null ? 1 : 2;
+		if ( firstFreeRow <= area.Rows - 1 ) WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, ( this.CanPrevious ? "Left: Previous | " : "" ) + ( this.CanNext ? "Enter/Right: Next | " : "Enter: Finish | " ) + "Esc: Cancel", theme.Focused );
 	}
 }
 

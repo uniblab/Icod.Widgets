@@ -33,6 +33,22 @@ public sealed class WidgetDialogTests {
 	}
 
 	[Fact]
+	public void CaptionControlCharactersAreSanitized() {
+		using WidgetHost host = new( new CursesScreen( 20, 5 ), WidgetTheme.Default ); WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "notice", "A\nB", "Saved." ); host.ShowModal( dialog );
+
+		Exception? error = Record.Exception( host.Render );
+
+		Assert.Null( error ); Assert.Contains( "A B", Row( host.GetPresentationWindow( dialog ), 0, 20 ), StringComparison.Ordinal );
+	}
+
+	[Fact]
+	public void WideAmbiguousGlyphsUseSingleColumnDialogFrame() {
+		using WidgetHost host = new( new CursesScreen( 20, 5, UnicodeCursesTextWidthProvider.WideAmbiguousInstance ), WidgetTheme.Default ); WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "notice", "Notice", "Saved." ); host.ShowModal( dialog ); host.Render(); CursesWindow window = host.GetPresentationWindow( dialog );
+
+		Assert.Equal( "+", window.GetCell( 0, 0 ).Content ); Assert.Equal( "+", window.GetCell( 0, 19 ).Content ); Assert.Equal( "|", window.GetCell( 1, 0 ).Content ); Assert.Equal( "|", window.GetCell( 1, 19 ).Content ); Assert.Equal( "+", window.GetCell( 4, 19 ).Content );
+	}
+
+	[Fact]
 	public void NoDiffersFromCancel() {
 		using WidgetHost host = HostWithBackground( out _ );
 		WidgetMessageDialog noDialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( noDialog );
@@ -110,6 +126,15 @@ public sealed class WidgetDialogTests {
 
 		Assert.Equal( "┌─ Setup (1/2) ────┐", Row( window, 0, 20 ) ); Assert.Equal( "│", window.GetCell( 1, 0 ).Content ); Assert.Equal( "F", window.GetCell( 1, 1 ).Content ); Assert.Equal( "│", window.GetCell( 1, 19 ).Content );
 		Assert.Equal( "└──────────────────┘", Row( window, 4, 20 ) );
+	}
+
+	[Fact]
+	public void WizardCompactLayoutsPreservePageAndError() {
+		using WidgetHost pageHost = new( new CursesScreen( 20, 2 ), WidgetTheme.Default ); WidgetWizardDialog pageWizard = new( "page", "Setup", [ "First", "Second" ] ); pageHost.ShowModal( pageWizard ); pageHost.Render();
+		Assert.Equal( "F", pageHost.GetPresentationWindow( pageWizard ).GetCell( 1, 0 ).Content );
+
+		using WidgetHost errorHost = new( new CursesScreen( 20, 4 ), WidgetTheme.Default ); WidgetWizardDialog errorWizard = new( "error", "Setup", [ "First", "Second" ] ); errorWizard.RejectNavigation( "Invalid" ); errorHost.ShowModal( errorWizard ); errorHost.Render();
+		Assert.Equal( "I", errorHost.GetPresentationWindow( errorWizard ).GetCell( 2, 1 ).Content );
 	}
 
 	[Fact]

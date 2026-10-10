@@ -98,9 +98,10 @@ internal sealed class WidgetBrowserView {
 	}
 	internal static void WriteLine( CursesScreen screen, CursesRectangle area, int row, string text, CursesStyle style ) {
 		if ( row < 0 || row >= area.Rows || area.Columns == 0 ) return;
-		string safe = string.Concat( text.EnumerateRunes().Select( rune => System.Text.Rune.IsControl( rune ) ? " " : rune.ToString() ) );
+		string safe = Sanitize( text );
 		string value = CursesText.TruncateToColumns( safe, area.Columns, screen.TextWidthProvider );
 		screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( new string( ' ', area.Columns ), style );
 		screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( value, style );
 	}
+	internal static string Sanitize( string text ) => string.Concat( text.EnumerateRunes().Select( rune => System.Text.Rune.IsControl( rune ) ? " " : rune.ToString() ) );
 }
