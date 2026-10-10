@@ -11,6 +11,6 @@ public sealed class WidgetModalLease : IDisposable {
 	internal WidgetModalLease( WidgetHost host, WidgetDialog dialog ) { this.host = host; this.Dialog = dialog; }
 	public WidgetDialog Dialog { get; }
 	public bool IsActive => this.host is not null;
-	public void Dispose() { WidgetHost? owner = Interlocked.Exchange( ref this.host, null ); owner?.CloseModal( this.Dialog, WidgetDialogOutcome.Cancel ); }
+	public void Dispose() { Volatile.Read( ref this.host )?.CloseModal( this.Dialog, WidgetDialogOutcome.Cancel ); }
 	internal void MarkClosed() => this.host = null;
 }

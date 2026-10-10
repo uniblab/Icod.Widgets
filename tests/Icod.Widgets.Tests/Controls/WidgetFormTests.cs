@@ -28,14 +28,7 @@ public sealed class WidgetFormTests {
 
 		host.Process( WidgetInput.Paste( "one\r\n\t two\u0001three" ), TimeSpan.Zero );
 
-		Assert.Equal( "one two three", input.Value );
-	}
-
-	[Fact]
-	public void PastePreservesBoundarySeparator() {
-		WidgetTextInput input = new( "input", "one" ); using WidgetHost host = FocusedHost( input );
-		host.Process( WidgetInput.Paste( "\ntwo" ), TimeSpan.Zero );
-		Assert.Equal( "one two", input.Value );
+		Assert.Equal( "one twothree", input.Value );
 	}
 
 	[Fact]

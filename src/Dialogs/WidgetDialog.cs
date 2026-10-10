@@ -13,6 +13,8 @@ public abstract class WidgetDialog( string id, string title ) : Widget( id ) {
 	public string Title { get; } = title ?? throw new ArgumentNullException( nameof( title ) );
 	public bool IsOpen { get; internal set; }
 	internal bool HasCompleted { get; set; }
+	internal virtual void OnOpened() { }
+	internal virtual void OnClosed() { }
 	internal void Finish( WidgetHost host, WidgetDialogOutcome outcome ) => host.CompleteDialog( this, outcome );
 	internal void Finish( WidgetHost host, WidgetDialogResult result ) => host.CompleteDialog( this, result );
 

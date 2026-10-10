@@ -40,30 +40,35 @@ public class WidgetList : Widget {
 			if ( !keys.Add( item.Key ) ) throw new ArgumentException( $"Duplicate list key '{item.Key}'.", nameof( items ) );
 		}
 		string? oldCursor = this.CursorKey;
+		int oldCursorIndex = this.cursorIndex;
 		string[] oldSelection = this.SelectedKeys.ToArray();
 		HashSet<string> enabled = replacement.Where( item => item.IsEnabled ).Select( item => item.Key ).ToHashSet( StringComparer.Ordinal );
-		this.selected.IntersectWith( enabled );
-		if ( WidgetSelectionMode.Single == this.SelectionMode && 1 < this.selected.Count ) {
-			string? first = replacement.FirstOrDefault( item => this.selected.Contains( item.Key ) )?.Key;
-			this.selected.Clear(); if ( first is not null ) this.selected.Add( first );
+		HashSet<string> nextSelection = this.selected.Where( enabled.Contains ).ToHashSet( StringComparer.Ordinal );
+		if ( WidgetSelectionMode.Single == this.SelectionMode && 1 < nextSelection.Count ) {
+			string? first = replacement.FirstOrDefault( item => nextSelection.Contains( item.Key ) )?.Key;
+			nextSelection.Clear(); if ( first is not null ) nextSelection.Add( first );
 		}
+		string[] orderedSelection = replacement.Where( item => nextSelection.Contains( item.Key ) ).Select( item => item.Key ).ToArray();
+		bool selectionChanged = !oldSelection.SequenceEqual( orderedSelection, StringComparer.Ordinal );
+		if ( selectionChanged ) this.Host?.EnsureActionCapacity();
+		this.selected.Clear(); this.selected.UnionWith( nextSelection );
 		this.items = replacement;
 		this.cursorIndex = oldCursor is null ? -1 : Array.FindIndex( replacement, item => item.IsEnabled && item.Key == oldCursor );
-		if ( 0 > this.cursorIndex ) this.cursorIndex = Array.FindIndex( replacement, item => item.IsEnabled );
+		if ( 0 > this.cursorIndex ) this.cursorIndex = FindNearestEnabled( replacement, oldCursorIndex );
 		this.anchorIndex = this.cursorIndex;
 		this.EnsureVisible();
-		if ( !oldSelection.SequenceEqual( this.SelectedKeys, StringComparer.Ordinal ) && this.Host is not null ) this.EmitSelection();
+		if ( selectionChanged && this.Host is not null ) this.EmitSelection();
 	}
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
 		if ( WidgetInputKind.Text == input.Kind && input.Character.HasValue ) return this.Search( input.Character.Value, host.CurrentTime );
 		if ( WidgetInputKind.Key != input.Kind ) return false;
+		if ( WidgetKey.Character == input.KeyCode && 0 != ( input.Modifiers & WidgetInputModifiers.Control ) && input.Character is { Value: 65 or 97 } && WidgetSelectionMode.Multiple == this.SelectionMode ) {
+			host.EnsureActionCapacity(); this.selected.Clear(); foreach ( WidgetListItem item in this.items ) if ( item.IsEnabled ) this.selected.Add( item.Key ); this.EmitSelection(); return true;
+		}
 		if ( WidgetKey.Character == input.KeyCode && input.Character.HasValue ) return this.Search( input.Character.Value, host.CurrentTime );
 		if ( WidgetKey.Space == input.KeyCode && WidgetSelectionMode.Multiple == this.SelectionMode ) return this.ToggleCurrent();
 		if ( WidgetKey.Enter == input.KeyCode && WidgetSelectionMode.Single == this.SelectionMode ) return this.CommitCurrent();
-		if ( WidgetKey.Character == input.KeyCode && 0 != ( input.Modifiers & WidgetInputModifiers.Control ) && input.Character is { Value: 65 or 97 } && WidgetSelectionMode.Multiple == this.SelectionMode ) {
-			this.selected.Clear(); foreach ( WidgetListItem item in this.items ) if ( item.IsEnabled ) this.selected.Add( item.Key ); this.EmitSelection(); return true;
-		}
 		int next = input.KeyCode switch {
 			WidgetKey.Up => this.FindEnabled( this.cursorIndex - 1, -1 ),
 			WidgetKey.Down => this.FindEnabled( this.cursorIndex + 1, 1 ),
@@ -93,6 +98,7 @@ public class WidgetList : Widget {
 
 	private bool ToggleCurrent() {
 		if ( this.cursorIndex < 0 || !this.items[ this.cursorIndex ].IsEnabled ) return false;
+		this.Host?.EnsureActionCapacity();
 		string key = this.items[ this.cursorIndex ].Key; if ( !this.selected.Add( key ) ) this.selected.Remove( key );
 		this.anchorIndex = this.cursorIndex; this.EmitSelection(); return true;
 	}
@@ -101,10 +107,12 @@ public class WidgetList : Widget {
 		if ( this.cursorIndex < 0 || !this.items[ this.cursorIndex ].IsEnabled ) return false;
 		string key = this.items[ this.cursorIndex ].Key;
 		if ( this.selected.Count == 1 && this.selected.Contains( key ) ) return true;
+		this.Host?.EnsureActionCapacity();
 		this.selected.Clear(); this.selected.Add( key ); this.anchorIndex = this.cursorIndex; this.EmitSelection(); return true;
 	}
 
 	private void SelectRange( int next ) {
+		this.Host?.EnsureActionCapacity();
 		if ( 0 > this.anchorIndex ) this.anchorIndex = this.cursorIndex;
 		this.selected.Clear();
 		for ( int index = Math.Min( this.anchorIndex, next ); index <= Math.Max( this.anchorIndex, next ); index++ ) if ( this.items[ index ].IsEnabled ) this.selected.Add( this.items[ index ].Key );
@@ -127,6 +135,16 @@ public class WidgetList : Widget {
 		if ( 0 == this.items.Length ) return -1;
 		for ( int index = Math.Clamp( start, 0, this.items.Length - 1 ); index >= 0 && index < this.items.Length; index += step ) if ( this.items[ index ].IsEnabled ) return index;
 		return this.cursorIndex;
+	}
+
+	private static int FindNearestEnabled( WidgetListItem[] items, int priorIndex ) {
+		if ( 0 == items.Length ) return -1;
+		int origin = Math.Clamp( priorIndex, 0, items.Length - 1 );
+		for ( int distance = 0; distance < items.Length; distance++ ) {
+			int before = origin - distance; if ( before >= 0 && items[ before ].IsEnabled ) return before;
+			int after = origin + distance; if ( after < items.Length && items[ after ].IsEnabled ) return after;
+		}
+		return -1;
 	}
 
 	private void EnsureVisible() {

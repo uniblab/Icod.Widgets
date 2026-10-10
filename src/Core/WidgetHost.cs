@@ -56,6 +56,10 @@ public sealed partial class WidgetHost : IDisposable {
 	public bool Detach( Widget widget ) {
 		ArgumentNullException.ThrowIfNull( widget );
 		this.ThrowIfDisposed();
+		if ( widget is WidgetDialog dialog && this.IsModalOpen( dialog ) ) {
+			this.CloseModal( dialog, WidgetDialogOutcome.Cancel );
+			return true;
+		}
 		if ( !this.roots.Remove( widget ) ) return false;
 		this.DetachValidated( widget.DescendantsAndSelf().ToArray() );
 		return true;
@@ -83,15 +87,17 @@ public sealed partial class WidgetHost : IDisposable {
 		}
 		this.currentTime = timestamp;
 		bool handled = false;
+		bool modalActive = this.ActiveModal is not null;
 
-		if ( WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
+		if ( !modalActive && WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
 			CursesFocusDirection direction = 0 != ( input.Modifiers & WidgetInputModifiers.Shift )
 				? CursesFocusDirection.Backward : CursesFocusDirection.Forward;
 			handled = this.router.MoveFocus( direction ) is not null;
 		} else {
 			Widget? target = this.ResolveTarget( input );
-			if ( target is not null && target.IsEnabled && target.IsVisible ) handled = target.OnInput( input, this );
+			if ( target is not null && target.IsEffectivelyEnabled && target.IsEffectivelyVisible ) handled = target.OnInput( input, this );
 		}
+		if ( modalActive && input.Kind is not WidgetInputKind.Focus and not WidgetInputKind.EndOfInput ) handled = true;
 
 		return new WidgetDispatchResult( handled, this.DrainActions() );
 	}
@@ -109,7 +115,7 @@ public sealed partial class WidgetHost : IDisposable {
 		Widget? focused = this.FocusedWidget;
 		foreach ( Widget root in this.roots ) {
 			foreach ( Widget widget in root.DescendantsAndSelf() ) {
-				if ( widget.IsVisible ) widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
+				if ( widget.IsEffectivelyVisible ) widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
 			}
 		}
 	}
@@ -117,8 +123,13 @@ public sealed partial class WidgetHost : IDisposable {
 	internal void Enqueue( WidgetAction action ) {
 		ArgumentNullException.ThrowIfNull( action );
 		this.ThrowIfDisposed();
-		if ( WidgetLimits.MaximumPendingActions <= this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." );
+		this.EnsureActionCapacity();
 		this.actions.Enqueue( action );
+	}
+
+	internal void EnsureActionCapacity( int count = 1 ) {
+		this.ThrowIfDisposed();
+		if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." );
 	}
 
 	internal void AttachChild( Widget child ) {
@@ -136,10 +147,12 @@ public sealed partial class WidgetHost : IDisposable {
 	internal void Synchronize( Widget widget ) {
 		if ( this.disposed || !this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) ) return;
 		region.SetBounds( widget.Bounds );
-		region.IsEnabled = widget.IsEnabled && widget.IsVisible && !widget.Bounds.IsEmpty;
+		region.IsEnabled = widget.IsEffectivelyEnabled && widget.IsEffectivelyVisible && !widget.Bounds.IsEmpty;
 		region.IsFocusable = widget.IsFocusable && region.IsEnabled;
-		if ( !region.IsEnabled && ReferenceEquals( this.pointerCapture, widget ) ) this.pointerCapture = null;
+		if ( !region.IsEnabled && ReferenceEquals( this.pointerCapture, widget ) ) this.CancelPointerCapture();
 	}
+
+	internal void SynchronizeTree( Widget widget ) { foreach ( Widget item in widget.DescendantsAndSelf() ) this.Synchronize( item ); }
 
 	private Widget? ResolveTarget( WidgetInput input ) {
 		if ( this.ActiveModal is not null ) return this.ActiveModal;
@@ -178,8 +191,8 @@ public sealed partial class WidgetHost : IDisposable {
 				completed.Add( item );
 				if ( item.IsFocusable ) {
 					CursesInteractionRegion region = this.router.RegisterRegion( new CursesInteractionRegionOptions( item.Bounds ) {
-						IsEnabled = item.IsEnabled && item.IsVisible && !item.Bounds.IsEmpty,
-						IsFocusable = item.IsEnabled && item.IsVisible && !item.Bounds.IsEmpty,
+						IsEnabled = item.IsEffectivelyEnabled && item.IsEffectivelyVisible && !item.Bounds.IsEmpty,
+						IsFocusable = item.IsEffectivelyEnabled && item.IsEffectivelyVisible && !item.Bounds.IsEmpty,
 						TraversalOrder = this.nextTraversalOrder++
 					} );
 					this.regions.Add( item, region );
@@ -194,7 +207,7 @@ public sealed partial class WidgetHost : IDisposable {
 
 	private void DetachValidated( Widget[] subtree ) {
 		foreach ( Widget item in subtree ) {
-			if ( ReferenceEquals( this.pointerCapture, item ) ) this.pointerCapture = null;
+			if ( ReferenceEquals( this.pointerCapture, item ) ) this.CancelPointerCapture();
 			if ( this.regions.Remove( item, out CursesInteractionRegion? region ) ) {
 				this.widgetsByRegion.Remove( region );
 				region.Dispose();
@@ -217,10 +230,11 @@ public sealed partial class WidgetHost : IDisposable {
 		this.roots.Clear();
 		this.attachedCount = 0;
 		this.actions.Clear();
-		this.pointerCapture = null;
+		this.CancelPointerCapture();
 		this.router.Dispose();
 		this.disposed = true;
 	}
 
 	private void ThrowIfDisposed() { if ( this.disposed ) throw new ObjectDisposedException( nameof( WidgetHost ) ); }
+	private void CancelPointerCapture() { Widget? captured = this.pointerCapture; this.pointerCapture = null; captured?.OnPointerCaptureCanceled(); }
 }

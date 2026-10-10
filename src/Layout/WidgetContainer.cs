@@ -16,6 +16,7 @@ public abstract class WidgetContainer : Widget {
 		ArgumentNullException.ThrowIfNull( child );
 		if ( child.Parent is not null || child.Host is not null ) throw new InvalidOperationException( "The widget already belongs to a tree." );
 		if ( ReferenceEquals( child, this ) ) throw new InvalidOperationException( "A widget cannot contain itself." );
+		if ( child.DescendantsAndSelf().Any( item => ReferenceEquals( item, this ) ) ) throw new InvalidOperationException( "A widget cannot contain one of its ancestors." );
 		this.Host?.AttachChild( child );
 		child.Parent = this;
 		this.children.Add( child );

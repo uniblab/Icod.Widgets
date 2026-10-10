@@ -5,6 +5,8 @@
 */
 namespace Icod.Widgets;
 
+using Icod.DCurses;
+
 /// <summary>Requests application-owned Previous/Next validation and page transitions.</summary>
 public sealed class WidgetWizardDialog : WidgetDialog {
 	private readonly string[] pages;
@@ -23,7 +25,15 @@ public sealed class WidgetWizardDialog : WidgetDialog {
 		if ( WidgetKey.Escape == input.KeyCode ) { this.Finish( host, WidgetDialogOutcome.Cancel ); return true; }
 		if ( input.KeyCode is WidgetKey.Left && this.CanPrevious ) { host.Enqueue( new WidgetWizardNavigationRequestedAction( this.Id, this.PageIndex, this.PageIndex - 1 ) ); return true; }
 		if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Right && this.CanNext ) { host.Enqueue( new WidgetWizardNavigationRequestedAction( this.Id, this.PageIndex, this.PageIndex + 1 ) ); return true; }
+		if ( WidgetKey.Enter == input.KeyCode && !this.CanNext ) { this.Finish( host, new WidgetDialogResult( WidgetDialogOutcome.Accepted, this.PageIndex ) ); return true; }
 		return false;
+	}
+
+	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
+		base.OnRender( screen, theme, focused ); CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.Rows < 2 || 0 == area.Columns ) return;
+		screen.StandardWindow.Move( area.Row + 1, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( this.Page, area.Columns, screen.TextWidthProvider ), theme.Normal );
+		if ( area.Rows >= 3 && this.Error is not null ) { screen.StandardWindow.Move( area.Row + 2, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( this.Error, area.Columns, screen.TextWidthProvider ), theme.Error ); }
+		if ( area.Rows >= 4 ) { string actions = this.CanNext ? "Previous  [Next]  Cancel" : "Previous  [Finish]  Cancel"; screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( actions, area.Columns, screen.TextWidthProvider ), theme.Focused ); }
 	}
 }
 

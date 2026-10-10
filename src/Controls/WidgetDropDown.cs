@@ -47,7 +47,7 @@ public sealed class WidgetDropDown : Widget {
 		}
 		if ( WidgetKey.Escape == input.KeyCode ) { this.Dismiss(); return true; }
 		if ( WidgetKey.Enter == input.KeyCode ) {
-			bool changed = this.selectedIndex != this.previewIndex; this.selectedIndex = this.previewIndex; this.IsOpen = false; this.PopupBounds = default;
+			bool changed = this.selectedIndex != this.previewIndex; if ( changed ) host.EnsureActionCapacity(); this.selectedIndex = this.previewIndex; this.IsOpen = false; this.PopupBounds = default;
 			if ( changed ) host.Enqueue( new WidgetValueChangedAction<string>( this.Id, this.SelectedKey ) );
 			return true;
 		}
@@ -66,10 +66,11 @@ public sealed class WidgetDropDown : Widget {
 			screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, focused ? theme.Focused : theme.Normal );
 		}
 		if ( !this.IsOpen || this.PopupBounds.IsEmpty ) return;
+		int first = Math.Clamp( this.previewIndex - this.PopupBounds.Rows + 1, 0, Math.Max( 0, this.items.Length - this.PopupBounds.Rows ) );
 		for ( int row = 0; row < this.PopupBounds.Rows; row++ ) {
-			WidgetListItem item = this.items[ row ]; string value = CursesText.TruncateToColumns( item.Text, this.PopupBounds.Columns, screen.TextWidthProvider );
+			int index = first + row; WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, this.PopupBounds.Columns, screen.TextWidthProvider );
 			screen.StandardWindow.Move( this.PopupBounds.Row + row, this.PopupBounds.Column );
-			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : row == this.previewIndex ? theme.Focused : theme.Normal );
+			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : index == this.previewIndex ? theme.Focused : theme.Normal );
 		}
 	}
 

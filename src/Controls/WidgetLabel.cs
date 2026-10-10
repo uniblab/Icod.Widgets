@@ -16,6 +16,6 @@ public sealed class WidgetLabel( string id, string text ) : Widget( id ) {
 		if ( clipped.IsEmpty ) return;
 		string value = CursesText.SliceByColumns( this.Text, clipped.Column - this.Bounds.Column, clipped.Columns, screen.TextWidthProvider );
 		screen.StandardWindow.Move( clipped.Row, clipped.Column );
-		screen.StandardWindow.Write( value, this.IsEnabled ? theme.Normal : theme.Disabled );
+		screen.StandardWindow.Write( value, this.IsEffectivelyEnabled ? theme.Normal : theme.Disabled );
 	}
 }

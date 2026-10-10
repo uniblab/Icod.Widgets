@@ -23,15 +23,17 @@ public abstract class Widget {
 	public virtual bool IsFocusable => false;
 	public bool IsEnabled {
 		get => this.isEnabled;
-		set { this.isEnabled = value; this.Host?.Synchronize( this ); }
+		set { if ( this.isEnabled == value ) return; this.isEnabled = value; this.Host?.SynchronizeTree( this ); }
 	}
 	public bool IsVisible {
 		get => this.isVisible;
-		set { this.isVisible = value; this.Host?.Synchronize( this ); }
+		set { if ( this.isVisible == value ) return; this.isVisible = value; this.Host?.SynchronizeTree( this ); }
 	}
 
 	internal WidgetContainer? Parent { get; set; }
 	internal WidgetHost? Host { get; set; }
+	internal bool IsEffectivelyEnabled => this.isEnabled && ( this.Parent?.IsEffectivelyEnabled ?? true );
+	internal bool IsEffectivelyVisible => this.isVisible && ( this.Parent?.IsEffectivelyVisible ?? true );
 
 	public void Arrange( CursesRectangle bounds ) {
 		this.Bounds = bounds;
@@ -42,6 +44,7 @@ public abstract class Widget {
 	protected virtual void OnArrange( CursesRectangle bounds ) { }
 	protected internal virtual bool OnInput( WidgetInput input, WidgetHost host ) => false;
 	protected internal virtual void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { }
+	internal virtual void OnPointerCaptureCanceled() { }
 
 	internal virtual IEnumerable<Widget> DescendantsAndSelf() { yield return this; }
 }

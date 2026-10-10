@@ -13,6 +13,7 @@ public sealed class WidgetCheckBox( string id, string text, bool isChecked = fal
 	public bool IsChecked { get; private set; } = isChecked;
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
 		if ( WidgetInputKind.Key != input.Kind || input.KeyCode is not ( WidgetKey.Space or WidgetKey.Enter ) ) return false;
+		host.EnsureActionCapacity();
 		this.IsChecked = !this.IsChecked;
 		host.Enqueue( new WidgetValueChangedAction<bool>( this.Id, this.IsChecked ) );
 		return true;
@@ -21,7 +22,7 @@ public sealed class WidgetCheckBox( string id, string text, bool isChecked = fal
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string value = CursesText.TruncateToColumns( $"[{( this.IsChecked ? 'x' : ' ' )}] {this.Text}", area.Columns, screen.TextWidthProvider );
 		screen.StandardWindow.Move( area.Row, area.Column );
-		screen.StandardWindow.Write( value, !this.IsEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
+		screen.StandardWindow.Write( value, !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
 	}
 }
 

@@ -21,3 +21,7 @@ public sealed record WidgetDialogCompletedAction( string WidgetId, WidgetDialogR
 
 public sealed record WidgetWizardNavigationRequestedAction( string WidgetId, int FromPage, int ToPage ) : WidgetAction( WidgetId );
 
+public sealed record WidgetBrowserLoadRequestedAction( string WidgetId, WidgetBrowserRequest Request ) : WidgetAction( WidgetId );
+
+public sealed record WidgetPickerValidationRequestedAction( string WidgetId, WidgetPickerValidationRequest Request ) : WidgetAction( WidgetId );
+

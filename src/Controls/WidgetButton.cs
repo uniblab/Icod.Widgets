@@ -21,7 +21,7 @@ public sealed class WidgetButton( string id, string text, string commandId ) : W
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer?.Button == CursesMouseButton.Primary ) {
 			if ( CursesMouseAction.Press == input.Pointer.Action ) { this.pointerPressed = true; return true; }
 			if ( CursesMouseAction.Release == input.Pointer.Action ) {
-				bool invoke = this.pointerPressed && this.Bounds.Contains( input.Pointer.Row, input.Pointer.Column ); this.pointerPressed = false;
+				bool invoke = this.pointerPressed && this.Bounds.Contains( input.Pointer.Row, input.Pointer.Column ); if ( invoke ) host.EnsureActionCapacity(); this.pointerPressed = false;
 				if ( invoke ) host.Enqueue( new WidgetInvokedAction( this.Id, this.CommandId ) );
 				return invoke;
 			}
@@ -29,11 +29,13 @@ public sealed class WidgetButton( string id, string text, string commandId ) : W
 		return false;
 	}
 
+	internal override void OnPointerCaptureCanceled() => this.pointerPressed = false;
+
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string text = CursesText.TruncateToColumns( $"[ {this.Text} ]", area.Columns, screen.TextWidthProvider );
 		screen.StandardWindow.Move( area.Row, area.Column );
-		screen.StandardWindow.Write( text, !this.IsEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
+		screen.StandardWindow.Write( text, !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
 	}
 }
 

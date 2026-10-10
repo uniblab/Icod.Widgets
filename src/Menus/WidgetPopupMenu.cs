@@ -45,13 +45,14 @@ public class WidgetPopupMenu : Widget {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		if ( !this.IsOpen || 0 == this.levels.Count ) { this.RenderBounds = default; return; }
-		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); this.RenderBounds = new CursesRectangle( area.Row, area.Column, Math.Min( area.Rows, this.levels[ ^1 ].Items.Count ), area.Columns );
+		Level level = this.levels[ ^1 ]; CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); this.RenderBounds = new CursesRectangle( area.Row, area.Column, Math.Min( area.Rows, level.Items.Count ), area.Columns );
+		int first = Math.Clamp( level.Cursor - this.RenderBounds.Rows + 1, 0, Math.Max( 0, level.Items.Count - this.RenderBounds.Rows ) );
 		for ( int row = 0; row < this.RenderBounds.Rows; row++ ) {
-			WidgetMenuItem item = this.levels[ ^1 ].Items[ row ];
+			int index = first + row; WidgetMenuItem item = level.Items[ index ];
 			string prefix = WidgetMenuItemKind.CheckableCommand == item.Kind ? ( item.IsChecked ? "[x] " : "[ ] " ) : string.Empty;
 			string suffix = WidgetMenuItemKind.Submenu == item.Kind ? " >" : string.Empty;
 			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', this.RenderBounds.Columns ) : CursesText.TruncateToColumns( prefix + item.Text + suffix, this.RenderBounds.Columns, screen.TextWidthProvider );
-			CursesStyle style = !item.IsEnabled ? theme.Disabled : row == this.levels[ ^1 ].Cursor && focused ? theme.Focused : theme.Normal;
+			CursesStyle style = !item.IsEnabled ? theme.Disabled : index == level.Cursor && focused ? theme.Focused : theme.Normal;
 			screen.StandardWindow.Move( this.RenderBounds.Row + row, this.RenderBounds.Column ); screen.StandardWindow.Write( value, style );
 		}
 	}
@@ -73,7 +74,7 @@ public class WidgetPopupMenu : Widget {
 	private bool Activate( WidgetHost host ) {
 		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Separator == item.Kind ) return false;
 		if ( WidgetMenuItemKind.Submenu == item.Kind ) return this.OpenSubmenu();
-		if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
+		if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { host.EnsureActionCapacity(); item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
 		else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
 		this.Close(); return true;
 	}
@@ -82,7 +83,7 @@ public class WidgetPopupMenu : Widget {
 		foreach ( WidgetMenuItem item in Flatten( this.levels[ ^1 ].Items ) ) {
 			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || ( shortcut.Character.HasValue && input.Character?.Value != shortcut.Character.Value ) ) continue;
 			if ( !item.IsEnabled || item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
-			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
+			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { host.EnsureActionCapacity(); item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
 			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
 			this.Close(); return true;
 		}
