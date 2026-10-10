@@ -38,6 +38,18 @@ public sealed class WidgetMenuTests {
 	}
 
 	[Fact]
+	public void ControlShortcutInvokesDirectlyWithoutOpeningMenu() {
+		WidgetMenuShortcut shortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'l' );
+		WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "view", "View", [ WidgetMenuItem.Command( "line", "Go to Line...", "view.line", shortcut: shortcut ) ], 'v' ) ] );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetButton editor = new( "editor", "Editor", "editor.focus" ); host.Attach( editor ); host.Attach( menu ); host.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		WidgetInvokedAction action = Assert.IsType<WidgetInvokedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'L' ) ), TimeSpan.Zero ).Actions ) );
+
+		Assert.Equal( "view.line", action.CommandId ); Assert.False( menu.IsOpen ); Assert.Same( editor, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void DisabledAndSeparatorsAreInert() {
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "off", "Disabled", "off", isEnabled: false ), WidgetMenuItem.Separator( "sep" ), WidgetMenuItem.Command( "on", "Enabled", "on" ) ] );
 		using WidgetHost host = Focus( menu ); menu.Open();
