@@ -18,10 +18,26 @@ public abstract class WidgetDialog( string id, string title ) : Widget( id ) {
 	internal void Finish( WidgetHost host, WidgetDialogOutcome outcome ) => host.CompleteDialog( this, outcome );
 	internal void Finish( WidgetHost host, WidgetDialogResult result ) => host.CompleteDialog( this, result );
 
-	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
-		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		string title = CursesText.TruncateToColumns( this.Title, area.Columns, screen.TextWidthProvider );
-		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( title, theme.Border );
+	internal CursesRectangle RenderFrame( CursesScreen screen, WidgetTheme theme, string? caption = null ) {
+		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return default;
+		for ( int row = 0; row < area.Rows; row++ ) WidgetBrowserView.WriteLine( screen, area, row, string.Empty, theme.Normal );
+		string title = caption ?? this.Title;
+		if ( area.Rows < 3 || area.Columns < 3 ) {
+			WidgetBrowserView.WriteLine( screen, area, 0, title, theme.Border );
+			return new CursesRectangle( area.Row + Math.Min( 1, area.Rows ), area.Column, Math.Max( 0, area.Rows - 1 ), area.Columns );
+		}
+		int maximumTitleColumns = Math.Max( 0, area.Columns - 5 );
+		string clippedTitle = CursesText.TruncateToColumns( title, maximumTitleColumns, screen.TextWidthProvider );
+		int titleColumns = CursesText.MeasureColumns( clippedTitle, screen.TextWidthProvider );
+		string top = 0 == titleColumns ? "┌" + new string( '─', area.Columns - 2 ) + "┐" :
+			"┌─ " + clippedTitle + " " + new string( '─', area.Columns - titleColumns - 5 ) + "┐";
+		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( top, theme.Border );
+		int right = area.Column + area.Columns - 1;
+		for ( int row = area.Row + 1; row < area.BottomExclusive - 1; row++ ) { screen.StandardWindow.Move( row, area.Column ); screen.StandardWindow.Write( "│", theme.Border ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", theme.Border ); }
+		screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( "└" + new string( '─', area.Columns - 2 ) + "┘", theme.Border );
+		return new CursesRectangle( area.Row + 1, area.Column + 1, area.Rows - 2, area.Columns - 2 );
 	}
+
+	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) => _ = this.RenderFrame( screen, theme );
 }
 
