@@ -43,6 +43,18 @@ public sealed class WidgetDropDownTests {
 	}
 
 	[Fact]
+	public void PopupRendersBorderAroundInsetItems() {
+		WidgetDropDown drop = Create(); using WidgetHost host = Host( drop, row: 1, screenRows: 8 ); host.Focus( drop ); drop.Open();
+		host.Render(); CursesWindow popup = host.GetPresentationWindow( drop );
+		Assert.Equal( 5, drop.PopupBounds.Rows );
+		Assert.Equal( "┌", popup.GetCell( 0, 0 ).Content );
+		Assert.Equal( "┐", popup.GetCell( 0, drop.PopupBounds.Columns - 1 ).Content );
+		Assert.Equal( "└", popup.GetCell( drop.PopupBounds.Rows - 1, 0 ).Content );
+		Assert.Equal( "┘", popup.GetCell( drop.PopupBounds.Rows - 1, drop.PopupBounds.Columns - 1 ).Content );
+		Assert.StartsWith( "Alpha", string.Concat( Enumerable.Range( 1, drop.PopupBounds.Columns - 2 ).Select( column => popup.GetCell( 1, column ).Content ) ) );
+	}
+
+	[Fact]
 	public void CompactPopupScrollsPreviewIntoView() {
 		WidgetDropDown drop = Create(); using WidgetHost host = Host( drop, row: 0, screenRows: 2 ); host.Focus( drop );
 		host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero );
@@ -54,5 +66,4 @@ public sealed class WidgetDropDownTests {
 
 	private static WidgetDropDown Create() => new( "drop", [ new( "a", "Alpha" ), new( "b", "Beta" ), new( "c", "Gamma" ) ], "a" );
 	private static WidgetHost Host( WidgetDropDown drop, int row = 1, int screenRows = 5 ) { WidgetHost host = new( new CursesScreen( 30, screenRows ), WidgetTheme.Default ); host.Attach( drop ); drop.Arrange( new CursesRectangle( row, 0, 1, 20 ) ); return host; }
-	private static string ReadRow( CursesScreen screen, int row, int columns ) => string.Concat( Enumerable.Range( 0, columns ).Select( column => screen.StandardWindow.GetCell( row, column ).Content ) );
 }
