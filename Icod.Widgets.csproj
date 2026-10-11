@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Icod.Widgets reusable terminal controls.
+	Copyright (C) 2026 Timothy J. Bruce <uniblab@hotmail.com>
+	SPDX-License-Identifier: LGPL-3.0-or-later
+-->
+
+<!--
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Copyright>Copyright (c) 2026 Timothy J. Bruce</Copyright>
+		<OutputType>Library</OutputType>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+		<AssemblyName>Icod.Widgets</AssemblyName>
+		<RootNamespace>Icod.Widgets</RootNamespace>
+		<Version>1.0.0</Version>
+		<PackageVersion>1.0.0</PackageVersion>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<PackageId>Icod.Widgets</PackageId>
+		<Title>Icod.Widgets</Title>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
+		<PackageReleaseNotes>Initial stable package for .NET 8, 9 and 10. Includes reusable forms, lists, drop-downs, menus with distinct mnemonics and command shortcuts, captioned dialogs with consistent Cancel outcomes, provider-backed file and folder pickers, and game UI controls. Includes gallery, editor and roguelike sample applications.</PackageReleaseNotes>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<RepositoryUrl>https://github.com/uniblab/Icod.Widgets</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PackageTags>alert;checkbox;console;console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;directory-picker;dotnet;dropdown;file-browser;file-picker;filesystem-browser;folder-picker;form-controls;forms;game-ui;help-overlay;icod;keyboard-shortcuts;list;listbox;menu;menu-bar;message-box;mnemonics;modal-dialog;multi-select;ncurses;pcurses;popup-menu;radio-button;status-bar;submenu;terminal;terminal-ui;terminal-widgets;text-input;text-ui;tui;ui;ui-controls;widgets;wizard</PackageTags>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<WarningLevel>2</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Staging'">
+		<WarningLevel>4</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>TRACE</DefineConstants>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<WarningLevel>4</WarningLevel>
+		<DebugType>portable</DebugType>
+		<Optimize>true</Optimize>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="src\**\*.cs" />
+		<EmbeddedResource Remove="samples\**" />
+		<None Remove="samples\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<Content Include="LICENSE">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>$(AssemblyName).LICENSE.txt</TargetPath>
+			<Pack>true</Pack>
+			<PackagePath>\</PackagePath>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Icod.DCurses" Version="2.3.1" />
+	</ItemGroup>
+</Project>

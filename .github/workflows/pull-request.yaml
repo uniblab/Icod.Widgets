@@ -1,0 +1,118 @@
+name: pull-request
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Staging
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      has_solution: ${{ steps.repository.outputs.has_solution }}
+      solution_path: ${{ steps.repository.outputs.solution_path }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - id: repository
+        name: Discover .NET repository
+        shell: pwsh
+        run: >-
+          ./packaging/Get-RepositoryMetadata.ps1
+          -Configuration '${{ env.CONFIGURATION }}'
+          -GitHubOutputPath $env:GITHUB_OUTPUT
+
+  validate:
+    needs: metadata
+    if: needs.metadata.outputs.has_solution == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows
+            verify_packages: true
+          - os: ubuntu-latest
+            name: Linux
+            verify_packages: true
+          - os: macos-latest
+            name: macOS
+            verify_packages: true
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore
+        run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
+      - name: Build
+        run: >-
+          dotnet build '${{ needs.metadata.outputs.solution_path }}'
+          -c ${{ env.CONFIGURATION }}
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+      - name: Test
+        run: >-
+          dotnet test '${{ needs.metadata.outputs.solution_path }}'
+          -c ${{ env.CONFIGURATION }}
+          --no-build
+          --no-restore
+          --logger trx
+      - name: Public sample smoke workflows
+        shell: pwsh
+        run: |
+          foreach ($sample in @('Gallery', 'Editor', 'Roguelike')) {
+            dotnet run --project "samples/Icod.Widgets.$sample.Sample" -c Staging -f net10.0 --no-build --no-restore -- --smoke
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Pack Staging artifacts
+        if: matrix.verify_packages
+        run: >-
+          dotnet pack '${{ needs.metadata.outputs.solution_path }}'
+          -c ${{ env.CONFIGURATION }}
+          --no-build
+          --no-restore
+          -o artifacts/packages
+          -p:ContinuousIntegrationBuild=true
+      - name: Verify exact Staging package artifacts
+        if: matrix.verify_packages
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyPackageArtifact.ps1
+          -ArtifactDirectory artifacts/packages
+          -Configuration '${{ env.CONFIGURATION }}'
+          -AllowNoPackages
+
+      - name: Verify release selection and symbol companion
+        if: matrix.verify_packages
+        shell: pwsh
+        run: |
+          Import-Module ./packaging/RepositoryTools.psm1 -Force
+          $version = Get-MSBuildProperty -ProjectPath ./Icod.Widgets.csproj -Name PackageVersion -Configuration Staging
+          ./packaging/SelectReleasePackages.ps1 -SourceDirectory artifacts/packages -DestinationDirectory artifacts/selected -ExpectedVersion $version
+          $package = @(Get-ChildItem -LiteralPath artifacts/selected -Filter '*.nupkg' -File)
+          $symbols = @(Get-ChildItem -LiteralPath artifacts/selected -Filter '*.snupkg' -File)
+          if (1 -ne $package.Count -or 1 -ne $symbols.Count -or $package[0].BaseName -ne $symbols[0].BaseName) {
+              throw 'Release selection must preserve exactly one matching package and symbol package.'
+          }
+      - name: Package-only consumer
+        if: matrix.verify_packages
+        shell: pwsh
+        run: |
+          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Staging --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

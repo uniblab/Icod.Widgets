@@ -1,0 +1,199 @@
+# Icod.Widgets
+
+## NAME
+
+Icod.Widgets — reusable .NET terminal UI controls for applications and games.
+
+## STATUS
+
+The full planned 1.0 control set is implemented for .NET 8, 9, and 10.
+Version **1.0.0** includes interactive samples and deterministic qualification
+in the source repository. Live terminal qualification records are maintained in
+[W1014](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/W1014-Stable-Qualification.md).
+
+## DESCRIPTION
+
+Icod.Widgets provides menus, dialogs, lists, drop-downs, folder and file
+pickers, basic form controls, and reusable roguelike presentation controls above
+Icod.DCurses. Applications retain ownership of their event loop, commands,
+validation, game rules, file operations, and terminal lifecycle.
+
+The production graph is `Icod.Widgets -> Icod.DCurses -> Icod.Terminal ->
+Icod.TermInfo`. The sole direct runtime package dependency of Widgets is
+Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
+
+## CONTROLS
+
+- Menu bars, framed popup menus, scoped mnemonics, visible command shortcuts,
+  submenus, separators, disabled and checkable items.
+- Captioned, framed OK, Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs
+  with explicit results.
+- Single-select and multi-select lists, and framed drop-down selection popups.
+- Folder selection and single/multiple existing-file selection.
+- Labels, buttons, single-line text input, checkboxes, radio groups, borders,
+  and scroll indicators.
+- Inventory/action lists, bounded message history, status bars, help overlays,
+  and text/number prompts.
+
+## INSTALLATION
+
+Add version 1.0.0 to a consuming project:
+
+```text
+dotnet add package Icod.Widgets --version 1.0.0
+```
+
+For a local build, use `dotnet pack Icod.Widgets.csproj -c Release -o
+artifacts/packages` and restore from that package directory. The package
+declares `Icod.DCurses 2.3.1` as its sole direct runtime dependency.
+
+## USAGE
+
+Applications create a `WidgetHost` over their DCurses session or screen, attach
+a widget tree, and keep ownership of the loop. The following is an excerpt
+spanning host setup and one input iteration: `session` is an open
+`CursesSession`, `inputEvent` comes from the application loop, and `elapsed`
+is a monotonic `TimeSpan` (for example, `Stopwatch.Elapsed`). See the
+[shared sample loop](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/Common/WidgetSampleApplication.cs)
+for session setup, input, rendering, and cleanup.
+
+```csharp
+using WidgetHost host = new(session, WidgetTheme.Default);
+WidgetButton save = new("save", "Save", "file.save");
+host.Attach(save);
+host.Arrange(session.Screen.Bounds);
+
+WidgetDispatchResult result = host.Process(inputEvent, elapsed);
+foreach (WidgetAction action in result.Actions) {
+    // Execute application commands or update application state.
+}
+host.Render();
+await session.RefreshAsync();
+```
+
+Tab and Shift+Tab traverse controls. Arrows navigate lists, radio groups, menus,
+and drop-downs. Enter activates or commits, Space toggles, and Escape cancels the
+top dialog/menu. Menu-bar `Alt` mnemonics and command shortcuts are routed only
+through the active host scope, so a modal cannot invoke background commands.
+Applications supply monotonic timestamps for list search.
+
+Filesystem loading and selection validation are asynchronous provider calls.
+Apply returned browser/validation results on the application loop; stale,
+foreign, canceled, and disposed-controller results are ignored. Pickers return
+paths and never open, create, delete, or write files.
+
+## MENUS
+
+Mnemonics navigate menu structure; shortcuts invoke commands directly. Assign a
+mnemonic separately from a shortcut so `Alt+V` can open View, plain `F` can invoke
+Go to File within that open level, and `Ctrl+L` can invoke Go to Line without
+opening the menu:
+
+```csharp
+WidgetMenuShortcut goToLine = new(
+    WidgetKey.Character, WidgetInputModifiers.Control, 'l');
+
+WidgetMenuBar menu = new("menu", [
+    WidgetMenuItem.Submenu("view", "View", [
+        WidgetMenuItem.Command(
+            "file", "Go to File...", "view.file", 'f'),
+        WidgetMenuItem.Command(
+            "line", "Go to Line...", "view.line", 'l',
+            shortcut: goToLine)
+    ], 'v')
+]);
+```
+
+Mnemonics are case-insensitive and unique within each menu level. While a menu
+is open, an unmodified mnemonic invokes a command, toggles a checkable command,
+or opens a submenu. Command shortcuts remain distinct, render right-aligned, and
+work from the visible menu bar's active host scope without changing menu
+navigation. Expanded menus use `WidgetTheme.Border`; viewports too small for a
+complete frame retain borderless keyboard operation.
+
+## DIALOGS
+
+Every dialog renders its `Title` as a caption in a `WidgetTheme.Border` frame
+and insets its content within that frame. Viewports too small for a complete
+frame retain a borderless title-and-content fallback. Message-dialog factories
+cover acknowledgement and choice flows:
+
+```csharp
+WidgetMessageDialog notice = WidgetMessageDialog.Ok(
+    "saved", "Saved", "The document was saved.");
+WidgetMessageDialog question = WidgetMessageDialog.YesNo(
+    "overwrite", "Overwrite?", "Replace the existing file?");
+```
+
+Enter completes the selected action. Escape always reports
+`WidgetDialogOutcome.Cancel`, including from an OK-only dialog; cancellation is
+therefore distinct from acknowledging the message.
+
+## FILE PICKERS
+
+Picker input emits `WidgetBrowserLoadRequestedAction` and
+`WidgetPickerValidationRequestedAction`. The application performs provider I/O
+and applies its result on the loop, then drains completion actions. Root requests
+use `WidgetBrowserRequest.IsRoots` and the same loader/generation guard as directory
+requests. Initial loading is explicit: call `RequestDirectory(StartLocation)`.
+
+Arrows/Page keys move the cursor; Enter opens directories, selects/accepts a single file, or toggles files in multiple mode;
+Space toggles files; Ctrl+S (or Ctrl+Enter when reported) validates/accepts; Escape cancels. Backspace/Alt+Up
+moves to parent; Ctrl+L edits a path; Ctrl+R lists roots; Ctrl+F cycles file filters;
+Ctrl+B displays the basket (Enter/Space/Delete removes a selected file).
+Errors leave the last listing usable. Loads after picker closure and stale/foreign
+results are ignored. Applications may cancel outstanding provider work themselves.
+
+## ERRORS AND CONFIGURATION
+
+Configure styles through `WidgetTheme`, choose a filesystem provider, file filters,
+text limits and number culture/range at construction. Duplicate IDs/keys, invalid
+ownership and capacity violations throw before attachment. Provider loaders map
+expected I/O/path failures to typed browser errors; unexpected provider exceptions
+remain application errors. A DCurses session requires interactive input/output
+and a terminal profile supporting cursor motion.
+
+## LIMITS
+
+One host accepts 1,024 widgets, 4,096 pending actions, 16 modal levels, and 16
+submenu levels. Lists and directory snapshots accept 100,000 items. Extremely
+small viewports retain keyboard cancellation and clip rendering. DCurses
+immediate-raster presentation cannot compose overlapping retained panels, so an
+application using raster content must select its text presentation while an
+overlay is visible.
+
+## EXAMPLES
+
+From the repository root, run the gallery in an interactive terminal with the
+.NET 10 SDK:
+
+```text
+dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
+```
+
+Use Ctrl+N/Ctrl+P to visit its six pages and Ctrl+Q to exit. The GPL gallery,
+editor, and roguelike samples support `-- --smoke` for deterministic checks.
+See the [sample guide](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/README.md)
+for all commands and application ownership boundaries.
+
+## ROADMAPS
+
+- [Main roadmap and recorded choices](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/ROADMAP.md).
+- [1.0.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/Icod.Widgets-1.0.0-Development-Roadmap.md).
+- [Design specification](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md).
+- [Task-by-task implementation plan](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
+
+## AUTHOR
+
+Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
+
+## COPYRIGHT
+
+Copyright (C) 2026 Timothy J. Bruce.
+
+## LICENSE
+
+The library is **LGPL-3.0-or-later**. Samples and tests are
+**GPL-3.0-or-later**, following the established Icod convention.
+See [licensing assignments](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSING.md), [LGPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE), and
+[GPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE.GPL).
