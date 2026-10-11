@@ -7,10 +7,9 @@ Icod.Widgets — reusable .NET terminal UI controls for applications and games.
 ## STATUS
 
 The full planned 1.0 control set is implemented for .NET 8, 9, and 10.
-The source package version is **1.0.0**. Interactive samples and deterministic
-qualification are available. Before tagging and publishing, record live terminal
-results on Windows, macOS, Linux, and applicable architectures in
-[W1014](docs/W1014-Stable-Qualification.md).
+Version **1.0.0** includes interactive samples and deterministic qualification
+in the source repository. Live terminal qualification records are maintained in
+[W1014](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/W1014-Stable-Qualification.md).
 
 ## DESCRIPTION
 
@@ -38,7 +37,7 @@ Icod.DCurses. Targets are `net8.0`, `net9.0`, and `net10.0` with C# 13.
 
 ## INSTALLATION
 
-After publication, install the stable package with:
+Add version 1.0.0 to a consuming project:
 
 ```text
 dotnet add package Icod.Widgets --version 1.0.0
@@ -51,7 +50,12 @@ declares `Icod.DCurses 2.3.1` as its sole direct runtime dependency.
 ## USAGE
 
 Applications create a `WidgetHost` over their DCurses session or screen, attach
-a widget tree, and keep ownership of the loop:
+a widget tree, and keep ownership of the loop. The following is an excerpt
+spanning host setup and one input iteration: `session` is an open
+`CursesSession`, `inputEvent` comes from the application loop, and `elapsed`
+is a monotonic `TimeSpan` (for example, `Stopwatch.Elapsed`). See the
+[shared sample loop](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/Common/WidgetSampleApplication.cs)
+for session setup, input, rendering, and cleanup.
 
 ```csharp
 using WidgetHost host = new(session, WidgetTheme.Default);
@@ -160,16 +164,24 @@ overlay is visible.
 
 ## EXAMPLES
 
-Run the GPL gallery, editor, and roguelike interactively; append `-- --smoke` for
-deterministic checks. See
-[`samples/README.md`](samples/README.md) for commands and ownership boundaries.
+From the repository root, run the gallery in an interactive terminal with the
+.NET 10 SDK:
+
+```text
+dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
+```
+
+Use Ctrl+N/Ctrl+P to visit its six pages and Ctrl+Q to exit. The GPL gallery,
+editor, and roguelike samples support `-- --smoke` for deterministic checks.
+See the [sample guide](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/README.md)
+for all commands and application ownership boundaries.
 
 ## ROADMAPS
 
-- [Main roadmap and recorded choices](ROADMAP.md).
-- [1.0.0 development roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md).
-- [Design specification](docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md).
-- [Task-by-task implementation plan](docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
+- [Main roadmap and recorded choices](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/ROADMAP.md).
+- [1.0.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/Icod.Widgets-1.0.0-Development-Roadmap.md).
+- [Design specification](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md).
+- [Task-by-task implementation plan](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
 
 ## AUTHOR
 
@@ -183,5 +195,5 @@ Copyright (C) 2026 Timothy J. Bruce.
 
 The library is **LGPL-3.0-or-later**. Samples and tests are
 **GPL-3.0-or-later**, following the established Icod convention.
-See [licensing assignments](LICENSING.md), [LGPL terms](LICENSE), and
-[GPL terms](LICENSE.GPL).
+See [licensing assignments](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSING.md), [LGPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE), and
+[GPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE.GPL).
