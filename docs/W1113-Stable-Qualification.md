@@ -14,6 +14,8 @@
 - The installed net10.0 runtime passes all 233 tests and all three deterministic
   sample smokes. The exact package-only consumer compiles for all three TFMs and
   runs successfully on net10.0.
+- `PackageConsumerAllFrameworks=true` enables the explicit net8/net9/net10
+  compile gate while the workflow-compatible default run target remains net10.0.
 - The frozen reflection fingerprint retains every recorded 1.0 type/member and
   reports assembly identity 1.0.0.0 across the 1.1 surface.
 - Source/license headers, project headers, README HTTP(S) links, package metadata,

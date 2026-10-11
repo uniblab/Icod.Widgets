@@ -54,6 +54,8 @@ found no removed 1.0 type or member. Assembly identity remains 1.0.0.0. The W110
 binary witness compiled against released 1.0.0 ran with the candidate assembly;
 the new package-only consumer compiles for net8.0/net9.0/net10.0 from the exact RC
 artifact and runs successfully on the installed net10.0 runtime.
+The consumer defaults to net10.0 so the shared workflow's unqualified `dotnet run`
+remains valid; `-p:PackageConsumerAllFrameworks=true` enables the three-TFM compile gate.
 
 The 1.1 names and signatures are frozen in `Public-API-Baseline-1.1.md` and
 `Public-API-Fingerprint-1.1.json`. Further changes require compatibility review.
