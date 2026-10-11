@@ -35,6 +35,7 @@
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
+		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
 		<PackageReleaseNotes>Initial stable package for .NET 8, 9 and 10. Includes reusable forms, lists, drop-downs, menus with distinct mnemonics and command shortcuts, captioned dialogs with consistent Cancel outcomes, provider-backed file and folder pickers, and game UI controls. Includes gallery, editor and roguelike sample applications.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -83,6 +84,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="" />
 		<Content Include="LICENSE">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>$(AssemblyName).LICENSE.txt</TargetPath>
