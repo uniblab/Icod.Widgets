@@ -1,7 +1,7 @@
 # W1014 — Stable Qualification
 
 **Candidate:** stable-source `1.0.0` (prepared from `1.0.0-rc.2`)
-**Stable gate:** open; a Windows Terminal live pass has been reported, with source and environment details still pending. No tag or publication is authorized by this record.
+**Stable gate:** open; the Windows Terminal report has a source and environment record, with itemized live sample outcomes still pending. No tag or publication is authorized by this record.
 
 ## Record the source before testing
 
@@ -22,13 +22,13 @@ A deterministic smoke or test PTY does not qualify a real terminal implementatio
 
 | Environment | Live result | Required record |
 |---|---|---|
-| Windows (architecture pending) | Reported pass; qualification record incomplete | Windows 10, Windows Terminal 1.24.12741.0; exact source SHA, OS build, architecture and exercised live steps pending |
+| Windows x64 (AMD64) | Reported pass; live sample scope pending | Windows 10 build 10.0.26200.9457, Windows Terminal 1.24.12741.0, source `f1e0a9462a71f853acf5cf1797c7b89380675681`; itemized live steps pending |
 | macOS ARM64/x64 as applicable | Pending | Terminal/version, architecture, exact SHA |
 | Linux x64/ARM64 as applicable | Pending | Terminal/version, architecture, exact SHA; WSL identified separately |
 
 ## Live reports
 
-- **2026-10-10 (operator report):** Everything was good on Windows 10 in Windows Terminal 1.24.12741.0. The Release solution build succeeded for all three target frameworks and all sample projects; `dotnet test tests\Icod.Widgets.Tests\Icod.Widgets.Tests.csproj -c Release --no-build` passed 387/387 tests (129 each on .NET 8.0.31, 9.0.20, and 10.0.12; none failed or skipped). The exact local source SHA, Windows build, architecture, and itemized live sample steps/outcomes were not provided. This records the report without marking the Windows exact-source gate complete.
+- **2026-10-10 (operator report):** Everything was good on Windows 10 in Windows Terminal 1.24.12741.0. The Release solution build succeeded for all three target frameworks and all sample projects; `dotnet test tests\Icod.Widgets.Tests\Icod.Widgets.Tests.csproj -c Release --no-build` passed 387/387 tests (129 each on .NET 8.0.31, 9.0.20, and 10.0.12; none failed or skipped). The local source was `f1e0a9462a71f853acf5cf1797c7b89380675681` on AMD64, Windows build 10.0.26200.9457. Itemized live sample steps/outcomes remain to be confirmed. The documentation-only commit recording this result did not change the tested controls.
 
 ## Acceptance checklist
 
