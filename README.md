@@ -1,5 +1,10 @@
 # Icod.Widgets
 
+![Icod TUI Toolchain](https://raw.githubusercontent.com/uniblab/Icod.Widgets/v1.1.0/icod_tui_toolchain.jpg)
+
+[![PR Staging build](https://github.com/uniblab/Icod.Widgets/actions/workflows/pull-request.yaml/badge.svg)](https://github.com/uniblab/Icod.Widgets/actions/workflows/pull-request.yaml)
+[![Main Release validation](https://github.com/uniblab/Icod.Widgets/actions/workflows/main.yaml/badge.svg?branch=main)](https://github.com/uniblab/Icod.Widgets/actions/workflows/main.yaml)
+
 ## NAME
 
 Icod.Widgets — reusable .NET terminal UI controls for applications and games.
@@ -10,6 +15,14 @@ The full planned 1.0 control set is implemented for .NET 8, 9, and 10.
 Version **1.0.0** includes interactive samples and deterministic qualification
 in the source repository. Live terminal qualification records are maintained in
 [W1014](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/W1014-Stable-Qualification.md).
+
+## Support the Project
+
+`Icod.Widgets` and its ecosystem packages (`Icod.TermInfo`, `Icod.Temrinal`, and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save you or your team time, please consider supporting their continued development and maintenance.
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor?logo=githubsponsors)](https://github.com/sponsors/uniblab)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support?logo=kofi)](https://ko-fi.com/TimothyBruce)
+[![PayPal](https://img.shields.io/badge/PayPal-Support?logo=paypal)](https://paypal.me/uniblab)
 
 ## DESCRIPTION
 
@@ -183,13 +196,15 @@ for all commands and application ownership boundaries.
 - [Design specification](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md).
 - [Task-by-task implementation plan](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
 
-## AUTHOR
+## Authors
+
+While this is all original work by Timothy Bruce, it is inspired by original work from Bill Joy, author of the original `termcap`; Ken Arnold, for his work on `termcap` and `curses`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
 
 Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
 
-## COPYRIGHT
+## Copyright
 
-Copyright (C) 2026 Timothy J. Bruce.
+Copyright (c) 2026 Timothy J. Bruce
 
 ## LICENSE
 
