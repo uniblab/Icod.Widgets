@@ -1,84 +1,130 @@
 # Icod.Widgets Main Roadmap
 
-**Decision date:** 2026-10-09 (America/New_York)\
-**Target:** first stable release `1.0.0`\
-**State:** W1001–W1013 implemented; 1.0.0 stable source prepared; live W1014 pending\
-**Repository baseline:** `d86e56deeac37b8faeadc2986c597634424ab07b` on `main`
+**Decision date:** 2026-10-11\
+**Baseline:** released 1.0.0; current source `d56cb9a06b78b8fa975de23cf590e6d198e36fc3`\
+**Next target:** 1.1.0 editing foundation, followed by a separately scoped 1.2.0 document workspace\
+**State:** approved direction; development roadmap written; implementation not started
 
-## Purpose and recorded choices
+## Purpose
 
-Build a separate reusable terminal-control DLL for general applications and
-roguelikes. The user approved all requested controls as the first stable-release
-goal, delivered through four smaller milestones.
+Build reusable terminal controls above Icod.DCurses for applications and games.
+The next consumer is [dedit](https://github.com/uniblab/Icod.Dedit/pull/1): an
+Edit-inspired GPL text editor with multiple documents in a tabbed interface and
+no print support. Widgets supplies reusable behavior, not dedit's file policy.
 
-| Decision | Selected direction |
-|---|---|
-| Architecture | Widgets above DCurses; one direct runtime dependency, `Icod.DCurses` |
-| Ownership | Application-owned event loop, command execution, validation, filesystem operations, and game state |
-| Interaction | Common focus/navigation semantics; keyboard operation for every control; pointer support through DCurses |
-| Dialogs | Explicit outcomes; modal interaction isolation and deterministic focus restoration |
-| Selection | Highlight and selection are distinct; multi-selection survives navigation |
-| File browsing | Shared navigation component with folder, single-file, and multiple-file policies; replaceable filesystem provider |
-| Presentation | Common theme, Unicode-aware cell geometry, resize/clipping, usable compact layouts |
-| Library license | `LGPL-3.0-or-later` |
-| Samples/tests license | `GPL-3.0-or-later`; excluded from DLL compilation and NuGet payload |
-| Platforms/tooling | Windows/macOS/Linux; managed C# 13; .NET 8/9/10; CMD, shell, PowerShell 5.1 build tooling |
+Deliver the editing foundation before workspace controls. A reliable document
+model, input path, and bounded viewport are independently useful; tabs must not
+force document lifetime or save policy into the library.
 
-The dependency baseline proposed for implementation is `Icod.DCurses 2.3.1`.
-Confirm published restore availability at W1001; any change must be explicit in
-the dependency record. Widgets will not declare direct Terminal/TermInfo package
-references or introduce a terminal capability database/input reader.
+## Ownership and permanent constraints
 
-## First stable-release scope
+| Owner | Responsibility |
+| --- | --- |
+| Icod.Widgets | Document text/edit history, view state, editing controls, focus/commands, scrolling, reusable workspace controls |
+| Icod.DCurses | Unicode/cell geometry, retained projection, clipping/damage, interaction mechanisms, clipboard and cursor facades |
+| Icod.Terminal | Terminal protocols, input decoding, clipboard transport/budgets, reversible terminal state |
+| Application / dedit | File identity, encoding/BOM/EOL policy, metadata-aware dirty state, safe save, external changes, document lifetime/close, search execution, loop and timing |
 
-| Family | Required scope | Milestone |
-|---|---|---|
-| Foundation | Host, lightweight containers/layout, theme, focus, clipping, lifecycle | M1 |
-| Forms | Labels, buttons, single-line text input, checkboxes, radio groups, borders, scroll indicators | M1 |
-| Lists | Single/multiple selection, scrolling, keyboard search, disabled items | M2 |
-| Drop-downs | Popup selection with explicit commit/cancel | M2 |
-| Menus | Bars/popups/submenus, separators, disabled/checkable items, shortcuts | M2 |
-| Dialogs | Captioned/framed OK, Yes/No, OK/Cancel, Previous/Next/Cancel, wrapped messages, default action, typed results | M2 |
-| Folder picker | Start folder, roots/drives, parent navigation, select current folder | M3 |
-| File picker | Existing single/multiple files, filters, folder navigation, selected-file display | M3 |
-| Roguelike conveniences | Inventory/action lists, message history, status bars, help overlays, text/number prompts | M4 |
-| Consumer qualification | Gallery, editor open-file flow, roguelike inventory/help flow; public and package-only consumers | M4 |
+One direct runtime dependency remains `Icod.DCurses`. Adopt **2.4.0** in the
+first implementation tranche, consuming Terminal 1.29.0 transitively. Do not
+add direct Terminal/TermInfo references, protocol escapes, another input reader,
+hidden timers, or a filesystem-writing service to Widgets.
 
-## Delivery decisions
+Preserve the stable 1.0 API and assembly version `1.0.0.0`. Continue managed
+C# 13, `net8.0`/`net9.0`/`net10.0`, AnyCPU, Windows/macOS/Linux build targets,
+and CMD/shell/PowerShell 5.1 tooling. The library remains LGPL-3.0-or-later;
+samples and tests remain GPL-3.0-or-later with their prescribed full headers.
 
-1. **M1 — foundation and basic forms:** prove focus, geometry, rendering and
-   application integration before composite controls.
-2. **M2 — selection, menus and dialogs:** build reusable behaviors on the same
-   foundation; prove modal restoration and explicit cancellation.
-3. **M3 — filesystem pickers:** implement/test common browser first, then the
-   distinct folder/file selection policies.
-4. **M4 — roguelike conveniences and stable qualification:** exercise controls in
-   realistic applications; freeze API/package/docs after acceptance.
+## Release sequence
 
-Use `1.0.0-alpha.N` for implementation previews and `1.0.0-rc.N` only after all
-four milestone gates pass. The source package version is `1.0.0`; tagged publication remains gated by W1014 live qualification.
-No calendar estimate substitutes for a gate.
+| Release | Deliverable | Explicit boundary |
+| --- | --- | --- |
+| 1.0.0 — released | Forms, lists/drop-downs, menus, captioned dialogs, existing-file/folder pickers, game UI, public samples | Existing text input is single-line; editor sample is an open/browse witness |
+| 1.1.0 — planned | Reusable document/editing foundation; Unicode editing, bounded undo/redo and view projection; input/focus/capture repairs; scrollbars; explicit clipboard and caret integration; better single-line fields | Single-document editing is useful on its own; no tabbed application or file-save engine |
+| 1.2.0 — planned direction | Tabs and document workspace, composable forms/dialogs, save-target picker, dynamic command/menu state, find/replace/navigation forms, actionable status fields | App owns documents, file writes, search/regex, close approval, and metadata |
+| Later — unscheduled | Data tables/trees, virtualized data sources, richer accessibility, advanced forms | Separate requirements, design, and approval; not blockers for dedit's first release |
 
-## Later candidates
+## 1.1.0 — editing foundation
 
-Save-file/overwrite workflows; full multiline editing; data tables/tree controls;
-advanced forms/data binding; asynchronous virtualized data sources; richer
-accessibility integrations. These require a later scope decision and are not
-prerequisites for the selected first release. No game rules or dungeon generation
-belong in this library.
+Separate three cooperating components:
 
-## Evidence and next action
+1. **Document:** exact text, indexed lines, immutable snapshots/revisions,
+   grouped bounded history, and saved-checkpoint identity.
+2. **View state:** caret, selection anchor, preferred vertical column, wrap and
+   horizontal/vertical scroll independent of document storage.
+3. **Editor control:** input and editing policy, visible-slice DCurses projection,
+   interactive scrollbars, explicit clipboard requests, and focused caret intent.
 
-W1001–W1013 established and automated the complete planned control set, public
-samples, package-only consumer, API baseline, and release-candidate packaging.
-Evidence is recorded in `docs/W1001-*.md` through `docs/W1013-*.md`. No package
-has been published.
+Measure candidate text stores before freezing one. Test real many-line and
+long-line documents, random edits, snapshots, history memory, and bounded layout.
+The DCurses synthetic ten-million-record demonstration is mechanism evidence,
+not a real-file performance claim.
 
-The remaining stable-release task is W1014 in the
-[development roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), using the
-[live qualification worksheet](docs/W1014-Stable-Qualification.md), the
-[design](docs/superpowers/specs/2026-10-09-icod-widgets-1.0-design.md) and
-[implementation plan](docs/superpowers/plans/2026-10-09-icod-widgets-1.0.md).
-Each implementation tranche records its exact commit, automated/manual evidence,
-remaining limitations, and package version in a corresponding `docs/Wxxxx-*.md`
-evidence file. Maintain README status and full CHANGELOG history as work lands.
+Required behavior includes grapheme-safe navigation/deletion, word movement,
+selection replacement, indentation, insert/overwrite, read-only operation,
+undo/redo, preserved tabs/mixed line endings/final newline, captured drag and
+caller-clock autoscroll. Distinguish UTF-16 offsets from grapheme positions,
+visual cells, and encoded bytes. Rendering must not normalize source text.
+
+First repair lost rich-input metadata and host routing: release events cannot
+duplicate edits, complete bracketed paste is one transaction, editor Tab differs
+from form traversal, and focus/capture cancellation is deterministic. Provide
+the minimal public extension and contextual-edit-command hooks needed by this
+release; the full dynamic menu/workspace model remains 1.2 work.
+
+Clipboard uses DCurses 2.4 explicitly, with caller-owned fallback and completion
+on the application loop. Its 65,536-byte default read/write limits are independent
+and configurable up to 16 MiB, not remote capacity negotiation. Late paste cannot
+land in a different view, selection, revision, or focus lifetime. Cut must not
+delete text on a failed copy. Caret styling remains best-effort and reversible.
+
+The [1.1 development roadmap](Icod.Widgets-1.1.0-Development-Roadmap.md),
+[design](docs/superpowers/specs/2026-10-11-icod-widgets-1.1-design.md), and
+[implementation plan](docs/superpowers/plans/2026-10-11-icod-widgets-1.1.md)
+define the task order and acceptance gates.
+
+## 1.2.0 — document workspace
+
+- **Tabs:** stable keys, captions, modified indicators, overflow, keyboard/mouse
+  switching, and cancellable close requests. A tab never saves or disposes the
+  application's document automatically. Each view retains its own caret/scroll.
+- **Composable dialogs:** child controls, initial focus, default/cancel actions,
+  validation, public completion, and Save / Don't Save / Cancel. Preserve framed
+  titles and Escape = Cancel, including OK-only dialogs.
+- **Save target:** a distinct picker for new or existing target paths. Preserve
+  the existing-file picker and third-party provider contracts. Validation is an
+  observation, not an atomic promise against overwrite races; the app writes.
+- **Commands and menus:** query enabled/checked state from active document and
+  focused control; support menu pointer interaction and contextual routing.
+  Keep menu navigation mnemonics distinct from command shortcuts.
+- **Search and navigation forms:** reusable find/replace/go-to-line controls and
+  typed requests/results. dedit executes searches/regex, cancels stale work, and
+  coordinates replacement transactions against document snapshots.
+- **Status and extension:** actionable position/encoding/EOL/indentation fields
+  and public custom-control hooks, without exposing host internals.
+
+Write a separate versioned design and plan after the 1.1 contracts are proven.
+These are direction commitments, not frozen 1.2 signatures or shipped features.
+
+## Deliberately outside this programme
+
+Printing, syntax highlighting, split views, multiple carets, tab reordering,
+session recovery, cloud services, and plugin hosting are not first-delivery
+requirements. Widgets never owns game rules, a dungeon engine, terminal
+emulation, document file identity, codecs, or safe-save/external-change policy.
+
+## Delivery and evidence
+
+Keep 1.0 qualification and release history in [W1014](docs/W1014-Stable-Qualification.md),
+the [1.0 roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), and
+[CHANGELOG](CHANGELOG.md). Do not turn historical untested platforms into passes.
+
+Each W11xx tranche records exact source/package versions, changes, tests,
+limitations, and acceptance evidence. Freeze API and package metadata before
+stable qualification, then verify the exact merged artifact. No calendar date
+or green documentation PR substitutes for implementation or release readiness.
+
+This planning change leaves package/dependency versions untouched. Implementation
+starts with `1.1.0-alpha.1`; release candidates follow completed feature gates;
+exact stable `1.1.0` is prepared only after qualification. The owner performs
+merge, tag, and publication. No change to `uniblab/.github` is required.
