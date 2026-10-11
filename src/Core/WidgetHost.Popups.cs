@@ -36,7 +36,7 @@ public sealed partial class WidgetHost {
 			region = this.router.RegisterRegion( new CursesInteractionRegionOptions( new CursesRectangle( 0, 0, clipped.Rows, clipped.Columns ) ) { Panel = panel, Scope = scope, IsFocusable = true, IsEnabled = !clipped.IsEmpty } );
 			CursesInteractionScopeLease lease = this.router.ActivateScope( scope );
 			this.widgetsByRegion.Add( region, owner ); this.popup = new( owner, previous, scope, lease, region, panel ); this.CancelPointerCapture();
-			this.router.Focus( region );
+			this.router.Focus( region ); this.ClipboardFocusChanged( previous );
 		} catch { region?.Dispose(); panel.Dispose(); scope.Dispose(); throw; }
 	}
 	internal void UpdatePopup( Widget owner, CursesRectangle bounds ) { if ( this.popup?.Owner == owner ) { CursesRectangle clipped = bounds.Intersect( this.Screen.Bounds ); if ( clipped.IsEmpty ) this.popup.Panel.Hide(); else { this.popup.Panel.SetBounds( clipped ); this.popup.Panel.Show(); } this.popup.Region.SetBounds( new CursesRectangle( 0, 0, clipped.Rows, clipped.Columns ) ); this.popup.Region.IsEnabled = !clipped.IsEmpty; } }

@@ -23,7 +23,9 @@ namespace Icod.Widgets;
 
 public enum WidgetMenuItemKind { Command, CheckableCommand, Separator, Submenu }
 
-public readonly record struct WidgetMenuShortcut( WidgetKey Key, WidgetInputModifiers Modifiers = WidgetInputModifiers.None, char? Character = null );
+public readonly record struct WidgetMenuShortcut( WidgetKey Key, WidgetInputModifiers Modifiers = WidgetInputModifiers.None, char? Character = null ) {
+	public int? FunctionKeyNumber { get; init; }
+}
 
 /// <summary>Represents a command, checkable command, separator, or submenu.</summary>
 public sealed class WidgetMenuItem {

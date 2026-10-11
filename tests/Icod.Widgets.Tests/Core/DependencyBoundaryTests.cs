@@ -21,10 +21,29 @@
 
 namespace Icod.Widgets.Tests.Core;
 
+using System.Xml.Linq;
 using Icod.DCurses;
 using Xunit;
 
 public sealed class DependencyBoundaryTests {
+	[Fact]
+	public void SoleDirectDependencyIsDCurses240() {
+		string? directory = AppContext.BaseDirectory;
+		string? project = null;
+		while ( directory is not null && project is null ) {
+			string candidate = Path.Combine( directory, "Icod.Widgets.csproj" );
+			if ( File.Exists( candidate ) ) project = candidate;
+			else directory = Directory.GetParent( directory )?.FullName;
+		}
+
+		Assert.NotNull( project );
+		XDocument document = XDocument.Load( project );
+		XElement[] references = document.Descendants( "PackageReference" ).ToArray();
+		XElement reference = Assert.Single( references );
+		Assert.Equal( "Icod.DCurses", (string?)reference.Attribute( "Include" ) );
+		Assert.Equal( "2.4.0", (string?)reference.Attribute( "Version" ) );
+	}
+
 	[Fact]
 	public void CandidateHostUsesOnlyPublicDcursesApi() {
 		CursesScreen screen = new( 80, 25 );

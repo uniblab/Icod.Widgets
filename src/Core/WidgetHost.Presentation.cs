@@ -25,6 +25,13 @@ using Icod.DCurses;
 public sealed partial class WidgetHost {
 	private readonly Dictionary<WidgetDialog, CursesPanel> dialogPanels = [];
 	private CursesPanel? attachmentPanel;
+	public WidgetCaretIntent? GetCaretIntent() {
+		this.ThrowIfDisposed(); if ( this.popup is not null ) return null; Widget? focused = this.FocusedWidget;
+		if ( focused is null || !focused.IsEffectivelyEnabled || !focused.IsEffectivelyVisible ) return null;
+		WidgetCaretIntent? intent = focused.GetHostCaretIntent();
+		if ( intent is null || !intent.IsVisible || !this.Screen.Bounds.Contains( intent.Row, intent.Column ) ) return null;
+		return intent with { FocusGeneration = this.focusGeneration };
+	}
 	internal CursesWindow GetPresentationWindow( Widget widget ) => widget is WidgetDialog dialog && this.dialogPanels.TryGetValue( dialog, out CursesPanel? panel ) ? panel.ContentWindow : this.popup?.Owner == widget ? this.popup.Panel.ContentWindow : this.Screen.StandardWindow;
 	private void RenderPanel( Widget widget, CursesPanel panel ) {
 		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget.Bounds ).Intersect( this.Screen.Bounds );

@@ -36,6 +36,7 @@ public abstract class Widget {
 	public string Id { get; }
 	public CursesRectangle Bounds { get; private set; }
 	public virtual bool IsFocusable => false;
+	public virtual bool AcceptsTab => false;
 	public bool IsEnabled {
 		get => this.isEnabled;
 		set { if ( this.isEnabled == value ) return; this.isEnabled = value; this.Host?.SynchronizeTree( this ); }
@@ -59,7 +60,17 @@ public abstract class Widget {
 	protected virtual void OnArrange( CursesRectangle bounds ) { }
 	protected internal virtual bool OnInput( WidgetInput input, WidgetHost host ) => false;
 	protected internal virtual void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { }
-	internal virtual void OnPointerCaptureCanceled() { }
+	protected void EnsureActionCapacity( int count = 1 ) => this.RequireHost().EnsureActionCapacityFor( this, count );
+	protected void EmitAction( WidgetAction action ) => this.RequireHost().EmitFor( this, action );
+	protected WidgetClipboardRequest RegisterClipboardRequest( WidgetClipboardRequest request ) => this.RequireHost().RegisterClipboardRequest( this, request );
+	protected virtual void OnCaptureCanceled() { }
+	protected virtual void OnUpdate( TimeSpan timestamp ) { }
+	protected virtual WidgetCaretIntent? GetCaretIntent() => null;
+	internal virtual void OnPointerCaptureCanceled() => this.OnCaptureCanceled();
+	internal void OnHostUpdate( TimeSpan timestamp ) => this.OnUpdate( timestamp );
+	internal WidgetCaretIntent? GetHostCaretIntent() => this.GetCaretIntent();
 
 	internal virtual IEnumerable<Widget> DescendantsAndSelf() { yield return this; }
+
+	private WidgetHost RequireHost() => this.Host ?? throw new InvalidOperationException( "The widget is not attached to a host." );
 }

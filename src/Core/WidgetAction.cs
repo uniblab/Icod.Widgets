@@ -32,6 +32,18 @@ public sealed record WidgetValueChangedAction<T>( string WidgetId, T Value ) : W
 
 public sealed record WidgetSelectionChangedAction( string WidgetId, IReadOnlyList<string> Keys ) : WidgetAction( WidgetId );
 
+/// <summary>Reports one committed text-document transaction without copying document contents.</summary>
+public sealed record WidgetTextEditedAction( string WidgetId, Guid DocumentId, long Revision, long StateId ) : WidgetAction( WidgetId );
+
+/// <summary>Reports one directional editor-selection change.</summary>
+public sealed record WidgetTextSelectionChangedAction( string WidgetId, Guid ViewId, long Anchor, long Caret ) : WidgetAction( WidgetId );
+
+/// <summary>Reports a user-originated scrollbar offset change.</summary>
+public sealed record WidgetScrollChangedAction( string WidgetId, long Offset ) : WidgetAction( WidgetId );
+
+/// <summary>Requests that the application perform an explicit clipboard operation.</summary>
+public sealed record WidgetClipboardRequestedAction( string WidgetId, WidgetClipboardRequest Request ) : WidgetAction( WidgetId );
+
 public sealed record WidgetDialogCompletedAction( string WidgetId, WidgetDialogResult Result ) : WidgetAction( WidgetId );
 
 public sealed record WidgetWizardNavigationRequestedAction( string WidgetId, int FromPage, int ToPage ) : WidgetAction( WidgetId );

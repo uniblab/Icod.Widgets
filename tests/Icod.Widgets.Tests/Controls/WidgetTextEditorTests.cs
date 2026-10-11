@@ -1,0 +1,191 @@
+/*
+	Icod.Widgets.Tests
+	Automated tests for the Icod.Widgets library.
+	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
+*/
+
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+namespace Icod.Widgets.Tests.Controls;
+
+using System.Text;
+using Icod.DCurses;
+using Xunit;
+
+public sealed class WidgetTextEditorTests {
+	[Fact]
+	public void MovementAndDeletionRespectTextElements() {
+		using Fixture fixture = new( "a\u0301界👩‍💻\n" ); fixture.View.SetSelection( 9, 9 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Left ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Backspace ) );
+
+		Assert.Equal( "a\u0301界\n", fixture.Text );
+		Assert.Equal( 3, fixture.View.Caret );
+	}
+
+	[Fact]
+	public void WordAndPageNavigation() {
+		using Fixture fixture = new( "one two\nshort\nthird line\nfourth line" );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Right, WidgetInputModifiers.Control ) );
+		Assert.Equal( 3, fixture.View.Caret );
+		fixture.Send( WidgetInput.Key( WidgetKey.PageDown ) );
+		Assert.Equal( 17, fixture.View.Caret );
+		fixture.Send( WidgetInput.Key( WidgetKey.End, WidgetInputModifiers.Control | WidgetInputModifiers.Shift ) );
+		Assert.Equal( 17, fixture.View.Anchor );
+		Assert.Equal( fixture.Document.Length, fixture.View.Caret );
+	}
+
+	[Fact]
+	public void SelectionReplacementIsOneTransaction() {
+		using Fixture fixture = new( "alpha beta" ); fixture.View.SetSelection( 0, 5 );
+
+		WidgetDispatchResult edited = fixture.Send( WidgetInput.TextInput( new Rune( 'X' ) ) );
+		WidgetTextEditedAction action = Assert.IsType<WidgetTextEditedAction>( edited.Actions[ 0 ] );
+		Assert.Equal( fixture.Document.Id, action.DocumentId );
+		Assert.Equal( "X beta", fixture.Text );
+
+		Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime ) );
+		Assert.Equal( "alpha beta", fixture.Text );
+		Assert.Equal( ( 0L, 5L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+	}
+
+	[Fact]
+	public void IndentAndOutdentAreUndoable() {
+		using Fixture fixture = new( "one\ntwo\nthree" ); fixture.View.SetSelection( 0, 7 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Tab ) );
+		Assert.Equal( "\tone\n\ttwo\nthree", fixture.Text );
+		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
+		Assert.Equal( "one\ntwo\nthree", fixture.Text );
+
+		fixture.View.SetSelection( 0, 7 ); fixture.Send( WidgetInput.Key( WidgetKey.Tab, WidgetInputModifiers.Shift ) );
+		Assert.Equal( "one\ntwo\nthree", fixture.Text );
+		fixture.View.SetSelection( 0, 9 ); fixture.Send( WidgetInput.Key( WidgetKey.Tab ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Tab, WidgetInputModifiers.Shift ) );
+		Assert.Equal( "one\ntwo\nthree", fixture.Text );
+		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
+		Assert.Equal( "\tone\n\ttwo\n\tthree", fixture.Text );
+	}
+
+	[Fact]
+	public void OverwriteDoesNotSplitClusterOrCrossLineEnd() {
+		using Fixture fixture = new( "a\u0301界\nZ" ); fixture.View.SetSelection( 0, 0 );
+		fixture.Send( WidgetInput.Key( WidgetKey.Insert ) );
+
+		fixture.Send( WidgetInput.TextInput( new Rune( 'X' ) ) );
+		Assert.Equal( "X界\nZ", fixture.Text );
+		fixture.View.SetSelection( 2, 2 ); fixture.Send( WidgetInput.TextInput( new Rune( 'Y' ) ) );
+
+		Assert.Equal( "X界Y\nZ", fixture.Text );
+	}
+
+	[Fact]
+	public void ReadOnlyCannotMutate() {
+		using Fixture fixture = new( "locked" ); fixture.Editor.IsReadOnly = true; fixture.View.SetSelection( 0, 6 );
+
+		fixture.Send( WidgetInput.TextInput( new Rune( 'X' ) ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Backspace ) );
+		fixture.Send( WidgetInput.Paste( "paste" ) );
+
+		Assert.Equal( "locked", fixture.Text );
+		Assert.Equal( WidgetCommandResult.Disabled, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime ) );
+	}
+
+	[Fact]
+	public void AssociatedTextInsertedOnce() {
+		using Fixture fixture = new( "" );
+		WidgetInput input = WidgetInput.Key( WidgetKey.Character, character: new Rune( 'x' ) ) with { Text = "xy" };
+
+		fixture.Send( input );
+
+		Assert.Equal( "xy", fixture.Text );
+	}
+
+	[Fact]
+	public void BracketedPasteCommitsOnlyAtEnd() {
+		using Fixture fixture = new( "ab" ); fixture.View.SetSelection( 1, 1 );
+
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Begin ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Data, "X\r\n" ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Data, "Y" ) );
+		Assert.Equal( "ab", fixture.Text );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.End ) );
+
+		Assert.Equal( "aX\r\nYb", fixture.Text );
+		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
+		Assert.Equal( "ab", fixture.Text );
+	}
+
+	[Fact]
+	public void InterruptedOrOversizedPasteDoesNotMutate() {
+		WidgetEditorOptions options = new() { MaximumPendingPasteUnits = 4 };
+		using Fixture fixture = new( "safe", options );
+
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Begin ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Data, "12345" ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.End ) );
+		Assert.Equal( "safe", fixture.Text );
+
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Begin ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.Data, "OK" ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Left ) );
+		fixture.Send( WidgetInput.PasteChunk( CursesPastePhase.End ) );
+		Assert.Equal( "safe", fixture.Text );
+	}
+
+	[Fact]
+	public void FullActionQueueLeavesEditUnchanged() {
+		using Fixture fixture = new( "before" ); fixture.View.SetSelection( 0, 6 );
+		for ( int index = 0; index < WidgetLimits.MaximumPendingActions - 1; index++ )
+			fixture.Host.Enqueue( new WidgetInvokedAction( "seed", index.ToString() ) );
+
+		Assert.Throws<InvalidOperationException>( () => fixture.Host.Process( WidgetInput.TextInput( new Rune( 'X' ) ), fixture.NextTime ) );
+
+		Assert.Equal( "before", fixture.Text );
+		Assert.Equal( ( 0L, 6L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+	}
+
+	[Fact]
+	public void RenderProjectsTabsWideTextAndSelection() {
+		using Fixture fixture = new( "\t界e\u0301\nnext" ); fixture.View.SetSelection( 0, 2 );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "界", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).IsContinuation );
+		Assert.Equal( "n", fixture.Host.Screen.StandardWindow.GetCell( 1, 0 ).Content );
+	}
+
+	private sealed class Fixture : IDisposable {
+		private int tick;
+		internal Fixture( string text, WidgetEditorOptions? options = null ) {
+			this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document );
+			this.Editor = new WidgetTextEditor( "editor", this.View, options );
+			this.Host = new WidgetHost( new CursesScreen( 20, 3 ), WidgetTheme.Default ); this.Host.Attach( this.Editor );
+			this.Editor.Arrange( new CursesRectangle( 0, 0, 3, 20 ) ); Assert.True( this.Host.Focus( this.Editor ) );
+		}
+		internal WidgetTextDocument Document { get; }
+		internal WidgetTextViewState View { get; }
+		internal WidgetTextEditor Editor { get; }
+		internal WidgetHost Host { get; }
+		internal TimeSpan NextTime => TimeSpan.FromMilliseconds( this.tick++ );
+		internal string Text => this.Document.Read( 0, checked( (int)this.Document.Length ) );
+		internal WidgetDispatchResult Send( WidgetInput input ) => this.Host.Process( input, this.NextTime );
+		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
+	}
+}

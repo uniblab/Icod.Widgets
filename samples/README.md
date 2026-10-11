@@ -7,7 +7,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Sample | Live command | Workflow |
 |---|---|---|
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Six pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI |
-| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an existing file; arrows/page keys browse lines |
+| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an existing file into an exact, editable in-memory document |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 
 Append `-- --smoke` for deterministic checks without opening a terminal. These
@@ -20,10 +20,18 @@ closes the active dialog/menu. Q/Escape exits outside an overlay and text field.
 input through DCurses so terminal flow control does not swallow Ctrl+Q. Mouse
 and paste protocols are acquired when available; keyboard operation is always usable.
 
+In the editor, F6 or Shift+F6 escapes the text editor and toggles focus to the
+Open button. Ctrl+Z/Ctrl+Y undo and redo; Ctrl+X/C/V/A cut, copy, paste, and
+select all. Clipboard transport is attempted through DCurses, with a process-local
+fallback when the terminal does not provide it. Status text reports modified and
+clipboard outcomes. The sample preserves mixed line endings and edits only in
+memory: it deliberately provides no save command and never overwrites a file.
+
 The application owns DCurses input, time, resize/layout, provider jobs, actions,
 render/refresh, leases and session cleanup. Provider jobs never mutate widgets;
 results apply on the loop. Pickers return paths; the editor application reads
-files (1 MiB sample limit) and never writes them. The roguelike sample is a UI
+files (1 MiB sample limit), replaces its in-memory document, and never writes
+them. The roguelike sample is a UI
 integration witness with no dungeon/rules engine.
 
 See [`live qualification`](../docs/W1014-Stable-Qualification.md).

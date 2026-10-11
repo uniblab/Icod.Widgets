@@ -1,0 +1,73 @@
+/*
+	Icod.Widgets.Tests
+	Automated tests for the Icod.Widgets library.
+	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
+*/
+
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+namespace Icod.Widgets.Tests.Qualification;
+
+using System.Text;
+using Icod.DCurses;
+using Xunit;
+
+public sealed class WidgetEditorQualificationTests {
+	[Fact]
+	public void PublicEditorWorkflowReplacesSelectionUndoesAndReturnsToCheckpoint() {
+		using Fixture fixture = new( "alpha\r\nbeta\ngamma\rdelta" ); using WidgetTextSnapshot saved = fixture.Document.CreateSnapshot(); fixture.Document.MarkSaved( saved );
+		fixture.View.SetSelection( 0, 5 ); fixture.Send( WidgetInput.TextInput( new Rune( 'X' ) ) );
+		Assert.Equal( "X\r\nbeta\ngamma\rdelta", fixture.Text ); Assert.True( fixture.Document.IsModified );
+		Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime ) );
+		Assert.Equal( "alpha\r\nbeta\ngamma\rdelta", fixture.Text ); Assert.False( fixture.Document.IsModified );
+	}
+
+	[Fact]
+	public void PublicClipboardDenialAndStaleCompletionPreserveText() {
+		using Fixture fixture = new( "safe" ); fixture.View.SetSelection( 0, 4 ); WidgetClipboardRequest cut = fixture.Request( WidgetEditCommand.Cut );
+		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( cut.RequestId, WidgetClipboardStatus.Denied ) ) ); Assert.Equal( "safe", fixture.Text );
+		WidgetClipboardRequest paste = fixture.Request( WidgetEditCommand.Paste ); fixture.View.SetSelection( 4, 4 );
+		Assert.False( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, "lost" ) ) ); Assert.Equal( "safe", fixture.Text );
+	}
+
+	[Fact]
+	public void EditCommandsFollowFocusedScopeBetweenFieldAndEditor() {
+		using Fixture fixture = new( "editor" ); WidgetTextInput field = new( "field", "field" ); fixture.Host.Attach( field ); field.Arrange( new CursesRectangle( 4, 0, 1, 20 ) );
+		fixture.View.SetSelection( 0, fixture.Document.Length ); Assert.True( fixture.Host.Focus( field ));
+		Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.SelectAll, fixture.NextTime ) ); Assert.Equal( "field", field.Value );
+		Assert.True( fixture.Host.Focus( fixture.Editor )); Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.SelectAll, fixture.NextTime ) );
+		fixture.Send( WidgetInput.TextInput( new Rune( 'E' ) ) ); Assert.Equal( "E", fixture.Text ); Assert.Equal( "field", field.Value );
+	}
+
+	[Fact]
+	public void RepeatedAttachResizeModalAndShutdownLeavesNoPendingMutation() {
+		for ( int index = 0; index < 50; index++ ) {
+			using Fixture fixture = new( "text" ); fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1 + index % 4, 5 + index % 20 ) ); fixture.Host.Render();
+			WidgetClipboardRequest paste = fixture.Request( WidgetEditCommand.Paste ); using WidgetModalLease modal = fixture.Host.ShowModal( WidgetMessageDialog.Ok( $"d{index}", "Notice", "Modal" ) );
+			Assert.False( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, "stale" ) ) ); Assert.Equal( "text", fixture.Text );
+		}
+	}
+
+	private sealed class Fixture : IDisposable {
+		private int tick;
+		internal Fixture( string text ) { this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View ); this.Host = new WidgetHost( new CursesScreen( 30, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 30 ) ); Assert.True( this.Host.Focus( this.Editor ) ); }
+		internal WidgetTextDocument Document { get; } internal WidgetTextViewState View { get; } internal WidgetTextEditor Editor { get; } internal WidgetHost Host { get; }
+		internal TimeSpan NextTime => TimeSpan.FromMilliseconds( this.tick++ ); internal string Text => this.Document.Read( 0, checked( (int)this.Document.Length ) );
+		internal WidgetDispatchResult Send( WidgetInput input ) => this.Host.Process( input, this.NextTime );
+		internal WidgetClipboardRequest Request( WidgetEditCommand command ) { Assert.Equal( WidgetCommandResult.Executed, this.Host.ExecuteEditCommand( command, this.NextTime ) ); return Assert.IsType<WidgetClipboardRequestedAction>( Assert.Single( this.Host.DrainActions() ) ).Request; }
+		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
+	}
+}

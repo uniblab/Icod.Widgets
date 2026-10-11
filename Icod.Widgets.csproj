@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.0.0</Version>
-		<PackageVersion>1.0.0</PackageVersion>
+		<Version>1.1.0</Version>
+		<PackageVersion>1.1.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
-		<Description>Reusable menus, dialogs, lists, filesystem pickers, and game-oriented terminal controls for .NET above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Initial stable package for .NET 8, 9 and 10. Includes reusable forms, lists, drop-downs, menus with distinct mnemonics and command shortcuts, captioned dialogs with consistent Cancel outcomes, provider-backed file and folder pickers, and game UI controls. Includes gallery, editor and roguelike sample applications.</PackageReleaseNotes>
+		<Description>Reusable terminal UI widgets for .NET, including Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
+		<PackageReleaseNotes>Adds exact multiline text documents, snapshots, bounded undo and redo, Unicode-aware editing and selection, interactive scrollbars, explicit clipboard request completion, focused caret intent, and single-line field editing parity. Depends on Icod.DCurses 2.4.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -48,7 +48,7 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<PackageTags>alert;checkbox;console;console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;directory-picker;dotnet;dropdown;file-browser;file-picker;filesystem-browser;folder-picker;form-controls;forms;game-ui;help-overlay;icod;keyboard-shortcuts;list;listbox;menu;menu-bar;message-box;mnemonics;modal-dialog;multi-select;ncurses;pcurses;popup-menu;radio-button;status-bar;submenu;terminal;terminal-ui;terminal-widgets;text-input;text-ui;tui;ui;ui-controls;widgets;wizard</PackageTags>
+		<PackageTags>console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;dotnet;editor;file-picker;forms;menu;terminal;terminal-ui;text-editor;text-input;text-ui;tui;ui;widgets</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
 		<PlatformTarget>AnyCPU</PlatformTarget>
@@ -93,6 +93,6 @@
 		</Content>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Icod.DCurses" Version="2.3.1" />
+		<PackageReference Include="Icod.DCurses" Version="2.4.0" />
 	</ItemGroup>
 </Project>

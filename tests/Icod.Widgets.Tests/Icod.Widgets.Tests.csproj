@@ -41,4 +41,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Icod.Widgets.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\..\samples\Common\WidgetSampleCaretCoordinator.cs" Link="Samples\WidgetSampleCaretCoordinator.cs" />
+	</ItemGroup>
 </Project>

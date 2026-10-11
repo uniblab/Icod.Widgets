@@ -2,6 +2,33 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.1.0 — reusable editing foundation
+
+- Shipped the exact document/snapshot/history model, Unicode multiline editor,
+  scrollbars, guarded clipboard integration, caret coordination, and upgraded
+  single-line editing described by the 1.1 release candidate.
+- Added the public editing guide, frozen additive API baseline, measured workload
+  evidence, package-only consumer, and editable in-memory sample.
+- Updated the sole direct runtime dependency to Icod.DCurses 2.4.0 while retaining
+  assembly version 1.0.0.0 and net8.0/net9.0/net10.0 support.
+
+## 1.1.0-rc.1 — editing foundation release candidate
+
+- Added exact mixed-EOL text documents with indexed lines, immutable bounded
+  snapshots, revision/state identity, atomic edits, checkpoints, and bounded undo/redo.
+- Added independent text view state and a Unicode-aware multiline editor with
+  selection, navigation, indentation, insert/overwrite, read-only mode, bracketed
+  paste assembly, captured pointer selection, autoscroll, and bounded projection.
+- Added horizontal and vertical scrollbars, explicit guarded clipboard requests
+  and completions, and focused caret intent for application-owned DCurses leases.
+- Added selection, clipboard commands, undo/redo, and caret intent to single-line
+  fields while preserving their 1.0 normalization, length, and Tab behavior.
+- Updated the editor sample into a real in-memory editor with exact file reads,
+  modified status, command shortcuts, focus escape, clipboard integration, and
+  no file-writing behavior.
+- Raised the sole direct runtime dependency to Icod.DCurses 2.4.0 while retaining
+  net8.0/net9.0/net10.0, AnyCPU, and assembly version 1.0.0.0.
+
 ## 1.0.0 — first stable package
 
 - Delivered the reusable .NET 8/9/10 control set: forms, lists, drop-downs,

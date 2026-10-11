@@ -124,7 +124,7 @@ limitations, and acceptance evidence. Freeze API and package metadata before
 stable qualification, then verify the exact merged artifact. No calendar date
 or green documentation PR substitutes for implementation or release readiness.
 
-This planning change leaves package/dependency versions untouched. Implementation
-starts with `1.1.0-alpha.1`; release candidates follow completed feature gates;
-exact stable `1.1.0` is prepared only after qualification. The owner performs
-merge, tag, and publication. No change to `uniblab/.github` is required.
+The 1.1 editing foundation is implemented and exact stable `1.1.0` source is
+prepared after qualification. The 1.2 document-workspace direction remains
+planned. The owner performs merge, tag, and publication. No change to
+`uniblab/.github` is required.

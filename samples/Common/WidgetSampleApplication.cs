@@ -28,10 +28,12 @@ internal abstract class WidgetSampleApplication : IDisposable {
 	private readonly CancellationTokenSource stop = new();
 	private readonly List<Task<Action>> jobs = [];
 	private readonly Stopwatch clock = Stopwatch.StartNew();
+	private WidgetSampleClipboardAdapter? clipboard;
 	protected WidgetSampleApplication( CursesScreen screen ) => this.Host = new( screen, WidgetTheme.Default );
 	internal WidgetHost Host { get; }
 	internal bool Running { get; private set; } = true;
 	internal string Status { get; set; } = "Ready";
+	protected TimeSpan CurrentTime => this.clock.Elapsed;
 	protected abstract string Heading { get; }
 	protected abstract string Keys { get; }
 	protected WidgetDialog? Dialog { get; private set; }
@@ -59,8 +61,16 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		foreach ( WidgetAction action in actions ) {
 			if ( action is WidgetBrowserLoadRequestedAction browse ) this.Load( browse.Request );
 			else if ( action is WidgetPickerValidationRequestedAction validation ) this.Validate( validation.Request );
+			else if ( action is WidgetClipboardRequestedAction clipboard ) this.Clipboard( clipboard.Request );
 			else { this.OnAction( action ); if ( action is WidgetDialogCompletedAction && this.Dialog?.Id == action.WidgetId ) this.Dialog = null; }
 		}
+	}
+	private void Clipboard( WidgetClipboardRequest request ) {
+		WidgetSampleClipboardAdapter adapter = this.clipboard ?? throw new InvalidOperationException( "The live clipboard adapter is unavailable." );
+		this.QueueWork( async token => {
+			WidgetClipboardResult result = await adapter.ExecuteAsync( request, token );
+			return () => { bool applied = this.Host.ApplyClipboardResult( result ); this.Status = applied ? $"Clipboard {request.Operation}: {result.Status}" : $"Clipboard {request.Operation}: stale result ignored"; };
+		} );
 	}
 	protected void Show( WidgetDialog dialog ) {
 		this.Dialog = dialog; this.Host.ShowModal( dialog );
@@ -98,6 +108,8 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		await using CursesSession session = await CursesSession.OpenAsync( new CursesSessionOptions { InputMode = CursesInputMode.Raw } );
 		session.StandardScreen.WrapMode = CursesWrapMode.Clip;
 		using WidgetSampleApplication app = create( session.Screen );
+		await using WidgetSampleCaretCoordinator caret = new( session );
+		app.clipboard = new WidgetSampleClipboardAdapter( session );
 		List<CursesInputProtocolLease> leases = [];
 		try {
 			foreach ( CursesInputProtocolOptions options in new[] { new CursesInputProtocolOptions { MouseTrackingMode = CursesMouseTrackingMode.ButtonEvents }, new CursesInputProtocolOptions { BracketedPaste = true }, new CursesInputProtocolOptions { KeyboardReportingMode = CursesKeyboardReportingMode.Disambiguated } } ) {
@@ -106,7 +118,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 			app.Arrange();
 			bool redraw = true;
 			while ( app.Running ) {
-				redraw |= await app.PollAsync(); if ( redraw ) { app.Draw(); await session.RefreshAsync(); redraw = false; }
+				redraw |= await app.PollAsync(); if ( redraw ) { app.Draw(); await session.RefreshAsync(); await caret.ApplyAsync( app.Host.GetCaretIntent(), app.stop.Token ); redraw = false; }
 				CursesEvent current = await session.ReadEventAsync( TimeSpan.FromMilliseconds( 50 ) );
 				if ( current.Kind == CursesEventKind.Input && current.Input is { } input ) { app.Input( WidgetInput.From( input ) ); redraw = true; }
 				else if ( current.Kind == CursesEventKind.Lifecycle && current.Lifecycle is { } lifecycle ) {
@@ -117,5 +129,5 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		} finally { try { session.StandardScreen.Clear(); await session.RefreshAsync(); } finally { for ( int index = leases.Count - 1; index >= 0; index-- ) await leases[ index ].DisposeAsync(); } }
 		return 0;
 	}
-	public void Dispose() { this.stop.Cancel(); this.Host.Dispose(); /* Pending workers observe cancellation; they never mutate the host. */ }
+	public virtual void Dispose() { this.stop.Cancel(); this.Host.Dispose(); /* Pending workers observe cancellation; they never mutate the host. */ }
 }

@@ -3,7 +3,7 @@
 **Target:** `1.1.0` — reusable editing foundation\
 **Decision date:** 2026-10-11\
 **Baseline:** `d56cb9a06b78b8fa975de23cf590e6d198e36fc3` on `main`; stable API/package 1.0.0\
-**State:** planning only; W1101–W1113 not started\
+**State:** W1101–W1113 implemented; `1.1.0` stable source prepared for owner handoff\
 **Execution:** sequential, in the main working session; no subagent delegation
 
 ## Goal and scope
@@ -153,24 +153,24 @@ pass or waive automated tests. Record accepted limitations for this release.
 
 ## Version and publication checklist
 
-This documentation PR leaves `Version`, `PackageVersion`, and the DCurses
-reference unchanged. It must not claim to be an implementation or release build.
+The implementation advanced through alpha and RC qualification to exact stable
+source. Publication remains owner-controlled.
 
-- [ ] W1101: use `1.1.0-alpha.1` for implementation; align package-consumer and
+- [x] W1101: use `1.1.0-alpha.1` for implementation; align package-consumer and
   test expectations. Further previews use increasing `alpha.N` values.
-- [ ] W1112: after feature gates, freeze the additive API snapshot and prepare
+- [x] W1112: after feature gates, freeze the additive API snapshot and prepare
   `1.1.0-rc.N`; publish no prerelease without explicit owner authorization.
-- [ ] W1113: set both `Version` and `PackageVersion` to **1.1.0**, keep
+- [x] W1113: set both `Version` and `PackageVersion` to **1.1.0**, keep
   `AssemblyVersion` **1.0.0.0**, and verify DCurses **2.4.0** in project and nuspec.
-- [ ] Update package description/tags/release notes for actual shipped editing
+- [x] Update package description/tags/release notes for actual shipped editing
   features; retain the existing library workflow. If GitHub topics are updated,
   respect its maximum of **20** and obtain authorization for that metadata write.
-- [ ] Update README install/status/dependency text, sample guide, CHANGELOG,
+- [x] Update README install/status/dependency text, sample guide, CHANGELOG,
   curated `docs/releases/1.1.0.md`, API baseline, and qualification record together.
   Keep README links full GitHub URLs and installation instructions durable.
-- [ ] Build/test/pack the exact stable source and consume the resulting package;
+- [x] Build/test/pack the exact stable source and consume the resulting package;
   check prerelease strings and old version pins rather than trusting filenames.
-- [ ] Record live results and limitations; verify CI and release-workflow inputs
+- [x] Record live results and limitations; verify CI and release-workflow inputs
   at the actual merged SHA, not just the PR's earlier head.
 - [ ] Owner merges and creates `v1.1.0`; the configured tag workflow publishes.
   Verify that the tag matches the artifact version and intended commit. The agent

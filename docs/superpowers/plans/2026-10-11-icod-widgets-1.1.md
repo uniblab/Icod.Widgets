@@ -83,26 +83,26 @@ and reviewed public signatures used below. Candidates share an internal benchmar
 interface for length, bounded read, replacement, snapshot, and line lookup; it is
 not a production/public abstraction commitment.
 
-- [ ] Add `SoleDirectDependencyIsDCurses240` asserting one direct PackageReference
+- [x] Add `SoleDirectDependencyIsDCurses240` asserting one direct PackageReference
   at 2.4.0, and capture a consumer compiled against the released 1.0 package.
-- [ ] Run the focused boundary test and record the expected old-dependency failure.
-- [ ] Set implementation `Version`/`PackageVersion` to `1.1.0-alpha.1`, DCurses to
+- [x] Run the focused boundary test and record the expected old-dependency failure.
+- [x] Set implementation `Version`/`PackageVersion` to `1.1.0-alpha.1`, DCurses to
   2.4.0, and the new package consumer to the same preview. Preserve assembly 1.0.0.0.
-- [ ] Run existing tests and the old binary consumer with the upgraded dependency;
+- [x] Run existing tests and the old binary consumer with the upgraded dependency;
   investigate actual compatibility failures before introducing new APIs.
-- [ ] Implement/measure gap-buffer and piece-table/tree experiments with identical
+- [x] Implement/measure gap-buffer and piece-table/tree experiments with identical
   seeded edit traces and exact string-oracle checks. Use a small 4 Ki-unit fixture,
   100,000-line fixture, 10,000,000-unit single line, mixed Unicode/EOL, local typing,
   distant alternating edits, retained snapshots, and history trim. Fixtures are
   workloads, not supported-size promises.
-- [ ] Record cold/warm time, allocation and retained-memory results, logical-line
+- [x] Record cold/warm time, allocation and retained-memory results, logical-line
   index work, fragmentation, and visible-slice work. Choose a store; define count
   versus byte budgets and concrete default/maximum/rejection behavior for every
   limit listed in the spec. Freeze word categories, indent width/tab policy,
   default inserted newline, typing-group timeout, and projection work ceilings.
-- [ ] Review the decision with the owner before W1104–W1108. Record any proven
+- [x] Review the decision with the owner before W1104–W1108. Record any proven
   DCurses gap with a minimal reproducer; otherwise retain the released dependency.
-- [ ] Verify build/test/pack and matching package-consumer version; commit
+- [x] Verify build/test/pack and matching package-consumer version; commit
   `build: establish Widgets 1.1 editing baseline and measured contracts`.
 
 ### W1102 — Preserve normalized input fidelity
@@ -121,15 +121,15 @@ Add `WidgetInput.FunctionKey(int number, WidgetInputModifiers modifiers = None)`
 with null PastePhase denotes a complete paste. Extend shortcut function identity
 with a non-positional member; keep the old constructor/deconstruction.
 
-- [ ] Add `FromPreservesRichMetadata`, `LegacyFactoriesKeepTheirMeaning`, and
+- [x] Add `FromPreservesRichMetadata`, `LegacyFactoriesKeepTheirMeaning`, and
   `FunctionShortcutsRemainDistinct`; assert F6 differs from F10, Begin/Data/End
   is retained, Focused differs from Unfocused, and release/repeat/associated text
   and all source modifier bits survive. Use public decoder/replay inputs where
   DCurses factories are internal, not reflection or InternalsVisibleTo.
-- [ ] Run WidgetInputTests red.
-- [ ] Implement additive conversion/factories and function-shortcut matching;
+- [x] Run WidgetInputTests red.
+- [x] Implement additive conversion/factories and function-shortcut matching;
   do not reinterpret legacy enum values or append positional constructor args.
-- [ ] Run WidgetInputTests green, menu tests, and the full suite; confirm existing
+- [x] Run WidgetInputTests green, menu tests, and the full suite; confirm existing
   single-string paste still works in forms. Commit `feat: preserve rich widget input`.
 
 ### W1103 — Focus, commands, capture, ticks, and external hooks
@@ -152,19 +152,19 @@ Add `Widget.AcceptsTab: bool` (virtual, default false), protected
 `OnCaptureCanceled()`, and `OnUpdate(TimeSpan timestamp)` hooks. Preserve the
 existing internal capture callback as a bridge, not a changed binary signature.
 
-- [ ] Add `FocusedEditorGetsTabButFieldTraverses`, `DisabledEditCommandDoesNotFallThrough`,
+- [x] Add `FocusedEditorGetsTabButFieldTraverses`, `DisabledEditCommandDoesNotFallThrough`,
   `CapturedMovesStayWithOwner`, `CancellationEndsCaptureExactlyOnce`,
   `BackwardTickDoesNotMutate`, `ReleaseCannotActivate`, and
   `ExternalActionCapacityFailureIsAtomic` using tiny custom test controls.
-- [ ] Run WidgetEditingRoutingTests red.
-- [ ] Implement overlay-first routing, focused edit-command precedence, explicit
+- [x] Run WidgetEditingRoutingTests red.
+- [x] Implement overlay-first routing, focused edit-command precedence, explicit
   focus movement, release suppression, capture of move/release through DCurses,
   and cancellation on loss/resize/hide/disable/detach/disposal. Validate ownership,
   WidgetId, and capacity before external action publication. A foreign or detached
   control cannot emit. Update uses the same monotonic clock validation as Process.
-- [ ] Compile a separate public consumer subclass that emits an action and receives
+- [x] Compile a separate public consumer subclass that emits an action and receives
   update/cancel hooks. Check it without internal/friend access.
-- [ ] Run focused/core/modal/menu/lifecycle tests and full suite green; commit
+- [x] Run focused/core/modal/menu/lifecycle tests and full suite green; commit
   `feat: add scoped editing routing and caller-driven widget updates`.
 
 ### W1104 — Exact document, line index, and snapshots
@@ -183,16 +183,16 @@ not borrowed mutable input buffers. Expose `Guid Id`, `long Length`, `long LineC
 Snapshot implements IDisposable and exposes matching identity/revision/state,
 length/line count, bounded Read and GetLine. Options contain W1101 frozen limits.
 
-- [ ] Add `ChunkBoundariesPreserveExactText`, `MixedEndingsIndexCorrectly`,
+- [x] Add `ChunkBoundariesPreserveExactText`, `MixedEndingsIndexCorrectly`,
   `EmptyAndFinalNewlineHaveCorrectLines`, `SnapshotDisposeReleasesRetention`,
   `SnapshotLimitRejectsWithoutEviction`, and `MutableInputIsNotBorrowed`.
   For `"a\r\nb\nc\rd"`, assert starts 0,3,5,7 and ending lengths 2,1,1,0;
   `"x\n"` has two lines; empty text has one. Split each fixture at every offset.
-- [ ] Run WidgetTextDocumentTests red.
-- [ ] Implement the selected store/index with overflow-safe long arithmetic,
+- [x] Run WidgetTextDocumentTests red.
+- [x] Implement the selected store/index with overflow-safe long arithmetic,
   explicit ownership and disposable snapshots, and no whole-text public getter.
   Source controls/invalid UTF-16 remain byte-for-byte equivalent as UTF-16 units.
-- [ ] Run tests green plus seeded random read/index comparisons. Measure initial
+- [x] Run tests green plus seeded random read/index comparisons. Measure initial
   loading and snapshot retention against W1101 limits; commit
   `feat: add indexed exact-text documents and immutable snapshots`.
 
@@ -212,21 +212,21 @@ edit kind, caller timestamp, and explicit coalescing choice. Result contains sta
 invoking-view selection restoration. Add change notification carrying replaced
 ranges and revision so views can reconcile; callbacks observe committed state.
 
-- [ ] Add `BatchIsAtomic`, `OnePasteOneUndo`, `UndoBranchDoesNotReuseStateId`,
+- [x] Add `BatchIsAtomic`, `OnePasteOneUndo`, `UndoBranchDoesNotReuseStateId`,
   `UndoToCheckpointClearsModified`, `LateSaveDoesNotCleanNewerText`,
   `TrimDoesNotCleanDocument`, `OversizedUndoGroupRejectsBeforeMutation`, and
   `BoundaryFailureDoesNotSplitClusterOrCrLf`. Add randomized edit/undo/redo oracle
   traces with reachable checkpoint tracking, including snapshots retained across trim.
   Add `SnapshotSurvivesLaterEditsAndUndo` here, once Apply/Undo exist; assert that
   a retained snapshot still reads its original text while the document changes.
-- [ ] Run WidgetTextHistoryTests red.
-- [ ] Implement prevalidation and atomic commit, whole-group eviction, redo
+- [x] Run WidgetTextHistoryTests red.
+- [x] Implement prevalidation and atomic commit, whole-group eviction, redo
   invalidation, revision versus state identity, snapshot identity validation, and
   saved-state bookkeeping. Apply replacements in an order that preserves the
   common source revision; reject overlap. Newline edits only change addressed text.
-- [ ] Implement explicit typing coalescence using W1101 policy; break on view
+- [x] Implement explicit typing coalescence using W1101 policy; break on view
   changes and checkpoints. Do not silently drop undo for a large edit.
-- [ ] Run history/document tests and full suite green; rerun snapshot/history
+- [x] Run history/document tests and full suite green; rerun snapshot/history
   measurements; commit `feat: add bounded text transactions and checkpoint-aware undo`.
 
 ### W1106 — View state and bounded projection
@@ -243,19 +243,19 @@ view, CursesScreen width provider, viewport rectangle, and budget; returns visib
 rows, source mapping, caret cell, selection spans, and exact/estimated extent.
 Do not expose private storage/layout cache as public data.
 
-- [ ] Add `TwoViewsKeepIndependentState`, `ViewChangeDoesNotDirtyDocument`,
+- [x] Add `TwoViewsKeepIndependentState`, `ViewChangeDoesNotDirtyDocument`,
   `DocumentEditReconcilesAnchors`, `PreferredColumnSurvivesShortLine`,
   `CacheInvalidatesOnlyAffectedRevisionAndGeometry`, `LongLineHasBoundedSlices`,
   `HugeClusterHasSafeBoundedFallback`, and `TabsUseTrueSourceColumn`.
-- [ ] Run WidgetTextProjectionTests red.
-- [ ] Implement directional selection and revision reconciliation, then bounded
+- [x] Run WidgetTextProjectionTests red.
+- [x] Implement directional selection and revision reconciliation, then bounded
   DCurses slices/hit-testing/selection spans. Carry Unicode and tab continuation;
   retain no full-file pad/layout/string per render. Cap work/cache to W1101 limits,
   exposing incomplete/estimated wrapped extent and continuation honestly.
-- [ ] Run retained-cell/hit-test round trips for combining/wide/ZWJ/control text,
+- [x] Run retained-cell/hit-test round trips for combining/wide/ZWJ/control text,
   zero/one-cell viewports and far horizontal offsets. Verify warm edit/scroll work
   counters do not grow with unrelated file size; run measured cold seeks separately.
-- [ ] Run focused/full tests green; commit `feat: project bounded editable text views`.
+- [x] Run focused/full tests green; commit `feat: project bounded editable text views`.
 
 ### W1107 — Multiline editor and atomic paste
 
@@ -272,19 +272,19 @@ Options specify W1101 newline/indent/tab/wrap/grouping/paste budgets. Add
 `WidgetTextSelectionChangedAction` carrying view ID/anchor/caret; neither carries
 the entire document. Copy/Cut/Paste produce service requests in W1109, not I/O here.
 
-- [ ] Add `MovementAndDeletionRespectTextElements`, `WordAndPageNavigation`,
+- [x] Add `MovementAndDeletionRespectTextElements`, `WordAndPageNavigation`,
   `SelectionReplacementIsOneTransaction`, `IndentAndOutdentAreUndoable`,
   `OverwriteDoesNotSplitClusterOrCrossLineEnd`, `ReadOnlyCannotMutate`,
   `AssociatedTextInsertedOnce`, `BracketedPasteCommitsOnlyAtEnd`,
   `InterruptedOrOversizedPasteDoesNotMutate`, and `FullActionQueueLeavesEditUnchanged`.
-- [ ] Run WidgetTextEditorTests red.
-- [ ] Implement editor commands with shared document transactions and bounded
+- [x] Run WidgetTextEditorTests red.
+- [x] Implement editor commands with shared document transactions and bounded
   projection. Newline insertion follows options; pasted text keeps its original
   endings/tabs. Home/End distinguishes line versus Ctrl document boundary;
   Shift extends selection; Ctrl+A selects all. Validate action capacity before edits.
-- [ ] Implement bounded Begin/Data/End accumulation and cancellation on target
+- [x] Implement bounded Begin/Data/End accumulation and cancellation on target
   invalidation; legacy complete Paste is one transaction. Release never types.
-- [ ] Run input replay, retained render, read-only, capacity and full tests green;
+- [x] Run input replay, retained render, read-only, capacity and full tests green;
   commit `feat: add Unicode multiline text editing`.
 
 ### W1108 — Scrollbars, capture, and caller-clock autoscroll
@@ -300,16 +300,16 @@ record `docs/W1108-Scrolling-and-Selection.md`.
 Horizontal/Vertical. Keep old WidgetScrollIndicator unchanged. Editor uses host
 capture/update hooks and exposes scrollbar ranges from its projection state.
 
-- [ ] Add `ThumbMapsLargeRangeWithoutOverflow`, `ZeroAndShortTracksRemainUsable`,
+- [x] Add `ThumbMapsLargeRangeWithoutOverflow`, `ZeroAndShortTracksRemainUsable`,
   `TrackPagesAndKeyboardScrolls`, `ScrollbarDoesNotMoveCaret`,
   `DragOutsideExtendsSelection`, `TickAutoscrollIsBoundedAndMonotonic`, and
   `LossModalResizeDetachCancelDrag`. Include ranges near long.MaxValue and
   rapid alternating wheel/drag input; distinguish estimated wrapped ranges.
-- [ ] Run scrollbar and pointer classes red.
-- [ ] Implement range/thumb/page math, axis-specific wheel behavior, primary and
+- [x] Run scrollbar and pointer classes red.
+- [x] Implement range/thumb/page math, axis-specific wheel behavior, primary and
   Shift pointer selection, captured outside moves/releases, and capped autoscroll
   driven only by Update. Stop work immediately when capture becomes invalid.
-- [ ] Run tests green plus retained cells at tiny geometry; commit
+- [x] Run tests green plus retained cells at tiny geometry; commit
   `feat: add interactive scrolling and captured text selection`.
 
 ### W1109 — Clipboard requests and guarded completion
@@ -331,21 +331,21 @@ returns whether a live request consumed the completion; false means stale/foreig
 The application drains completion actions afterward. Success is the application's
 explicit acceptance of transport/fallback policy, not proof of remote acceptance.
 
-- [ ] Add `CopyHonorsUtf8ByteBudget`, `NoSilentClipboardTruncation`,
+- [x] Add `CopyHonorsUtf8ByteBudget`, `NoSilentClipboardTruncation`,
   `FailedCopyDoesNotCut`, `AcceptedCutDeletesExactlyOnce`,
   `LatePasteRejectsChangedSelectionRevisionFocusOrAttachment`,
   `ReadOnlyChangeInvalidatesRequest`, `NewRequestSupersedesOld`, and
   `PasteCompletionIsOneUndoGroup`. Include 65,536/65,537 UTF-8 byte boundaries,
   multibyte text, invalid UTF-8, denied/timeout/canceled/oversized responses, local
   fallback, duplicate completion, and detach/reuse of the same widget string ID.
-- [ ] Run WidgetClipboardTests red with fake caller completions, no terminal.
-- [ ] Implement bounded request capture and loop-only guarded application. Retain
+- [x] Run WidgetClipboardTests red with fake caller completions, no terminal.
+- [x] Implement bounded request capture and loop-only guarded application. Retain
   text until an accepted cut result; never query/read the clipboard at focus time.
   Reject changed targets and out-of-budget text before history/action mutation.
-- [ ] Add a sample adapter over released CursesSession ReadClipboardAsync and
+- [x] Add a sample adapter over released CursesSession ReadClipboardAsync and
   WriteClipboardAsync. Strictly decode UTF-8; preserve unknown failures as failures;
   keep 65,536-byte defaults and explain independent up-to-16-MiB session options.
-- [ ] Run fake-service, editor and full tests green; commit
+- [x] Run fake-service, editor and full tests green; commit
   `feat: add explicit bounded clipboard requests for editing targets`.
 
 ### W1110 — Caret intent and reversible session integration
@@ -363,14 +363,14 @@ Add a protected `Widget.GetCaretIntent(): WidgetCaretIntent?` default-null hook.
 Sample coordinator owns optional CursesCursorStyleLease and asynchronous disposal;
 the core host owns no session lease or async terminal calls.
 
-- [ ] Add `CaretMatchesUnicodeGeometry`, `HiddenOffscreenOrModalCaretIsAbsent`,
+- [x] Add `CaretMatchesUnicodeGeometry`, `HiddenOffscreenOrModalCaretIsAbsent`,
   `InsertAndOverwriteHaveDistinctStyleIntent`, `StaleStyleCompletionIsDisposed`,
   `UnsupportedObservationDoesNotEmitGuessedReset`, and `CleanupRestoresOnce`.
-- [ ] Run WidgetCaretTests red.
-- [ ] Implement clipped intent from projection and focused host scope; keep
+- [x] Run WidgetCaretTests red.
+- [x] Implement clipped intent from projection and focused host scope; keep
   cursor visibility distinct from style. In the sample serialize style requests,
   revalidate focus generation, and dispose old/stale leases in valid LIFO order.
-- [ ] Run fake-session/output tests, screen-only tests and full suite green;
+- [x] Run fake-session/output tests, screen-only tests and full suite green;
   commit `feat: expose focused caret intent and sample lease coordination`.
 
 ### W1111 — Single-line field editing parity
@@ -386,15 +386,15 @@ the shared transaction/clipboard contracts behind a bounded single-line adapter.
 Expose caret through W1110. Keep the default 4,096 and maximum 100,000 text-element
 limits, existing whitespace/control normalization, and Tab traversal.
 
-- [ ] Add `SelectionReplacementAndUndo`, `PasteRemainsSingleLine`,
+- [x] Add `SelectionReplacementAndUndo`, `PasteRemainsSingleLine`,
   `ExistingLimitsAndValueActionRemainCompatible`, `FocusedFieldWinsCopyCommand`,
   `FieldTabStillTraverses`, and `LimitReductionClampsSelectionAndInvalidatesPaste`.
   Compare old normalization fixtures with the 1.0 behavior; multiline exact paste
   and single-line normalized paste must deliberately differ.
-- [ ] Run WidgetTextInputEditingTests red.
-- [ ] Implement selection/history/commands and caret using shared primitives;
+- [x] Run WidgetTextInputEditingTests red.
+- [x] Implement selection/history/commands and caret using shared primitives;
   avoid copying editor-only wrapping/indentation behavior into fields.
-- [ ] Run form/prompt/picker regressions and the full suite green; commit
+- [x] Run form/prompt/picker regressions and the full suite green; commit
   `feat: add selection clipboard and undo to single-line fields`.
 
 ### W1112 — Public witnesses, performance audit, compatibility, and RC
@@ -410,25 +410,25 @@ workload evidence, additive API freeze, reproducible sample commands, and exact 
 artifacts. Parameterize package consumer by actual artifact version and run it
 on net8.0/net9.0/net10.0; do not accidentally restore the existing 1.0 package.
 
-- [ ] Add public scenario tests for type/select/replace/undo/checkpoint, clipboard
+- [x] Add public scenario tests for type/select/replace/undo/checkpoint, clipboard
   denial/stale completion, form/editor command scope, and repeated attach/resize/
   modal/shutdown. Include complete mixed-EOL round-trip without source normalization.
-- [ ] Run new acceptance tests red; then convert the current read/browse editor
+- [x] Run new acceptance tests red; then convert the current read/browse editor
   sample to real in-memory editing using public APIs. Sample file reading remains
   application code and bounded; never overwrite user files. Display modified and
   clipboard outcomes, provide F6/Shift+F6 focus escape, and keep smoke mode.
-- [ ] Run gallery/editor/roguelike smoke and tests, then W1101 measurements on the
+- [x] Run gallery/editor/roguelike smoke and tests, then W1101 measurements on the
   actual document/view stack. Report cold/warm performance and retained memory,
   including long lines/clusters, repeated pastes/undo, retained snapshots and trims.
   Meet recorded limits or return to the owner with evidence before loosening them.
-- [ ] Verify 1.0 compiled consumer and new external/custom/package-only consumers;
+- [x] Verify 1.0 compiled consumer and new external/custom/package-only consumers;
   compare additive public API per TFM and frozen enum/record signatures. Freeze
   reviewed APIs without deleting the historical 1.0 baseline.
-- [ ] Write usage/ownership/limits guidance and real sample commands; update
+- [x] Write usage/ownership/limits guidance and real sample commands; update
   package metadata and changelog only for delivered features. Run the roadmap's
   Staging/Release build-test-pack commands and artifact verifier, with CI across
   supported hosts. Confirm README external links and license/source headers.
-- [ ] Prepare matching `1.1.0-rc.N` project/consumer metadata after all feature
+- [x] Prepare matching `1.1.0-rc.N` project/consumer metadata after all feature
   gates pass; commit `release: qualify Widgets 1.1 editing candidate`.
 
 ### W1113 — Stable source and owner release handoff
@@ -441,17 +441,17 @@ CHANGELOG, this roadmap/plan status; create `docs/releases/1.1.0.md` and
 environment-specific live record, and owner merge/tag checklist. No publication
 or merge is performed by completing this task.
 
-- [ ] Run the roadmap's live scenarios on available terminals; record exact
+- [x] Run the roadmap's live scenarios on available terminals; record exact
   SHA/package/OS/architecture/terminal/runtime and Pass/Fail/Unsupported/Not tested.
   Keep unavailable macOS/Linux live environments explicit; obtain acceptance of
   this release's remaining limitations without calling CI a visual test.
-- [ ] Set Version and PackageVersion to 1.1.0, retain AssemblyVersion 1.0.0.0,
+- [x] Set Version and PackageVersion to 1.1.0, retain AssemblyVersion 1.0.0.0,
   DCurses 2.4.0, and align package consumer, notes, README, and baseline evidence.
-- [ ] Run clean matching-config build/test/pack, sample smoke, artifact validation,
+- [x] Run clean matching-config build/test/pack, sample smoke, artifact validation,
   and package-only consumers on the exact stable source. Inspect nuspec and archive
   contents; ensure no alpha/rc package is selected as stable and no sample/test
   source is compiled into the library.
-- [ ] Verify the diff and all automated gates, record remaining limitations and
+- [x] Verify the diff and all automated gates, record remaining limitations and
   commands/results, then commit `release: prepare Icod.Widgets 1.1.0`.
 - [ ] Hand off for owner review/merge. Verify main CI and exact merged artifact
   before the owner creates v1.1.0; tag-driven NuGet/GitHub publication remains
@@ -466,6 +466,5 @@ Each Review Focus item has a named owning test above. Task interfaces share
 document/view/request identities and distinguish text-state from revision.
 
 The resource/storage/word-policy decision is deliberately gated at W1101, not
-left for dependent implementers to guess. All tasks remain unchecked because
-this PR contains planning and documentation only. Review this plan before
-implementation; preserve the selected sequential execution method.
+left for dependent implementers to guess. Implemented work is checked above;
+the final owner merge/tag/publication handoff remains intentionally open.

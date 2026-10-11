@@ -12,12 +12,13 @@ ownership of the application's event loop or business logic.
 
 ## Status
 
-Stable release: **1.0.0**. Multiline editing and document-workspace controls
-are planned work, not features of the 1.0 package.
+Stable release: **1.1.0**. It adds the reusable single-document editing
+foundation; tabs and document-workspace policy remain application concerns
+planned for a later release.
 
 See the [changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
 for release history and the [main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md)
-for the planned 1.1 editing foundation and 1.2 document workspace.
+for the delivered 1.1 editing foundation and planned 1.2 document workspace.
 
 ## Support the Project
 
@@ -46,14 +47,14 @@ Widgets has one direct runtime package dependency: `Icod.DCurses`.
 
 ## Quick Start
 
-Install the stable package:
+Install the current stable package:
 
 ```text
-dotnet add package Icod.Widgets --version 1.0.0
+dotnet add package Icod.Widgets --version 1.1.0
 ```
 
-The 1.0.0 package declares `Icod.DCurses 2.3.1` as its sole direct runtime
-dependency. The planned 1.1 release will raise that dependency to 2.4.0.
+The 1.1.0 package declares `Icod.DCurses 2.4.0` as its sole direct runtime
+dependency.
 
 For a runnable first step, clone the repository and launch the gallery from its
 root in an interactive terminal with the .NET 10 SDK:
@@ -90,13 +91,18 @@ host.Render();
 await session.RefreshAsync();
 ```
 
-See the [shared sample loop](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/Common/WidgetSampleApplication.cs)
+See the [shared sample loop](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/samples/Common/WidgetSampleApplication.cs)
 for complete session setup, input, resizing, rendering, and cleanup.
 
 ## Feature Inventory
 
 - Labels, buttons, single-line text input, checkboxes, radio groups, borders,
   scroll indicators, and stack/grid layout.
+- Exact mixed-EOL text documents, immutable snapshots, checkpoint identity,
+  bounded undo/redo, independent view state, and Unicode-aware multiline editing.
+- Selection, indentation, insert/overwrite mode, read-only operation, captured
+  pointer drag/autoscroll, both-axis scrollbars, explicit bounded clipboard
+  requests, and focused terminal-caret intent.
 - Single- and multi-select lists, keyboard search, and framed drop-down popups.
 - Menu bars, framed popup menus, submenus, separators, disabled/checkable items,
   scoped mnemonics, and independent command shortcuts.
@@ -114,6 +120,10 @@ shortcuts invoke commands directly. Escape cancels the top dialog/menu;
 The [controls and interaction guide](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md)
 contains menu and dialog examples, picker keys, configuration, errors, and limits.
 
+The [editing guide](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Editing-Guide.md)
+covers document/view ownership, commands, clipboard completion, caret intent,
+resource limits, and application-loop integration.
+
 ## Platforms and Targets
 
 The library, samples, and tests target `net8.0`, `net9.0`, and `net10.0` with
@@ -122,9 +132,9 @@ PowerShell 5.1. Interactive applications require a usable terminal and a DCurses
 profile supporting cursor motion.
 
 Windows, macOS, and Linux are build/CI targets. Live terminal results are
-environment-specific: [W1014](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/W1014-Stable-Qualification.md)
-records the 1.0 Windows operator report and explicitly untested macOS/Linux
-live environments. Automated tests are not a claim of live-terminal qualification.
+environment-specific: [W1113](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/W1113-Stable-Qualification.md)
+records the 1.1 qualification scope and explicitly unavailable live environments.
+Automated tests are not a claim of live-terminal qualification.
 
 ## Design Boundaries and Guarantees
 
@@ -134,7 +144,8 @@ live environments. Automated tests are not a claim of live-terminal qualificatio
 - Provider jobs return results for application-loop application. Stale, foreign,
   canceled, and closed-picker results cannot complete a selection.
 - Pickers return paths; they do not open, create, delete, or write files. The
-  1.0 editor sample demonstrates opening and browsing, not editable documents.
+  editor sample performs bounded file reads in application code and edits only
+  an in-memory document; it intentionally never writes user files.
 - Modal scopes isolate background commands and restore eligible focus. Compact
   viewports clip rendering while retaining keyboard cancellation.
 - Resource limits are explicit. The 1.0 host supports 1,024 widgets, 4,096 pending
@@ -145,17 +156,17 @@ live environments. Automated tests are not a claim of live-terminal qualificatio
 
 ## Samples and Documentation
 
-The [sample guide](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/samples/README.md)
+The [sample guide](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/samples/README.md)
 covers the gallery, editor open-file flow, and roguelike UI. All three support
 `-- --smoke` for deterministic checks without a live terminal.
 
 Recommended entry points:
 
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
-- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) and [1.0.0 release notes](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/releases/1.0.0.md) — shipped history.
+- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) and [1.1.0 release notes](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/releases/1.1.0.md) — shipped history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
 - [1.1.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.1.0-Development-Roadmap.md) — planned tranches, dependencies, and release gates.
-- [1.0 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility reference.
+- [1.1 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/Public-API-Baseline-1.1.md) and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
 Release audits, versioned plans, API snapshots, and qualification worksheets
@@ -163,9 +174,9 @@ remain in the repository. They are intentionally not repeated in this README.
 
 ## Compatibility and Versioning
 
-The stable 1.0 public API is the compatibility floor for the 1.x line.
-The 1.1 plan requires additive API evolution, preservation of existing control
-contracts, and assembly identity `1.0.0.0`; package versions advance separately.
+The stable 1.0 public API is the compatibility floor for the 1.x line. Version
+1.1 evolves it additively, preserves existing control contracts, and retains
+assembly identity `1.0.0.0`; package versions advance separately.
 
 The README is a product and contributor entry point. Release chronology belongs
 in the changelog; implementation and qualification status belongs in versioned
@@ -185,6 +196,6 @@ Copyright (c) 2026 Timothy J. Bruce
 
 The library is **LGPL-3.0-or-later**. Samples and tests are **GPL-3.0-or-later**,
 following the established Icod convention.
-See [licensing assignments](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSING.md),
-[LGPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE), and
-[GPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/LICENSE.GPL).
+See [licensing assignments](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/LICENSING.md),
+[LGPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/LICENSE), and
+[GPL terms](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/LICENSE.GPL).

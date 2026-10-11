@@ -42,15 +42,33 @@ public sealed record WidgetInput {
 	public WidgetKey KeyCode { get; init; }
 	public WidgetInputModifiers Modifiers { get; init; }
 	public Rune? Character { get; init; }
+	public Rune? ShiftedCharacter { get; init; }
+	public Rune? BaseLayoutCharacter { get; init; }
 	public string? Text { get; init; }
 	public CursesMouseEvent? Pointer { get; init; }
+	public int? FunctionKeyNumber { get; init; }
+	public CursesKeyEventPhase? KeyPhase { get; init; }
+	public CursesFocusState? FocusState { get; init; }
+	public CursesPastePhase? PastePhase { get; init; }
+	public CursesKeyModifiers SourceModifiers { get; init; }
 
 	public static WidgetInput Key(
 		WidgetKey key,
 		WidgetInputModifiers modifiers = WidgetInputModifiers.None,
 		Rune? character = null ) {
 		if ( !Enum.IsDefined( key ) || WidgetKey.None == key ) throw new ArgumentOutOfRangeException( nameof( key ) );
-		return new WidgetInput( WidgetInputKind.Key ) { KeyCode = key, Modifiers = modifiers, Character = character };
+		return new WidgetInput( WidgetInputKind.Key ) {
+			KeyCode = key, Modifiers = modifiers, Character = character,
+			KeyPhase = CursesKeyEventPhase.Press, SourceModifiers = ConvertModifiers( modifiers )
+		};
+	}
+
+	public static WidgetInput FunctionKey( int number, WidgetInputModifiers modifiers = WidgetInputModifiers.None ) {
+		if ( number is < 0 or > 63 ) throw new ArgumentOutOfRangeException( nameof( number ) );
+		return new WidgetInput( WidgetInputKind.Key ) {
+			KeyCode = WidgetKey.Function, Modifiers = modifiers, FunctionKeyNumber = number,
+			KeyPhase = CursesKeyEventPhase.Press, SourceModifiers = ConvertModifiers( modifiers )
+		};
 	}
 
 	public static WidgetInput TextInput( Rune character ) => new( WidgetInputKind.Text ) {
@@ -60,6 +78,16 @@ public sealed record WidgetInput {
 	public static WidgetInput Paste( string text ) => new( WidgetInputKind.Paste ) {
 		Text = text ?? throw new ArgumentNullException( nameof( text ) )
 	};
+
+	public static WidgetInput PasteChunk( CursesPastePhase phase, string? text = null ) {
+		if ( !Enum.IsDefined( phase ) ) throw new ArgumentOutOfRangeException( nameof( phase ) );
+		return new WidgetInput( WidgetInputKind.Paste ) { PastePhase = phase, Text = text };
+	}
+
+	public static WidgetInput FocusChanged( CursesFocusState state ) {
+		if ( !Enum.IsDefined( state ) ) throw new ArgumentOutOfRangeException( nameof( state ) );
+		return new WidgetInput( WidgetInputKind.Focus ) { FocusState = state };
+	}
 
 	public static WidgetInput PointerInput( CursesMouseEvent pointer ) => new( WidgetInputKind.Pointer ) {
 		Pointer = pointer ?? throw new ArgumentNullException( nameof( pointer ) )
@@ -71,15 +99,20 @@ public sealed record WidgetInput {
 		return input.Kind switch {
 			CursesInputEventKind.Text => new WidgetInput( WidgetInputKind.Text ) {
 				KeyCode = WidgetKey.Character, Character = input.Character,
-				Text = input.Character?.ToString(), Modifiers = modifiers },
+				ShiftedCharacter = input.ShiftedCharacter, BaseLayoutCharacter = input.BaseLayoutCharacter,
+				Text = input.Character?.ToString(), Modifiers = modifiers, SourceModifiers = input.Modifiers },
 			CursesInputEventKind.Key => new WidgetInput( WidgetInputKind.Key ) {
 				KeyCode = ConvertKey( input.Key ), Character = input.Character,
-				Text = input.AssociatedText, Modifiers = modifiers },
+				ShiftedCharacter = input.ShiftedCharacter, BaseLayoutCharacter = input.BaseLayoutCharacter,
+				Text = input.AssociatedText, Modifiers = modifiers, SourceModifiers = input.Modifiers,
+				FunctionKeyNumber = input.FunctionKeyNumber, KeyPhase = input.KeyPhase },
 			CursesInputEventKind.Mouse => new WidgetInput( WidgetInputKind.Pointer ) {
-				Pointer = input.Mouse, Modifiers = modifiers },
+				Pointer = input.Mouse, Modifiers = modifiers, SourceModifiers = input.Modifiers },
 			CursesInputEventKind.Paste => new WidgetInput( WidgetInputKind.Paste ) {
-				Text = input.Paste?.Text, Modifiers = modifiers },
-			CursesInputEventKind.Focus => new WidgetInput( WidgetInputKind.Focus ),
+				Text = input.Paste?.Text, Modifiers = modifiers, SourceModifiers = input.Modifiers,
+				PastePhase = input.Paste?.Phase },
+			CursesInputEventKind.Focus => new WidgetInput( WidgetInputKind.Focus ) {
+				FocusState = input.Focus?.State, SourceModifiers = input.Modifiers },
 			_ => new WidgetInput( WidgetInputKind.EndOfInput )
 		};
 	}
@@ -89,6 +122,14 @@ public sealed record WidgetInput {
 		if ( 0 != ( value & CursesKeyModifiers.Shift ) ) result |= WidgetInputModifiers.Shift;
 		if ( 0 != ( value & CursesKeyModifiers.Control ) ) result |= WidgetInputModifiers.Control;
 		if ( 0 != ( value & CursesKeyModifiers.Alt ) ) result |= WidgetInputModifiers.Alt;
+		return result;
+	}
+
+	private static CursesKeyModifiers ConvertModifiers( WidgetInputModifiers value ) {
+		CursesKeyModifiers result = CursesKeyModifiers.None;
+		if ( 0 != ( value & WidgetInputModifiers.Shift ) ) result |= CursesKeyModifiers.Shift;
+		if ( 0 != ( value & WidgetInputModifiers.Control ) ) result |= CursesKeyModifiers.Control;
+		if ( 0 != ( value & WidgetInputModifiers.Alt ) ) result |= CursesKeyModifiers.Alt;
 		return result;
 	}
 
