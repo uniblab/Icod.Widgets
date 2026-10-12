@@ -1,6 +1,6 @@
 # W1211 Stable Qualification and Owner Handoff
 
-**Source:** PR #5, `docs/1.2.0-document-workspace-design`; final correction tree and CI run recorded after push<br>
+**Source:** PR #5, `docs/1.2.0-document-workspace-design`; qualified implementation tree `0d22184e570e38d55b6003fe3ea2c8590bf8013b` at remote commit `2264b35d1e37ed32a429b7973797b9fc14f0e721`<br>
 **Package:** `Icod.Widgets 1.2.0`<br>
 **Assembly:** `1.0.0.0`<br>
 **Direct dependency:** `Icod.DCurses 2.4.0`<br>
@@ -27,6 +27,12 @@ The final workspace smoke also closes every document and exercises disabled
 document commands in the resulting empty workspace. It verifies F6/Shift+F6
 focus movement and F3 Find Next after the Find form closes. A focused rendering
 test verifies that a Find-only form does not advertise Replace.
+
+GitHub Actions [PR run 38285456464](https://github.com/uniblab/Icod.Widgets/actions/runs/38285456464)
+at the qualified implementation tree completed successfully: metadata, Windows,
+Linux, and macOS jobs all concluded **success**. Its matrix ran Staging restore,
+build, tests, sample smokes, package checks, and package-only consumer. These
+are automated CI checks, not live interactive-terminal checks.
 
 ## Artifact and compatibility
 
@@ -57,8 +63,8 @@ and assembly version `1.0.0.0`. See the
 Only .NET 10 is installed in this local environment. net8/net9 builds and the
 package-only consumer compiled, but their runtime tests were **Not tested** here.
 Windows, macOS, and Linux live terminal interactions were **Not tested** here;
-headless sample smokes do not qualify interactive rendering/input. The final
-remote PR platform matrix is recorded after the correction push. PowerShell
+headless sample smokes do not qualify interactive rendering/input. The remote
+PR platform matrix is recorded above. PowerShell
 package-verifier execution was **Not tested**; direct archive/nuspec inspection
 is recorded above.
 
