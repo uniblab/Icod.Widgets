@@ -27,7 +27,7 @@ using Xunit;
 
 public sealed class DependencyBoundaryTests {
 	[Fact]
-	public void SoleDirectDependencyIsDCurses240() {
+	public void SoleDirectDependencyIsDCurses250() {
 		string? directory = AppContext.BaseDirectory;
 		string? project = null;
 		while ( directory is not null && project is null ) {
@@ -41,7 +41,7 @@ public sealed class DependencyBoundaryTests {
 		XElement[] references = document.Descendants( "PackageReference" ).ToArray();
 		XElement reference = Assert.Single( references );
 		Assert.Equal( "Icod.DCurses", (string?)reference.Attribute( "Include" ) );
-		Assert.Equal( "2.4.0", (string?)reference.Attribute( "Version" ) );
+		Assert.Equal( "2.5.0", (string?)reference.Attribute( "Version" ) );
 	}
 
 	[Fact]

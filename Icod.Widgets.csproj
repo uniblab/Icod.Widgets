@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.2.0</Version>
-		<PackageVersion>1.2.0</PackageVersion>
+		<Version>1.3.0-alpha.1</Version>
+		<PackageVersion>1.3.0-alpha.1</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Adds stable-key document tabs, replaceable caller-owned editor content, dynamic menus and actionable status, child-composable dialogs, explicit save-target inspection, and typed search/navigation requests. Includes an in-memory workspace sample. Depends on Icod.DCurses 2.4.0.</PackageReleaseNotes>
+		<PackageReleaseNotes>Development source for opt-in widget color themes over Icod.DCurses 2.5.0. No prerelease package has been published.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -93,6 +93,6 @@
 		</Content>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Icod.DCurses" Version="2.4.0" />
+		<PackageReference Include="Icod.DCurses" Version="2.5.0" />
 	</ItemGroup>
 </Project>

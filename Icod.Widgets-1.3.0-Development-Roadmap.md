@@ -29,7 +29,8 @@ document policy.
 - The merged Widgets 1.2.0 package directly depends on DCurses 2.4.0. First
   verify that the stable 2.5.0 package is published and restorable, then move
   the *single* direct dependency to 2.5.0. Icod.Terminal 1.29.0 remains
-  transitive; the package version changes only in the release tranches.
+  transitive. Use a synchronized `1.3.0-alpha.N` source/package identity during
+  development; advance to RC and stable only after their respective gates.
 - The application selects a palette and drives input, timing, render and
   refresh. Widgets resolves presentation roles and paints cells; DCurses
   handles terminal-specific representation and independent axis fallback.
