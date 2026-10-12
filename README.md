@@ -65,7 +65,10 @@ cd Icod.Widgets
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
 ```
 
-Use Ctrl+N/Ctrl+P to visit its six pages and Ctrl+Q to exit.
+Use Ctrl+N/Ctrl+P to visit its seven pages and Ctrl+Q to exit.
+On the 1.3 development branch, Ctrl+T cycles capability-aware dark and light
+palettes and terminal-default styling. Try the forms, selected lists, framed
+popups, dialog captions, and game status under each palette.
 
 To exercise the 1.1 multiline editing foundation, run the editor sample:
 
@@ -134,6 +137,34 @@ for complete session setup, input, resizing, rendering, and cleanup.
 - Provider-backed folder selection and single/multiple existing-file selection.
 - Inventory/action lists, bounded message history, status bars, help overlays,
   and text/number prompts.
+
+## Themes and terminal colors
+
+The 1.3 development branch adds full `CursesStyle` roles for widget parts:
+each style carries foreground, background and attributes. Use
+`WidgetPalette.Create(session.PresentationCapabilities)` after opening a DCurses
+session, or supply your own `WidgetTheme` with immutable `Parts` overrides.
+Change a live host's theme with `host.SetTheme(nextTheme)` and render again.
+Scoped `widget.Styles` overrides take precedence on that widget's subtree;
+the six original theme roles remain supported.
+
+```csharp
+WidgetTheme dark = WidgetPalette.Create(session.PresentationCapabilities);
+WidgetTheme light = WidgetPalette.Create(session.PresentationCapabilities, WidgetPaletteVariant.Light);
+using WidgetHost host = new(session, dark);
+// Attach, arrange and run the application loop as in Quick Start.
+host.SetTheme(light);
+host.Render();
+```
+
+Color requests follow DCurses' public capability observations. Unsupported
+foreground and background axes revert independently to terminal defaults;
+RGB and indexed colors are requested only when advertised. A terminal that
+advertises neither color nor attributes may display identical cell styles;
+text markers, borders, labels and focus navigation still work. The terminal
+controls its physical palette, so exact colors vary by profile. The
+[1.3 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.3.0-Development-Roadmap.md)
+tracks qualification before release.
 
 Tab/Shift+Tab traverses controls unless a control consumes Tab; the multiline
 editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.

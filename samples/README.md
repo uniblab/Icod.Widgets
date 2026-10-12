@@ -6,10 +6,16 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 
 | Sample | Live command | Workflow |
 |---|---|---|
-| Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Six pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI |
+| Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Seven pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI, workspace colors |
 | Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an existing file into an exact, editable in-memory document |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 | Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
+
+On the 1.3 branch, the gallery's **Ctrl+T** cycles dark, light, and
+terminal-default presentation. Dark/light use the running DCurses session's
+color/attribute observations; default demonstrates the legacy six-role theme.
+Try the same widget and overlay under each mode. The gallery smoke also cycles
+all three while checking that keyboard focus is retained.
 
 Append `-- --smoke` for deterministic checks without opening a terminal. These
 checks exercise the same application controllers as live mode. CI runs them on

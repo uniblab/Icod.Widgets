@@ -6,7 +6,12 @@ GPL-3.0-or-later. Run from the repository root:
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
 ```
 
-Ctrl+N/Ctrl+P change page; Tab/Shift+Tab focus controls. Six pages:
+Ctrl+N/Ctrl+P change page; Tab/Shift+Tab focus controls. **Ctrl+T** cycles
+dark, light, and terminal-default themes without disturbing focus. The first
+two use `WidgetPalette.Create(session.PresentationCapabilities)`; when a
+profile offers no color, foreground and background stay at terminal defaults.
+Compare selected rows, disabled entries, popup borders and empty cells, dialog
+captions, status fields, and the editor's focused/unfocused selection. Seven pages:
 
 1. Forms: type/paste Unicode; Left/Right/Home/End move by text element;
    Backspace/Delete edit. Space toggles checkbox; arrows choose radio;
@@ -32,6 +37,9 @@ Ctrl+N/Ctrl+P change page; Tab/Shift+Tab focus controls. Six pages:
    filters. Ctrl+B shows basket; Enter/Space/Delete removes a basket entry.
    Escape cancels. Selection survives directory/filter changes; failures stay open.
 6. Game UI: inventory, messages, status, and modal help.
+7. Workspace color: an active modified tab, multiline editor, scrollbar track
+   and thumb, plus actionable status. F6 moves focus out of the editor; Ctrl+T
+   switches themes while preserving the active tab and document view.
 
 Resize repeatedly, including compact layouts. Ctrl+Q always exits; Q/Escape
 exits outside a dialog/menu and text field. Keyboard operation requires no mouse.
@@ -41,4 +49,6 @@ The sample uses retained text presentation and no raster graphics.
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS six gallery pages, forms, provider-backed picker cancellation, wizard validation, rendering`.
+Expected: `PASS seven gallery pages, theme cycle, provider-backed picker cancellation, wizard validation, rendering`.
+The smoke cycles all three themes and verifies focus retention; it does not
+verify physical terminal color output.
