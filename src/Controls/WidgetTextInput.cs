@@ -163,13 +163,15 @@ public sealed class WidgetTextInput : Widget, IWidgetEditTarget, IWidgetClipboar
 	}
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
-		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return; CursesStyle style = !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal;
-		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) ); int start = this.GetVisibleStart( area.Columns, screen.TextWidthProvider );
+		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
+		CursesStyle surface = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.FieldSurface );
+		CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused && !this.HasPartStyle( theme, WidgetStyleRole.FieldText ) ? WidgetStyleRole.Focused : WidgetStyleRole.FieldText );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( surface ) ); int start = this.GetVisibleStart( area.Columns, screen.TextWidthProvider );
 		string display = CursesText.TruncateToColumns( this.value[ start.. ], area.Columns, screen.TextWidthProvider ); int end = start + display.Length;
 		int selectionStart = Math.Clamp( this.SelectionStart, start, end ); int selectionEnd = Math.Clamp( this.SelectionEnd, start, end );
 		screen.StandardWindow.Move( area.Row, area.Column );
 		if ( selectionStart > start ) screen.StandardWindow.Write( this.value[ start..selectionStart ], style );
-		if ( selectionEnd > selectionStart ) screen.StandardWindow.Write( this.value[ selectionStart..selectionEnd ], theme.Selected );
+		if ( selectionEnd > selectionStart ) screen.StandardWindow.Write( this.value[ selectionStart..selectionEnd ], this.Style( theme, WidgetStyleRole.FieldSelection ) );
 		if ( end > selectionEnd ) screen.StandardWindow.Write( this.value[ selectionEnd..end ], style );
 	}
 

@@ -107,12 +107,14 @@ public class WidgetList : Widget {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); this.LastRenderVisitedCount = 0; if ( area.IsEmpty ) return;
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.ListSurface ) ) );
 		for ( int row = 0; row < area.Rows; row++ ) {
 			int index = this.scrollOffset + row; if ( index >= this.items.Length ) break;
 			WidgetListItem item = this.items[ index ]; this.LastRenderVisitedCount++;
 			string marker = this.selected.Contains( item.Key ) ? "* " : "  ";
 			string text = CursesText.TruncateToColumns( marker + item.Text, area.Columns, screen.TextWidthProvider );
-			CursesStyle style = !this.IsEffectivelyEnabled || !item.IsEnabled ? theme.Disabled : index == this.cursorIndex && focused ? theme.Focused : this.selected.Contains( item.Key ) ? theme.Selected : theme.Normal;
+			CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled || !item.IsEnabled ? WidgetStyleRole.ListDisabled : index == this.cursorIndex && focused ? WidgetStyleRole.ListFocused : this.selected.Contains( item.Key ) ? WidgetStyleRole.ListSelected : WidgetStyleRole.ListItem );
+			screen.StandardWindow.FillRectangle( area.Row + row, area.Column, 1, area.Columns, CursesCell.Blank( style ) );
 			screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( text, style );
 		}
 	}

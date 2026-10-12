@@ -69,6 +69,11 @@ public abstract class Widget {
 			if ( current.Styles.TryGetValue( role, out CursesStyle style ) ) return style;
 		return theme.Resolve( role );
 	}
+	protected bool HasPartStyle( WidgetTheme theme, WidgetStyleRole role ) {
+		for ( Widget? current = this; current is not null; current = current.Parent )
+			if ( current.Styles.TryGetValue( role, out _ ) ) return true;
+		return theme.Parts.TryGetValue( role, out _ );
+	}
 	internal CursesStyle ResolveStyle( WidgetTheme theme, WidgetStyleRole role ) => this.Style( theme, role );
 	protected void EnsureActionCapacity( int count = 1 ) => this.RequireHost().EnsureActionCapacityFor( this, count );
 	protected void EmitAction( WidgetAction action ) => this.RequireHost().EmitFor( this, action );

@@ -32,8 +32,9 @@ public sealed class WidgetBorder : WidgetContainer {
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		string line = new( '─', area.Columns ); screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( line, theme.Border );
-		if ( 1 < area.Rows ) { screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( line, theme.Border ); }
+		CursesStyle style = this.Style( theme, WidgetStyleRole.Border );
+		string line = new( '─', area.Columns ); screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( line, style );
+		if ( 1 < area.Rows ) { screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( line, style ); }
 	}
 }
 

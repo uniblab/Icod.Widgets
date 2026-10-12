@@ -36,8 +36,10 @@ public sealed class WidgetCheckBox( string id, string text, bool isChecked = fal
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string value = CursesText.TruncateToColumns( $"[{( this.IsChecked ? 'x' : ' ' )}] {this.Text}", area.Columns, screen.TextWidthProvider );
+		CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.Focused : WidgetStyleRole.CheckBox );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) );
 		screen.StandardWindow.Move( area.Row, area.Column );
-		screen.StandardWindow.Write( value, !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
+		screen.StandardWindow.Write( value, style );
 	}
 }
 

@@ -79,6 +79,43 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void CoreControlsStyleOwnedBlankCellsAndSelectedRows() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.Surface, Red ).With( WidgetStyleRole.Text, Blue )
+			.With( WidgetStyleRole.ListSurface, Red ).With( WidgetStyleRole.ListSelected, Blue );
+		CursesScreen screen = new( 12, 5 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
+		WidgetLabel label = new( "label", "Hi" ); WidgetList list = new( "list", WidgetSelectionMode.Single );
+		list.SetItems( [ new WidgetListItem( "one", "One" ) ] );
+		WidgetStack root = new( "root", WidgetOrientation.Vertical ); root.Add( label ); root.Add( list ); host.Attach( root );
+		label.Arrange( new CursesRectangle( 0, 0, 1, 12 ) ); list.Arrange( new CursesRectangle( 1, 0, 3, 12 ) );
+		host.Render();
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 11 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 3, 11 ).Style );
+		host.Focus( list ); host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ); list.OnRender( screen, host.Theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 11 ).Style );
+	}
+
+	[Fact]
+	public void EditorAndFieldUseDistinctSurfaceTextAndSelectionStyles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.TextSelectionInactive, Red ).With( WidgetStyleRole.FieldSurface, Blue )
+			.With( WidgetStyleRole.FieldText, Red ).With( WidgetStyleRole.FieldSelection, Blue );
+		CursesScreen screen = new( 10, 3 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
+		WidgetTextInput field = new( "field", "ab" ); field.Arrange( new CursesRectangle( 0, 0, 1, 10 ) );
+		field.SetSelection( 0, 1 ); field.OnRender( screen, host.Theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 1 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 9 ).Style );
+		using WidgetTextViewState view = new( new WidgetTextDocument( [ "界z".AsMemory() ] ) );
+		WidgetTextEditor editor = new( "editor", view ); editor.Arrange( new CursesRectangle( 1, 0, 2, 10 ) );
+		view.SetSelection( 0, 1 ); editor.OnRender( screen, host.Theme, false );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 1 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 2 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 9 ).Style );
+	}
+
+	[Fact]
 	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
 		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
 		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };
