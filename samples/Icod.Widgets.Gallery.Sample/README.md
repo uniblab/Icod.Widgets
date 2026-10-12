@@ -38,8 +38,9 @@ captions, status fields, and the editor's focused/unfocused selection. Seven pag
    Escape cancels. Selection survives directory/filter changes; failures stay open.
 6. Game UI: inventory, messages, status, and modal help.
 7. Workspace color: an active modified tab, multiline editor, scrollbar track
-   and thumb, plus actionable status. F6 moves focus out of the editor; Ctrl+T
-   switches themes while preserving the active tab and document view.
+   and thumb, plus actionable status. F6/Shift+F6 cycles focus among tabs,
+   editor, and status, including a way out of the editor, which consumes Tab.
+   Ctrl+T switches themes while preserving the active tab and document view.
 
 Resize repeatedly, including compact layouts. Ctrl+Q always exits; Q/Escape
 exits outside a dialog/menu and text field. Keyboard operation requires no mouse.
@@ -50,5 +51,6 @@ dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -
 ```
 
 Expected: `PASS seven gallery pages, theme cycle, provider-backed picker cancellation, wizard validation, rendering`.
-The smoke cycles all three themes and verifies focus retention; it does not
-verify physical terminal color output.
+The smoke cycles all three themes, verifies focus retention, and exercises
+F6/Shift+F6 navigation on the workspace page. It does not verify physical
+terminal color output.

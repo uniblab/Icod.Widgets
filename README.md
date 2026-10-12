@@ -68,7 +68,8 @@ dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
 Use Ctrl+N/Ctrl+P to visit its seven pages and Ctrl+Q to exit.
 Ctrl+T cycles capability-aware dark and light
 palettes and terminal-default styling. Try the forms, selected lists, framed
-popups, dialog captions, and game status under each palette.
+popups, dialog captions, and game status under each palette. On the workspace
+page, F6 and Shift+F6 move among the tabs, editor, and actionable status.
 
 To exercise the 1.1 multiline editing foundation, run the editor sample:
 
@@ -156,6 +157,23 @@ using WidgetHost host = new(session, dark);
 host.SetTheme(light);
 host.Render();
 ```
+
+To customize a part, reuse a style from the capability-aware palette. For
+example, this gives one button the palette's selected style when focused;
+other buttons retain the theme's `ButtonFocused` role:
+
+```csharp
+WidgetButton action = new("action", "Apply", "document.apply") {
+    Styles = WidgetStyles.Empty.With(WidgetStyleRole.ButtonFocused, host.Theme.Selected)
+};
+host.Attach(action); // Arrange and render in the application loop.
+```
+
+Use `host.Theme with { Parts = host.Theme.Parts.With(WidgetStyleRole.DialogBorder, host.Theme.Focused) }`
+with `host.SetTheme` to override a role across the theme. Scoped styles resolve
+before theme parts; switching themes does not clear a widget's scoped overrides.
+Reapply palette-derived overrides when changing palettes if they should follow
+the new palette.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;

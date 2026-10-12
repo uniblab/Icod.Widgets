@@ -15,7 +15,9 @@ The gallery's **Ctrl+T** cycles dark, light, and
 terminal-default presentation. Dark/light use the running DCurses session's
 color/attribute observations; default demonstrates the legacy six-role theme.
 Try the same widget and overlay under each mode. The gallery smoke also cycles
-all three while checking that keyboard focus is retained.
+all three while checking that keyboard focus is retained. On its workspace
+color page, F6 and Shift+F6 cycle among tabs, editor, and actionable status;
+the smoke exercises this route too.
 
 Append `-- --smoke` for deterministic checks without opening a terminal. These
 checks exercise the same application controllers as live mode. CI runs them on

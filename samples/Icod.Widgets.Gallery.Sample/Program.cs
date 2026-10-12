@@ -40,6 +40,16 @@ internal static class Program {
 			if ( !ReferenceEquals( focusBeforeThemeSwitch, app.Host.FocusedWidget ) ) return 3;
 		}
 		if ( app.PaletteIndex != 0 ) return 3;
+		app.SelectPage( 6 );
+		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetTextEditor ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetStatusBar ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6, WidgetInputModifiers.Shift ) );
+		if ( app.Host.FocusedWidget is not WidgetStatusBar ) return 4;
 		app.SelectPage( 4 ); app.OpenFiles( true ); await app.PollAsync( true ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		app.SelectPage( 3 ); app.OpenWizard(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		if ( app.Host.ModalDepth != 0 ) return 2;
@@ -57,7 +67,7 @@ internal static class Program {
 		internal int PaletteIndex => this.paletteIndex;
 		internal WidgetTextInput Name { get; } = new( "name" );
 		protected override string Heading => "Icod.Widgets gallery — " + new[] { "Forms", "Lists / drop-down", "Menus", "Dialogs / wizard", "Folders / files", "Game UI", "Workspace color" }[ this.page ] + " — " + new[] { "dark", "light", "default" }[ this.paletteIndex ];
-		protected override string Keys => "Ctrl+N/P pages | Ctrl+T theme | Tab focus | Enter activate";
+		protected override string Keys => this.page == 6 ? "Ctrl+N/P pages | Ctrl+T theme | F6 / Shift+F6 focus | Enter activate" : "Ctrl+N/P pages | Ctrl+T theme | Tab focus | Enter activate";
 		internal Gallery( CursesScreen screen ) : base( screen ) {
 			WidgetList single = new( "single", WidgetSelectionMode.Single ); single.SetItems( Items() );
 			WidgetList multiple = new( "multiple", WidgetSelectionMode.Multiple ); multiple.SetItems( Items() );
@@ -100,6 +110,12 @@ internal static class Program {
 			if ( this.Dialog is { IsOpen: true } dialog ) dialog.Arrange( screen.Bounds );
 		}
 		protected override bool OnShortcut( WidgetInput input ) {
+			if ( this.page == 6 && input.Kind == WidgetInputKind.Key && input.KeyCode == WidgetKey.Function && input.FunctionKeyNumber == 6 ) {
+				Widget[] targets = this.pages[ 6 ].Where( widget => widget.IsFocusable && widget is WidgetTabStrip or WidgetTextEditor or WidgetStatusBar ).ToArray();
+				int current = Array.FindIndex( targets, widget => ReferenceEquals( widget, this.Host.FocusedWidget ) );
+				if ( targets.Length > 0 ) this.Host.Focus( targets[ current < 0 ? 0 : ( current + ( ( input.Modifiers & WidgetInputModifiers.Shift ) != 0 ? targets.Length - 1 : 1 ) ) % targets.Length ] );
+				return true;
+			}
 			if ( ( input.Modifiers & WidgetInputModifiers.Control ) == 0 ) return false;
 			if ( input.Character?.Value is 't' or 'T' ) { this.paletteIndex = ( this.paletteIndex + 1 ) % 3; this.ApplyPalette(); this.Status = "Theme: " + new[] { "dark", "light", "terminal default" }[ this.paletteIndex ]; return true; }
 			if ( input.Character?.Value is 'n' or 'N' ) { this.SelectPage( ( this.page + 1 ) % 7 ); return true; }
