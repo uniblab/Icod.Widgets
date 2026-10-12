@@ -25,6 +25,7 @@ using Icod.DCurses;
 public sealed partial class WidgetHost {
 	private readonly Dictionary<WidgetDialog, CursesPanel> dialogPanels = [];
 	private CursesPanel? attachmentPanel;
+	private CursesScreen? overlayStaging;
 	public WidgetCaretIntent? GetCaretIntent() {
 		this.ThrowIfDisposed(); if ( this.popup is not null ) return null; Widget? focused = this.FocusedWidget;
 		if ( focused is null || !focused.IsEffectivelyEnabled || !focused.IsEffectivelyVisible ) return null;
@@ -38,10 +39,12 @@ public sealed partial class WidgetHost {
 		if ( bounds.IsEmpty || !widget.IsEffectivelyVisible ) { panel.Hide(); return; }
 		panel.SetBounds( bounds ); panel.Show();
 		// Render through the existing public control seam, then copy only the overlay rectangle.
-		CursesScreen staging = new( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
+		if ( this.overlayStaging is null || this.overlayStaging.Columns != this.Screen.Columns || this.overlayStaging.Rows != this.Screen.Rows )
+			this.overlayStaging = new CursesScreen( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
+		CursesScreen staging = this.overlayStaging;
 		staging.StandardWindow.WrapMode = CursesWrapMode.Clip;
-		WidgetStyleRole surface = widget is WidgetDialog ? WidgetStyleRole.DialogSurface : WidgetStyleRole.PopupSurface;
-		staging.StandardWindow.FillRectangle( bounds.Row, bounds.Column, bounds.Rows, bounds.Columns, CursesCell.Blank( widget.ResolveStyle( this.Theme, surface ) ) );
+		if ( widget is not WidgetDialog )
+			staging.StandardWindow.FillRectangle( bounds.Row, bounds.Column, bounds.Rows, bounds.Columns, CursesCell.Blank( widget.ResolveStyle( this.Theme, WidgetStyleRole.PopupSurface ) ) );
 		widget.OnRender( staging, this.Theme, ReferenceEquals( widget, this.FocusedWidget ) );
 		if ( widget is WidgetDialog dialog ) foreach ( Widget child in dialog.DescendantsAndSelf().Skip( 1 ) )
 			if ( child.IsEffectivelyVisible ) child.OnRender( staging, this.Theme, ReferenceEquals( child, this.FocusedWidget ) );

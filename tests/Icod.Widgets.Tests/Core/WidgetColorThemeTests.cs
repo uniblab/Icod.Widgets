@@ -229,6 +229,21 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void RepeatedModalThemeSwitchesReusePresentationStorage() {
+		CursesScreen screen = new( 80, 25 ); using WidgetHost host = new( screen, WidgetTheme.Default );
+		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "modal", "Title", "Body" ); host.ShowModal( dialog ); host.Render();
+		WidgetTheme dark = WidgetPalette.Create( default ); WidgetTheme light = WidgetPalette.Create( default, WidgetPaletteVariant.Light );
+		long before = GC.GetAllocatedBytesForCurrentThread();
+		for ( int iteration = 0; iteration < 100; iteration++ ) {
+			host.SetTheme( iteration % 2 == 0 ? dark : light );
+			host.Render();
+		}
+		long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+		Assert.InRange( allocated, 0, 100_000_000 );
+		Assert.Same( dialog, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
 		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
 		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };
