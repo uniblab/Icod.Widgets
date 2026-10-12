@@ -34,10 +34,13 @@ public class WidgetPopupMenu : Widget {
 		this.rootItems = items.ToArray();
 		if ( MaximumDepth( this.rootItems ) > WidgetLimits.MaximumSubmenuDepth ) throw new ArgumentException( $"A menu cannot exceed {WidgetLimits.MaximumSubmenuDepth} levels.", nameof( items ) );
 		ValidateMnemonics( this.rootItems, nameof( items ) );
-		HashSet<( WidgetKey Key, WidgetInputModifiers Modifiers, char? Character )> shortcuts = [];
-		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut is { } shortcut &&
-			!shortcuts.Add( ( shortcut.Key, shortcut.Modifiers, shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ) : null ) ) )
-			throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
+		HashSet<( WidgetKey Key, WidgetInputModifiers Modifiers, char? Character, int? FunctionKeyNumber )> shortcuts = [];
+		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut is { } shortcut ) {
+			if ( shortcut.FunctionKeyNumber is < 0 or > 63 || shortcut.FunctionKeyNumber.HasValue && WidgetKey.Function != shortcut.Key )
+				throw new ArgumentException( "A numbered menu shortcut must identify a function key from 0 through 63.", nameof( items ) );
+			if ( !shortcuts.Add( ( shortcut.Key, shortcut.Modifiers, shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ) : null, shortcut.FunctionKeyNumber ) ) )
+				throw new ArgumentException( "Menu shortcuts must be unique.", nameof( items ) );
+		}
 	}
 
 	public override bool IsFocusable => true;
@@ -136,7 +139,8 @@ public class WidgetPopupMenu : Widget {
 
 	protected bool TryShortcut( WidgetInput input, WidgetHost host ) {
 		foreach ( WidgetMenuItem item in FlattenEnabled( this.rootItems ) ) {
-			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers || !ShortcutCharacterMatches( shortcut, input ) ) continue;
+			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers ||
+				!ShortcutCharacterMatches( shortcut, input ) || !ShortcutFunctionKeyMatches( shortcut, input ) ) continue;
 			if ( item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
 			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
 			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
@@ -147,6 +151,8 @@ public class WidgetPopupMenu : Widget {
 
 	private static bool ShortcutCharacterMatches( WidgetMenuShortcut shortcut, WidgetInput input ) => !shortcut.Character.HasValue ||
 		input.Character is { Value: <= char.MaxValue } character && char.ToUpperInvariant( shortcut.Character.Value ) == char.ToUpperInvariant( (char)character.Value );
+	private static bool ShortcutFunctionKeyMatches( WidgetMenuShortcut shortcut, WidgetInput input ) =>
+		!shortcut.FunctionKeyNumber.HasValue || shortcut.FunctionKeyNumber == input.FunctionKeyNumber;
 
 	private static string ComposeRow( WidgetMenuItem item, string label, int columns, CursesScreen screen ) {
 		if ( item.Shortcut is not { } shortcut ) return CursesText.TruncateToColumns( label, columns, screen.TextWidthProvider );
@@ -162,7 +168,8 @@ public class WidgetPopupMenu : Widget {
 		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Control ) ) parts.Add( "Ctrl" );
 		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Alt ) ) parts.Add( "Alt" );
 		if ( 0 != ( shortcut.Modifiers & WidgetInputModifiers.Shift ) ) parts.Add( "Shift" );
-		parts.Add( shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ).ToString() : shortcut.Key.ToString() );
+		parts.Add( shortcut.Character.HasValue ? char.ToUpperInvariant( shortcut.Character.Value ).ToString() :
+			shortcut.FunctionKeyNumber.HasValue ? $"F{shortcut.FunctionKeyNumber.Value}" : shortcut.Key.ToString() );
 		return string.Join( "+", parts );
 	}
 

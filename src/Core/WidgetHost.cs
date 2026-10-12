@@ -85,6 +85,7 @@ public sealed partial class WidgetHost : IDisposable {
 
 	public void Arrange( CursesRectangle bounds ) {
 		this.ThrowIfDisposed();
+		this.CancelPointerCapture();
 		foreach ( Widget root in this.roots ) root.Arrange( bounds );
 	}
 
@@ -92,34 +93,67 @@ public sealed partial class WidgetHost : IDisposable {
 		ArgumentNullException.ThrowIfNull( widget );
 		this.ThrowIfDisposed();
 		if ( !ReferenceEquals( widget.Host, this ) ) throw new ArgumentException( "The widget is not attached to this host.", nameof( widget ) );
-		if ( this.popup?.Owner == widget ) return this.router.Focus( this.popup.Region );
-		return this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) && this.router.Focus( region );
+		Widget? previous = this.FocusedWidget; if ( !ReferenceEquals( previous, widget ) ) this.CancelPointerCapture();
+		bool result = this.popup?.Owner == widget ? this.router.Focus( this.popup.Region ) :
+			this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) && this.router.Focus( region );
+		if ( result && !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); return result;
+	}
+
+	public bool MoveFocus( CursesFocusDirection direction ) {
+		this.ThrowIfDisposed();
+		if ( !Enum.IsDefined( direction ) ) throw new ArgumentOutOfRangeException( nameof( direction ) );
+		if ( this.popup is not null ) this.DismissPopup();
+		Widget? previous = this.FocusedWidget;
+		CursesInteractionRegion? next = this.router.MoveFocus( direction );
+		if ( next is not null && !ReferenceEquals( previous, this.FocusedWidget ) ) { this.CancelPointerCapture(); this.ClipboardFocusChanged( previous ); }
+		return next is not null;
+	}
+
+	public WidgetCommandResult ExecuteEditCommand( WidgetEditCommand command, TimeSpan timestamp ) {
+		if ( !Enum.IsDefined( command ) ) throw new ArgumentOutOfRangeException( nameof( command ) );
+		this.SetCurrentTime( timestamp );
+		if ( this.FocusedWidget is not IWidgetEditTarget target ) return WidgetCommandResult.NotApplicable;
+		if ( !target.CanExecuteEditCommand( command ) ) return WidgetCommandResult.Disabled;
+		WidgetCommandResult result = target.ExecuteEditCommand( command, timestamp );
+		if ( !Enum.IsDefined( result ) || WidgetCommandResult.NotApplicable == result )
+			throw new InvalidOperationException( "An applicable edit target must return Disabled or Executed." );
+		return result;
 	}
 
 	public WidgetDispatchResult Process( CursesInputEvent input, TimeSpan timestamp ) => this.Process( WidgetInput.From( input ), timestamp );
 
 	public WidgetDispatchResult Process( WidgetInput input, TimeSpan timestamp ) {
 		ArgumentNullException.ThrowIfNull( input );
-		this.ThrowIfDisposed();
-		if ( TimeSpan.Zero > timestamp || ( this.currentTime.HasValue && timestamp < this.currentTime.Value ) ) {
-			throw new ArgumentOutOfRangeException( nameof( timestamp ), "Widget time must be nonnegative and monotonic." );
-		}
-		this.currentTime = timestamp;
+		this.SetCurrentTime( timestamp );
+		if ( WidgetInputKind.Focus == input.Kind && CursesFocusState.Unfocused == input.FocusState ) this.CancelPointerCapture();
+		if ( WidgetInputKind.Key == input.Kind && CursesKeyEventPhase.Release == input.KeyPhase )
+			return new WidgetDispatchResult( false, this.DrainActions() );
 		bool handled = false;
 
 		if ( WidgetInputKind.Key == input.Kind && this.popup is null && this.ActiveModal is null && this.TryMenuBarInput( input ) ) handled = true;
 		else if ( WidgetInputKind.Key == input.Kind && WidgetKey.Tab == input.KeyCode ) {
 			CursesFocusDirection direction = 0 != ( input.Modifiers & WidgetInputModifiers.Shift )
 				? CursesFocusDirection.Backward : CursesFocusDirection.Forward;
-			if ( this.popup is not null ) this.DismissPopup();
-			handled = this.ActiveModal?.OnInput( input, this ) ?? false;
-			if ( !handled ) handled = this.router.MoveFocus( direction ) is not null;
+			Widget? tabTarget = this.ResolveTarget( input );
+			if ( tabTarget?.AcceptsTab == true && tabTarget.IsEffectivelyEnabled && tabTarget.IsEffectivelyVisible ) handled = tabTarget.OnInput( input, this );
+			else {
+				if ( this.popup is not null ) this.DismissPopup();
+				handled = this.ActiveModal?.OnInput( input, this ) ?? false;
+				if ( !handled ) handled = this.MoveFocus( direction );
+			}
 		} else {
 			Widget? target = this.ResolveTarget( input );
 			if ( target is not null && target.IsEffectivelyEnabled && target.IsEffectivelyVisible ) handled = target.OnInput( input, this );
 		}
 
 		return new WidgetDispatchResult( handled || this.ActiveModal is not null, this.DrainActions() );
+	}
+
+	public WidgetDispatchResult Update( TimeSpan timestamp ) {
+		this.SetCurrentTime( timestamp );
+		foreach ( Widget widget in this.roots.SelectMany( root => root.DescendantsAndSelf() ).ToArray() )
+			if ( ReferenceEquals( widget.Host, this ) && widget.IsEffectivelyEnabled && widget.IsEffectivelyVisible ) widget.OnHostUpdate( timestamp );
+		return new WidgetDispatchResult( this.ActiveModal is not null, this.DrainActions() );
 	}
 
 	private bool TryMenuBarInput( WidgetInput input ) {
@@ -152,6 +186,12 @@ public sealed partial class WidgetHost : IDisposable {
 	}
 
 	internal void EnsureActionCapacity( int count = 1 ) { this.ThrowIfDisposed(); if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." ); }
+	internal void EnsureActionCapacityFor( Widget source, int count ) { this.ValidateActionSource( source ); this.EnsureActionCapacity( count ); }
+	internal void EmitFor( Widget source, WidgetAction action ) {
+		ArgumentNullException.ThrowIfNull( action ); this.ValidateActionSource( source );
+		if ( !StringComparer.Ordinal.Equals( source.Id, action.WidgetId ) ) throw new ArgumentException( "An emitted action must identify its source widget.", nameof( action ) );
+		this.EnsureActionCapacity(); this.actions.Enqueue( action );
+	}
 
 	internal void Enqueue( WidgetAction action ) {
 		ArgumentNullException.ThrowIfNull( action );
@@ -174,8 +214,10 @@ public sealed partial class WidgetHost : IDisposable {
 
 	internal void Synchronize( Widget widget ) {
 		if ( this.disposed ) return;
+		Widget? previous = this.FocusedWidget;
 		foreach ( Widget child in widget.DescendantsAndSelf().Skip( 1 ) ) this.SynchronizeRegion( child );
 		this.SynchronizeRegion( widget );
+		if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous );
 	}
 	private void SynchronizeRegion( Widget widget ) {
 		if ( !this.regions.TryGetValue( widget, out CursesInteractionRegion? region ) ) return;
@@ -191,19 +233,20 @@ public sealed partial class WidgetHost : IDisposable {
 	}
 
 	private Widget? ResolveTarget( WidgetInput input ) {
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null && this.pointerCapture is { } captured ) {
+			if ( CursesMouseAction.Release == input.Pointer.Action ) this.pointerCapture = null;
+			return captured;
+		}
 		if ( this.ActiveModal is not null ) return this.ActiveModal;
 		if ( this.popup is { } frame ) {
 			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.DismissPopup(); return null; }
 			if ( input.Kind != WidgetInputKind.Pointer ) return frame.Owner;
 		}
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null ) {
-			if ( CursesMouseAction.Release == input.Pointer.Action && this.pointerCapture is not null ) {
-				Widget captured = this.pointerCapture; this.pointerCapture = null; return captured;
-			}
 			if ( CursesMouseAction.Release == input.Pointer.Action ) return null;
 			CursesInteractionHit? hit = this.router.HitTest( input.Pointer.Row, input.Pointer.Column );
 			if ( hit is not null && this.widgetsByRegion.TryGetValue( hit.Region, out Widget? pointerWidget ) ) {
-				if ( pointerWidget.IsFocusable ) _ = this.router.Focus( hit.Region );
+				if ( pointerWidget.IsFocusable ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
 				if ( CursesMouseAction.Press == input.Pointer.Action ) this.pointerCapture = pointerWidget;
 				return pointerWidget;
 			}
@@ -227,6 +270,7 @@ public sealed partial class WidgetHost : IDisposable {
 		try {
 			foreach ( Widget item in subtree ) {
 				item.Host = this;
+				this.RegisterAttachmentGeneration( item );
 				this.attachedCount++;
 				completed.Add( item );
 				if ( item.IsFocusable ) {
@@ -248,6 +292,7 @@ public sealed partial class WidgetHost : IDisposable {
 	}
 
 	private void DetachValidated( Widget[] subtree ) {
+		Widget? previousFocus = this.FocusedWidget;
 		foreach ( Widget item in subtree ) {
 			if ( this.popup?.Owner == item ) this.DismissPopup();
 			if ( ReferenceEquals( this.pointerCapture, item ) ) this.CancelPointerCapture();
@@ -257,15 +302,18 @@ public sealed partial class WidgetHost : IDisposable {
 			}
 			if ( item is WidgetDialog dialog && this.dialogPanels.Remove( dialog, out CursesPanel? panel ) ) panel.Dispose();
 			if ( ReferenceEquals( item.Host, this ) ) {
+				this.RemoveAttachmentGeneration( item );
 				item.Host = null;
 				this.attachedCount--;
 			}
 		}
 		_ = this.router.FocusedRegion;
+		if ( !ReferenceEquals( previousFocus, this.FocusedWidget ) ) this.ClipboardFocusChanged( previousFocus );
 	}
 
 	public void Dispose() {
 		if ( this.disposed ) return;
+		this.CancelPointerCapture();
 		this.DismissPopup();
 		this.ClearModalsSilently();
 		foreach ( CursesInteractionRegion region in this.regions.Values.ToArray() ) region.Dispose();
@@ -276,12 +324,22 @@ public sealed partial class WidgetHost : IDisposable {
 		this.roots.Clear();
 		this.attachedCount = 0;
 		this.actions.Clear();
-		this.CancelPointerCapture();
+		this.ClearClipboardRequests();
 		this.router.Dispose();
 		this.disposed = true;
 	}
 
 	internal void SynchronizeTree( Widget widget ) => this.Synchronize( widget );
 	private void CancelPointerCapture() { Widget? captured = this.pointerCapture; this.pointerCapture = null; captured?.OnPointerCaptureCanceled(); }
+	private void SetCurrentTime( TimeSpan timestamp ) {
+		this.ThrowIfDisposed();
+		if ( TimeSpan.Zero > timestamp || ( this.currentTime.HasValue && timestamp < this.currentTime.Value ) )
+			throw new ArgumentOutOfRangeException( nameof( timestamp ), "Widget time must be nonnegative and monotonic." );
+		this.currentTime = timestamp;
+	}
+	private void ValidateActionSource( Widget source ) {
+		ArgumentNullException.ThrowIfNull( source ); this.ThrowIfDisposed();
+		if ( !ReferenceEquals( source.Host, this ) ) throw new InvalidOperationException( "The action source is not attached to this host." );
+	}
 	private void ThrowIfDisposed() { if ( this.disposed ) throw new ObjectDisposedException( nameof( WidgetHost ) ); }
 }

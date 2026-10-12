@@ -30,6 +30,9 @@ internal static class Program {
 		using Gallery app = new( new CursesScreen( 80, 30 ) );
 		app.Arrange(); app.Host.Focus( app.Name ); app.Input( WidgetInput.Paste( "Ada\tLovelace" ) );
 		if ( app.Name.Value != "Ada Lovelace" ) return 1;
+		app.Name.SetSelection( 0, 3 ); app.Input( WidgetInput.TextInput( new System.Text.Rune( 'X' ) ) );
+		if ( app.Name.Value != "X Lovelace" || WidgetCommandResult.Executed != app.Host.ExecuteEditCommand( WidgetEditCommand.Undo, app.Host.CurrentTime + TimeSpan.FromMilliseconds( 1 ) ) || app.Name.Value != "Ada Lovelace" ) return 1;
+		app.Host.DrainActions();
 		for ( int page = 0; page < 6; page++ ) { app.SelectPage( page ); app.Draw(); }
 		app.SelectPage( 4 ); app.OpenFiles( true ); await app.PollAsync( true ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		app.SelectPage( 3 ); app.OpenWizard(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
@@ -57,7 +60,7 @@ internal static class Program {
 			WidgetInventoryList inventory = new( "inventory" ); inventory.SetItems( Items() );
 			WidgetMessageHistory history = new( "history" ); history.Append( "The library receives items and messages from the application." ); history.Append( "No game rules live in Icod.Widgets." );
 			WidgetStatusBar status = new( "status" ); status.SetFields( [ new( "hp", "HP 12/20", 10 ), new( "depth", "Depth 3", 5 ) ] );
-			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode/paste), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
+			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode, selection, paste, undo), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
 			this.pages.Add( [ new WidgetLabel( "list-hint", "Single: Enter commits | Multi: Space toggles, Ctrl+A all, Shift+arrows range" ), single, multiple, new WidgetDropDown( "drop", Items(), "potion" ) ] );
 			this.pages.Add( [ new WidgetLabel( "menu-hint", "Alt+F/V opens | letter invokes | Ctrl+R shortcut | arrows navigate | Esc closes" ), new WidgetMenuBar( "bar", menuItems ), menu ] );
 			this.pages.Add( [ Button( "ok", "OK", "dialog.ok" ), Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );

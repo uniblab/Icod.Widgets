@@ -28,45 +28,81 @@ internal static class Program {
 		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync( screen => new Editor( screen, Environment.CurrentDirectory ) );
 		string directory = Path.Combine( Path.GetTempPath(), $"icod-editor-{Guid.NewGuid():N}" ); Directory.CreateDirectory( directory );
 		try {
-			await File.WriteAllTextAsync( Path.Combine( directory, "note.txt" ), "hello widgets" );
+			await File.WriteAllTextAsync( Path.Combine( directory, "note.txt" ), "hello\r\nwidgets\n" );
 			using Editor app = new( new CursesScreen( 60, 12 ), directory ); app.Arrange(); app.Open(); await app.PollAsync( true );
 			app.Input( WidgetInput.Key( WidgetKey.Enter ) );
 			await app.PollAsync( true ); await app.PollAsync( true ); app.Draw();
-			if ( app.Text != "hello widgets" || app.Host.ModalDepth != 0 ) return 1;
+			if ( app.Text != "hello\r\nwidgets\n" || app.Host.ModalDepth != 0 || app.IsModified ) return 1;
+			app.Input( WidgetInput.TextInput( new System.Text.Rune( '!' ) ) );
+			if ( app.Text != "!hello\r\nwidgets\n" || !app.IsModified ) return 2;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 3;
+			app.Input( WidgetInput.TextInput( new System.Text.Rune( 'q' ) ) );
+			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 4;
+			app.Input( WidgetInput.Key( WidgetKey.Escape ) );
+			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 5;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 6;
 			app.Open(); await app.PollAsync( true ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
-			if ( app.Text != "hello widgets" ) return 2;
-			Console.WriteLine( "PASS keyboard file selection, application-owned file reading, cancellation preserves document" ); return 0;
+			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
+			if ( app.Running ) return 8;
+			Console.WriteLine( "PASS exact file load, in-memory edit, text-field quit routing, undo to checkpoint, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
 	private sealed class Editor : WidgetSampleApplication {
 		private readonly string start;
 		private readonly WidgetButton open = new( "open", "Open file (Ctrl+O)", "file.open" );
-		private readonly WidgetList lines = new( "lines", WidgetSelectionMode.Single );
+		private WidgetTextDocument document = new( Array.Empty<ReadOnlyMemory<char>>() );
+		private WidgetTextViewState view;
+		private WidgetTextEditor editor;
 		private int nextId;
-		internal string Text { get; private set; } = "";
-		protected override string Heading => "Icod.Widgets editor open-file example";
-		protected override string Keys => "Ctrl+O opens a file | Arrows/PageUp/PageDown browse document | This example never writes files";
-		internal Editor( CursesScreen screen, string start ) : base( screen ) { this.start = start; this.Host.Attach( this.open ); this.Host.Attach( this.lines ); }
+		internal string Text => this.document.Read( 0, checked( (int)this.document.Length ) );
+		internal bool IsModified => this.document.IsModified;
+		protected override string Heading => "Icod.Widgets in-memory editor example";
+		protected override string Keys => "Ctrl+O open | Ctrl+Z/Y undo/redo | Ctrl+X/C/V/A edit | F6 moves focus | Never writes files";
+		internal Editor( CursesScreen screen, string start ) : base( screen ) {
+			this.start = start; this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
+			this.Host.Attach( this.open ); this.Host.Attach( this.editor );
+		}
 		internal override void Arrange() {
 			CursesScreen screen = this.Host.Screen;
 			this.open.Arrange( new CursesRectangle( Math.Min( 2, screen.Rows ), 0, Math.Min( 1, Math.Max( 0, screen.Rows - 2 ) ), screen.Columns ) );
-			this.lines.Arrange( new CursesRectangle( Math.Min( 3, screen.Rows ), 0, Math.Max( 0, screen.Rows - 5 ), screen.Columns ) );
+			this.editor.Arrange( new CursesRectangle( Math.Min( 3, screen.Rows ), 0, Math.Max( 0, screen.Rows - 5 ), screen.Columns ) );
 			if ( this.Dialog is { IsOpen: true } dialog ) dialog.Arrange( screen.Bounds );
 			if ( this.Host.FocusedWidget is null ) this.Host.Focus( this.open );
 		}
 		internal void Open() => this.Show( new WidgetFilePicker( "open." + ++this.nextId, new LocalWidgetFileSystemProvider(), this.start, false, [ new WidgetFileFilter( "Text", [ ".txt", ".md", ".cs", ".json" ] ), WidgetFileFilter.AllFiles ] ) );
-		protected override bool OnShortcut( WidgetInput input ) { if ( ( input.Modifiers & WidgetInputModifiers.Control ) != 0 && input.Character?.Value is 'o' or 'O' ) { this.Open(); return true; } return false; }
+		protected override bool OnShortcut( WidgetInput input ) {
+			if ( input.KeyCode == WidgetKey.Function && input.FunctionKeyNumber == 6 ) { this.Host.Focus( ReferenceEquals( this.Host.FocusedWidget, this.editor ) ? this.open : this.editor ); return true; }
+			if ( ( input.Modifiers & WidgetInputModifiers.Control ) == 0 ) return false;
+			if ( input.Character?.Value is 'o' or 'O' ) { this.Open(); return true; }
+			WidgetEditCommand? command = input.Character?.Value switch {
+				'z' or 'Z' => WidgetEditCommand.Undo, 'y' or 'Y' => WidgetEditCommand.Redo,
+				'x' or 'X' => WidgetEditCommand.Cut, 'c' or 'C' => WidgetEditCommand.Copy,
+				'v' or 'V' => WidgetEditCommand.Paste, 'a' or 'A' => WidgetEditCommand.SelectAll, _ => null
+			};
+			if ( command is null ) return false; WidgetCommandResult result = this.Host.ExecuteEditCommand( command.Value, this.CurrentTime );
+			this.Status = result == WidgetCommandResult.Executed ? command.Value.ToString() : $"{command.Value}: {result}"; return true;
+		}
 		protected override void OnAction( WidgetAction action ) {
 			if ( action is WidgetInvokedAction { CommandId: "file.open" } ) this.Open();
+			else if ( action is WidgetTextEditedAction ) this.Status = this.document.IsModified ? "Modified (memory only)" : "Unmodified";
 			else if ( action is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Accepted } completed && completed.Result.Value is IReadOnlyList<string> { Count: 1 } paths ) {
 				string path = paths[ 0 ]; this.Status = "Reading " + path;
 				this.QueueWork( async token => {
 					// Size bound keeps this small demonstration responsive and memory bounded.
 					if ( new FileInfo( path ).Length > 1_048_576 ) throw new IOException( "Sample supports files up to 1 MiB." );
 					string text = await File.ReadAllTextAsync( path, token );
-					return () => { this.Text = text; this.lines.SetItems( text.Replace( "\r", "" ).Split( '\n' ).Take( WidgetLimits.MaximumItems ).Select( ( line, index ) => new WidgetListItem( index.ToString(), line.Replace( '\t', ' ' ) ) ).ToArray() ); this.Status = path; this.Host.Focus( this.lines ); };
+					return () => this.ReplaceDocument( text, path );
 				} );
 			} else base.OnAction( action );
 		}
+		private void ReplaceDocument( string text, string path ) {
+			this.Host.Detach( this.editor ); this.view.Dispose();
+			this.document = new WidgetTextDocument( [ text.AsMemory() ] ); this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
+			this.Host.Attach( this.editor ); this.Arrange(); this.Host.Focus( this.editor ); this.Status = path + " — unmodified, memory only";
+		}
+		public override void Dispose() { this.view.Dispose(); base.Dispose(); }
 	}
 }
