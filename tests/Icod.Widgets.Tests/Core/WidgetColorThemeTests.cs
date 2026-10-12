@@ -197,6 +197,38 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void PaletteOnMonochromeProfileKeepsNonColorFocusSelectionAndErrorCues() {
+		WidgetTheme theme = WidgetPalette.Create( default );
+		Assert.Equal( CursesColorKind.Default, theme.Resolve( WidgetStyleRole.TabActive ).Foreground.Kind );
+		Assert.Equal( CursesColorKind.Default, theme.Resolve( WidgetStyleRole.EditorSurface ).Background.Kind );
+		Assert.Equal( CursesStyle.Default, theme.Resolve( WidgetStyleRole.EditorSurface ) );
+		WidgetTheme attributesOnly = WidgetPalette.Create( Capabilities( 0, false, false, false, CursesTextAttributes.Reverse | CursesTextAttributes.Bold ) );
+		Assert.Equal( CursesColorKind.Default, attributesOnly.Focused.Foreground.Kind );
+		Assert.NotEqual( attributesOnly.Normal, attributesOnly.Focused );
+		Assert.NotEqual( attributesOnly.Normal, attributesOnly.Error );
+	}
+
+	[Fact]
+	public void PaletteUsesOnlyAdvertisedColorKindsAndAxes() {
+		CursesPresentationCapabilities indexed = Capabilities( 8, false, true, false, CursesTextAttributes.Reverse | CursesTextAttributes.Bold );
+		WidgetTheme selected = WidgetPalette.Create( indexed );
+		Assert.Equal( CursesColorKind.Indexed, selected.Resolve( WidgetStyleRole.TabActive ).Foreground.Kind );
+		Assert.True( selected.Resolve( WidgetStyleRole.TabActive ).Foreground.Index < 8 );
+		Assert.Equal( CursesColorKind.Default, selected.Resolve( WidgetStyleRole.TabActive ).Background.Kind );
+		CursesPresentationCapabilities rgb = Capabilities( 0, true, false, true, CursesTextAttributes.Reverse );
+		WidgetTheme direct = WidgetPalette.Create( rgb, WidgetPaletteVariant.Light );
+		Assert.Equal( CursesColorKind.Default, direct.Resolve( WidgetStyleRole.Text ).Foreground.Kind );
+		Assert.Equal( CursesColorKind.Rgb, direct.Resolve( WidgetStyleRole.TabActive ).Background.Kind );
+	}
+
+	private static CursesPresentationCapabilities Capabilities( int colors, bool rgb, bool foreground, bool background, CursesTextAttributes attributes ) {
+		var ctor = typeof( CursesPresentationCapabilities ).GetConstructors( System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance )
+			.Single( c => c.GetParameters().Length == 11 );
+		return (CursesPresentationCapabilities)ctor.Invoke( [ colors, rgb, foreground, background, true, attributes,
+			CursesTextAttributes.None, false, false, false, false ] );
+	}
+
+	[Fact]
 	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
 		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
 		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };
