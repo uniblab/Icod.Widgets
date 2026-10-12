@@ -53,6 +53,8 @@ public sealed class WidgetTextInput : Widget, IWidgetEditTarget, IWidgetClipboar
 
 	public override bool IsFocusable => true;
 	public string Value => this.value;
+	internal long ValueRevision => this.revision;
+	internal void ResetForNewContext() { this.CancelPendingPaste(); this.value = ""; this.anchor = this.caret = 0; this.undo.Clear(); this.redo.Clear(); this.revision++; this.selectionEpoch++; }
 	public int Anchor => this.anchor;
 	public int Caret => this.caret;
 	public int SelectionStart => Math.Min( this.anchor, this.caret );

@@ -26,6 +26,12 @@ public abstract record WidgetAction( string WidgetId );
 
 public sealed record WidgetInvokedAction( string WidgetId, string CommandId ) : WidgetAction( WidgetId );
 
+/// <summary>Requests activation of a caller-owned tab; the application accepts by replacing the tab snapshot.</summary>
+public sealed record WidgetTabActivationRequestedAction( string WidgetId, string TabKey ) : WidgetAction( WidgetId );
+
+/// <summary>Requests a close decision without removing the tab or its document.</summary>
+public sealed record WidgetTabCloseRequestedAction( string WidgetId, string TabKey ) : WidgetAction( WidgetId );
+
 public sealed record WidgetCheckedInvokedAction( string WidgetId, string CommandId, bool IsChecked ) : WidgetAction( WidgetId );
 
 public sealed record WidgetValueChangedAction<T>( string WidgetId, T Value ) : WidgetAction( WidgetId );
@@ -46,6 +52,9 @@ public sealed record WidgetClipboardRequestedAction( string WidgetId, WidgetClip
 
 public sealed record WidgetDialogCompletedAction( string WidgetId, WidgetDialogResult Result ) : WidgetAction( WidgetId );
 
+/// <summary>Requests application-owned validation before a form dialog can complete.</summary>
+public sealed record WidgetDialogValidationRequestedAction( string WidgetId, WidgetDialogValidationRequest Request ) : WidgetAction( WidgetId );
+
 public sealed record WidgetWizardNavigationRequestedAction( string WidgetId, int FromPage, int ToPage ) : WidgetAction( WidgetId );
 
 
@@ -53,3 +62,9 @@ public sealed record WidgetWizardNavigationRequestedAction( string WidgetId, int
 public sealed record WidgetBrowserLoadRequestedAction( string WidgetId, WidgetBrowserRequest Request ) : WidgetAction( WidgetId );
 /// <summary>Requests provider validation before a picker can complete.</summary>
 public sealed record WidgetPickerValidationRequestedAction( string WidgetId, WidgetPickerValidationRequest Request ) : WidgetAction( WidgetId );
+
+/// <summary>Requests application-owned inspection of a proposed save target without writing it.</summary>
+public sealed record WidgetSaveTargetInspectionRequestedAction( string WidgetId, WidgetSaveTargetRequest Request ) : WidgetAction( WidgetId );
+
+/// <summary>Requests application-owned search or replacement against a chosen document revision.</summary>
+public sealed record WidgetSearchRequestedAction( string WidgetId, WidgetSearchRequest Request ) : WidgetAction( WidgetId );

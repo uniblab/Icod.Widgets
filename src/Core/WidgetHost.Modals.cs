@@ -44,7 +44,9 @@ public sealed partial class WidgetHost {
 			CursesInteractionScopeLease scopeLease = this.router.ActivateScope( scope );
 			dialog.IsOpen = true; dialog.HasCompleted = false;
 			WidgetModalLease lease = new( this, dialog ); this.modalFrames.Add( new ModalFrame( dialog, previous, lease, scope, scopeLease ) );
-			this.CancelPointerCapture(); _ = this.Focus( dialog ); return lease;
+			this.CancelPointerCapture(); Widget[] eligible = dialog.DescendantsAndSelf().Skip( 1 ).Where( child => child.IsFocusable && child.IsEffectivelyEnabled && child.IsEffectivelyVisible && !child.Bounds.IsEmpty ).ToArray();
+			Widget? initial = eligible.FirstOrDefault( child => StringComparer.Ordinal.Equals( child.Id, dialog.InitialFocusId ) ) ?? eligible.FirstOrDefault();
+			_ = this.Focus( initial ?? dialog ); return lease;
 		} catch { if ( ReferenceEquals( dialog.Host, this ) ) this.Detach( dialog ); scope.Dispose(); throw; }
 		finally { this.attachmentScope = null; }
 	}
@@ -77,7 +79,7 @@ public sealed partial class WidgetHost {
 			if ( ReferenceEquals( frame.Dialog.Host, this ) ) this.Detach( frame.Dialog );
 			frame.Scope.Dispose();
 		}
-		if ( 0 < this.modalFrames.Count ) _ = this.Focus( this.modalFrames[ ^1 ].Dialog );
+		if ( 0 < this.modalFrames.Count ) _ = this.Focus( restore is not null && ReferenceEquals( restore.Host, this ) && this.DialogAncestor( restore ) == this.modalFrames[ ^1 ].Dialog ? restore : this.modalFrames[ ^1 ].Dialog );
 		else if ( restore is not null && ReferenceEquals( restore.Host, this ) && restore.IsEnabled && restore.IsVisible ) _ = this.Focus( restore );
 	}
 

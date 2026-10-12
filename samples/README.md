@@ -9,6 +9,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Six pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI |
 | Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an existing file into an exact, editable in-memory document |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
+| Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
 Append `-- --smoke` for deterministic checks without opening a terminal. These
 checks exercise the same application controllers as live mode. CI runs them on
@@ -27,6 +28,13 @@ fallback when the terminal does not provide it. Status text reports modified and
 clipboard outcomes. The sample preserves mixed line endings and edits only in
 memory: it deliberately provides no save command and never overwrites a file.
 
+In the document workspace, Ctrl+Tab/Shift+Ctrl+Tab switches documents. F6 and
+Shift+F6 move focus among the editor, tab strip, and actionable status fields;
+Delete requests a close while the tab strip has focus. Ctrl+F opens Find, and F3
+repeats the last successful query after the form closes. Alt+V followed by plain
+F demonstrates scoped menu command dispatch. Save As inspects a proposed target
+and never writes it.
+
 The application owns DCurses input, time, resize/layout, provider jobs, actions,
 render/refresh, leases and session cleanup. Provider jobs never mutate widgets;
 results apply on the loop. Pickers return paths; the editor application reads
@@ -34,5 +42,10 @@ files (1 MiB sample limit), replaces its in-memory document, and never writes
 them. The roguelike sample is a UI
 integration witness with no dungeon/rules engine.
 
-See the [`1.1 stable qualification record`](../docs/W1113-Stable-Qualification.md)
+The [workspace sample](Icod.Widgets.Workspace.Sample/README.md) includes a
+step-by-step walkthrough of caller-owned document lifetime, close decisions,
+typed search/save requests, and the empty-workspace state. It contains no
+file-writing code.
+
+See the [`1.2 stable qualification record`](../docs/W1211-Stable-Qualification.md)
 for automated coverage and the explicitly unavailable live environments.

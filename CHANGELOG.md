@@ -2,6 +2,35 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.2.0 — document workspace
+
+- Shipped stable-key document tabs and caller-owned active content replacement.
+- Added controlled menu presentation, focused edit-command routing, actionable
+  status fields, and pointer activation.
+- Added composable form dialogs with Save/Don't Save/Cancel choices, a separate
+  non-writing save-target inspector, and typed search/navigation requests.
+- Added an in-memory multi-document workspace sample, public package consumer,
+  API compatibility snapshot, and bounded workload measurements.
+- Hardened the sample's empty-workspace commands, added F6 focus movement and
+  F3 Find Next, and made Find-only forms advertise only available actions.
+- Preserved the `1.0.0.0` assembly identity, net8.0/net9.0/net10.0 targets,
+  and sole direct `Icod.DCurses 2.4.0` dependency.
+
+## 1.2.0-rc.1 — document workspace candidate
+
+- Added stable-key tabs, deterministic overflow, caller-owned active content
+  replacement, and stale pointer/clipboard/paste cancellation.
+- Added caller-controlled menu presentation, focused edit-command routing,
+  pointer activation, and optional actionable status fields.
+- Added child-composable dialog controls, explicit Save/Don't Save/Cancel
+  outcomes, validation requests, and a separate non-writing save-target picker.
+- Added typed Find/Replace/Go To Line requests with document/view/revision and
+  generation guards. The application owns search execution and file writes.
+- Added a three-document in-memory workspace sample, public package consumer,
+  API compatibility snapshot, and bounded switching measurements.
+- Retained assembly version 1.0.0.0, net8.0/net9.0/net10.0 targets, and the
+  sole direct dependency on Icod.DCurses 2.4.0.
+
 ## 1.1.0 — reusable editing foundation
 
 - Shipped the exact document/snapshot/history model, Unicode multiline editor,

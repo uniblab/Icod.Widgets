@@ -1,7 +1,7 @@
 # Controls and interaction
 
-This guide describes the shipped Icod.Widgets 1.0 controls. Multiline editing
-and the document workspace are planned separately in the [main roadmap](../ROADMAP.md).
+This guide covers control interaction, including document workspace controls.
+The [main roadmap](../ROADMAP.md) tracks release status.
 See the [root README](../README.md) for installation, host setup, and a runnable gallery.
 
 ## Menus
@@ -65,6 +65,32 @@ moves to parent; Ctrl+L edits a path; Ctrl+R lists roots; Ctrl+F cycles file fil
 Ctrl+B displays the basket (Enter/Space/Delete removes a selected file).
 Errors leave the last listing usable. Loads after picker closure and stale/foreign
 results are ignored. Applications may cancel outstanding provider work themselves.
+
+## Document workspace
+
+`WidgetTabStrip` accepts a validated ordered tab snapshot with stable keys.
+Activation and close actions are requests; the application decides whether to
+switch or remove a document. `WidgetContentHost.SetContent` detaches the old
+caller-owned widget tree without disposing its document or view. Use separate
+`WidgetTextViewState` instances per document and retain them in the application.
+The multiline editor consumes Tab/Shift+Tab for indentation; applications that
+place it beside workspace controls should provide an explicit focus key such as
+F6. The workspace sample uses F6/Shift+F6 for the editor, tabs, and status fields.
+Delete emits a close request when the tab strip has focus.
+
+Menu presentation snapshots can update captions, checked/enabled state, and
+selection while a menu is open. `FocusedEditCommand` first routes to the focused
+editor; an inapplicable edit falls back to the application command. Optional
+status field commands create visible, keyboard/pointer-operable fields.
+
+`WidgetFormDialog` supports composed child controls and typed validation. The
+Save/Don't Save/Cancel factory defaults to Cancel, and Escape always cancels.
+`WidgetSaveTargetPicker` asks a separate optional provider to inspect a proposed
+target and never writes files. Search and Go To Line forms emit typed requests;
+the application validates the document/view/revision before applying results.
+
+The [workspace sample](../samples/Icod.Widgets.Workspace.Sample/README.md)
+exercises these controls in an in-memory application loop.
 
 ## Errors and configuration
 

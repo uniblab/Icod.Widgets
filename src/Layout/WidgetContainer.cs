@@ -29,6 +29,7 @@ public abstract class WidgetContainer : Widget {
 
 	public void Add( Widget child ) {
 		ArgumentNullException.ThrowIfNull( child );
+		this.ValidateChildAddition( child );
 		if ( child.Parent is not null || child.Host is not null ) throw new InvalidOperationException( "The widget already belongs to a tree." );
 		if ( ReferenceEquals( child, this ) ) throw new InvalidOperationException( "A widget cannot contain itself." );
 		if ( child.DescendantsAndSelf().Any( item => ReferenceEquals( item, this ) ) ) throw new InvalidOperationException( "A widget cannot contain one of its ancestors." );
@@ -37,6 +38,7 @@ public abstract class WidgetContainer : Widget {
 		this.children.Add( child );
 		this.OnArrange( this.Bounds );
 	}
+	internal virtual void ValidateChildAddition( Widget child ) { }
 
 	public bool Remove( Widget child ) {
 		ArgumentNullException.ThrowIfNull( child );

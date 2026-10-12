@@ -1,9 +1,9 @@
 # Icod.Widgets Main Roadmap
 
-**Decision date:** 2026-10-11\
-**Baseline:** released 1.0.0; current source `d56cb9a06b78b8fa975de23cf590e6d198e36fc3`\
-**Next target:** 1.1.0 editing foundation, followed by a separately scoped 1.2.0 document workspace\
-**State:** approved direction; development roadmap written; implementation not started
+**Decision date:** 2026-10-12\
+**Baseline:** 1.1.0 stable source merged at `d71b74d0a68792c2001b609978b434bffb14f030`\
+**Next target:** 1.2.0 document workspace\
+**State:** scope and architecture approved; W12xx roadmap and implementation plans proposed for review
 
 ## Purpose
 
@@ -12,8 +12,10 @@ The next consumer is [dedit](https://github.com/uniblab/Icod.Dedit/pull/1): an
 Edit-inspired GPL text editor with multiple documents in a tabbed interface and
 no print support. Widgets supplies reusable behavior, not dedit's file policy.
 
-Deliver the editing foundation before workspace controls. A reliable document
-model, input path, and bounded viewport are independently useful; tabs must not
+The 1.1 editing foundation is complete. The selected 1.2 direction is one
+cohesive **Document Workspace** release: tabs, dynamic commands, composable
+dialogs, save-target selection, search/navigation forms, actionable status
+fields, and the public extension seams required to compose them. Tabs must not
 force document lifetime or save policy into the library.
 
 ## Ownership and permanent constraints
@@ -40,8 +42,8 @@ samples and tests remain GPL-3.0-or-later with their prescribed full headers.
 | Release | Deliverable | Explicit boundary |
 | --- | --- | --- |
 | 1.0.0 — released | Forms, lists/drop-downs, menus, captioned dialogs, existing-file/folder pickers, game UI, public samples | Existing text input is single-line; editor sample is an open/browse witness |
-| 1.1.0 — planned | Reusable document/editing foundation; Unicode editing, bounded undo/redo and view projection; input/focus/capture repairs; scrollbars; explicit clipboard and caret integration; better single-line fields | Single-document editing is useful on its own; no tabbed application or file-save engine |
-| 1.2.0 — planned direction | Tabs and document workspace, composable forms/dialogs, save-target picker, dynamic command/menu state, find/replace/navigation forms, actionable status fields | App owns documents, file writes, search/regex, close approval, and metadata |
+| 1.1.0 — merged stable source | Reusable document/editing foundation; Unicode editing, bounded undo/redo and view projection; input/focus/capture repairs; scrollbars; explicit clipboard and caret integration; better single-line fields | Single-document editing is useful on its own; no tabbed application or file-save engine |
+| 1.2.0 — approved design | Cohesive Document Workspace: tabs, composable forms/dialogs, save-target picker, dynamic command/menu state, find/replace/navigation forms, actionable status fields, and public composition seams | App owns documents, file writes, search/regex, close approval, and metadata |
 | Later — unscheduled | Data tables/trees, virtualized data sources, richer accessibility, advanced forms | Separate requirements, design, and approval; not blockers for dedit's first release |
 
 ## 1.1.0 — editing foundation
@@ -85,9 +87,16 @@ define the task order and acceptance gates.
 
 ## 1.2.0 — document workspace
 
-- **Tabs:** stable keys, captions, modified indicators, overflow, keyboard/mouse
-  switching, and cancellable close requests. A tab never saves or disposes the
-  application's document automatically. Each view retains its own caret/scroll.
+The selected scope is a complete reusable workspace layer rather than a narrow
+tab-strip release or dedit-specific façade. The library exposes presentation
+state and semantic requests; the application remains the authority for policy,
+I/O, asynchronous work, and document lifetime.
+
+- **Tabs and active content:** stable keys, captions, modified indicators,
+  overflow, keyboard/mouse switching, and cancellable close requests. A tab
+  never saves or disposes the application's document automatically. Each view
+  retains its own caret/scroll, and switching invalidates pending interaction
+  that must not cross into another view.
 - **Composable dialogs:** child controls, initial focus, default/cancel actions,
   validation, public completion, and Save / Don't Save / Cancel. Preserve framed
   titles and Escape = Cancel, including OK-only dialogs.
@@ -103,8 +112,12 @@ define the task order and acceptance gates.
 - **Status and extension:** actionable position/encoding/EOL/indentation fields
   and public custom-control hooks, without exposing host internals.
 
-Write a separate versioned design and plan after the 1.1 contracts are proven.
-These are direction commitments, not frozen 1.2 signatures or shipped features.
+The [versioned 1.2 design](docs/superpowers/specs/2026-10-12-icod-widgets-1.2-document-workspace-design.md)
+defines the approved behavior, ownership boundaries, failure model, and release
+acceptance scenarios. The [1.2 development roadmap](Icod.Widgets-1.2.0-Development-Roadmap.md)
+orders W1201–W1211 and links focused test-first implementation plans. Public
+signatures are proposed there and freeze only after implementation and public
+consumer qualification. These are plans, not shipped features.
 
 ## Deliberately outside this programme
 
@@ -119,12 +132,12 @@ Keep 1.0 qualification and release history in [W1014](docs/W1014-Stable-Qualific
 the [1.0 roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), and
 [CHANGELOG](CHANGELOG.md). Do not turn historical untested platforms into passes.
 
-Each W11xx tranche records exact source/package versions, changes, tests,
+Each W12xx tranche will record exact source/package versions, changes, tests,
 limitations, and acceptance evidence. Freeze API and package metadata before
 stable qualification, then verify the exact merged artifact. No calendar date
 or green documentation PR substitutes for implementation or release readiness.
 
-The 1.1 editing foundation is implemented and exact stable `1.1.0` source is
-prepared after qualification. The 1.2 document-workspace direction remains
-planned. The owner performs merge, tag, and publication. No change to
-`uniblab/.github` is required.
+The 1.1 editing foundation is implemented and merged. The 1.2 Document Workspace
+design is approved for detailed planning and implementation, but no 1.2 runtime
+feature is shipped by this planning state. The owner performs merge, tag, and
+publication. No change to `uniblab/.github` is required.

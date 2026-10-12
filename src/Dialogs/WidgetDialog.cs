@@ -24,13 +24,14 @@ namespace Icod.Widgets;
 using Icod.DCurses;
 
 /// <summary>Base for explicit-result modal or modeless dialogs.</summary>
-public abstract class WidgetDialog( string id, string title ) : Widget( id ) {
+public abstract class WidgetDialog( string id, string title ) : WidgetContainer( id ) {
 	public override bool IsFocusable => true;
 	public string Title { get; } = title ?? throw new ArgumentNullException( nameof( title ) );
 	public bool IsOpen { get; internal set; }
 	internal bool HasCompleted { get; set; }
 	internal virtual void OnOpened() { }
 	internal virtual void OnClosed() { }
+	internal virtual string? InitialFocusId => null;
 	internal void Finish( WidgetHost host, WidgetDialogOutcome outcome ) => host.CompleteDialog( this, outcome );
 	internal void Finish( WidgetHost host, WidgetDialogResult result ) => host.CompleteDialog( this, result );
 	internal CursesRectangle GetContentBounds( CursesScreen screen ) {
@@ -38,6 +39,10 @@ public abstract class WidgetDialog( string id, string title ) : Widget( id ) {
 		return area.Rows < 3 || area.Columns < 3
 			? new CursesRectangle( area.Row + Math.Min( 1, area.Rows ), area.Column, Math.Max( 0, area.Rows - 1 ), area.Columns )
 			: new CursesRectangle( area.Row + 1, area.Column + 1, area.Rows - 2, area.Columns - 2 );
+	}
+	protected override void OnArrange( CursesRectangle bounds ) {
+		CursesRectangle content = this.Host is null ? new CursesRectangle( bounds.Row + Math.Min( 1, bounds.Rows ), bounds.Column + Math.Min( 1, bounds.Columns ), Math.Max( 0, bounds.Rows - 2 ), Math.Max( 0, bounds.Columns - 2 ) ) : this.GetContentBounds( this.Host.Screen );
+		foreach ( Widget child in this.Children ) child.Arrange( content );
 	}
 
 	internal CursesRectangle RenderFrame( CursesScreen screen, WidgetTheme theme, string? caption = null ) {

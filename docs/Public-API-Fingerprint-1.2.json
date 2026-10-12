@@ -1,0 +1,1917 @@
+{
+  "packageVersion": "1.2.0",
+  "assemblyVersion": "1.0.0.0",
+  "generatedFrom": "public reflection surface",
+  "types": [
+    {
+      "name": "Icod.Widgets.IWidgetEditTarget",
+      "kind": "interface",
+      "members": [
+        "Method: Boolean CanExecuteEditCommand(Icod.Widgets.WidgetEditCommand)",
+        "Method: Icod.Widgets.WidgetCommandResult ExecuteEditCommand(Icod.Widgets.WidgetEditCommand, System.TimeSpan)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.IWidgetFileSystemProvider",
+      "kind": "interface",
+      "members": [
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetDirectorySnapshot] ReadDirectoryAsync(System.String, System.Threading.CancellationToken)",
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetFileSelectionValidation] ValidateSelectionAsync(System.Collections.Generic.IReadOnlyList\u00601[System.String], Icod.Widgets.WidgetFileSelectionKind, System.Threading.CancellationToken)",
+        "Method: System.Threading.Tasks.ValueTask\u00601[System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry]] GetRootsAsync(System.Threading.CancellationToken)",
+        "Property: System.StringComparer PathComparer"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.IWidgetSaveTargetProvider",
+      "kind": "interface",
+      "members": [
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetSaveTargetObservation] InspectTargetAsync(System.String, System.String, System.Threading.CancellationToken)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.LocalWidgetFileSystemProvider",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor()",
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetDirectorySnapshot] ReadDirectoryAsync(System.String, System.Threading.CancellationToken)",
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetFileSelectionValidation] ValidateSelectionAsync(System.Collections.Generic.IReadOnlyList\u00601[System.String], Icod.Widgets.WidgetFileSelectionKind, System.Threading.CancellationToken)",
+        "Method: System.Threading.Tasks.ValueTask\u00601[System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry]] GetRootsAsync(System.Threading.CancellationToken)",
+        "Property: System.StringComparer PathComparer"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.Widget",
+      "kind": "abstract-class",
+      "members": [
+        "Method: Void Arrange(Icod.DCurses.CursesRectangle)",
+        "Property: Boolean AcceptsTab",
+        "Property: Boolean IsEnabled",
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsVisible",
+        "Property: Icod.DCurses.CursesRectangle Bounds",
+        "Property: System.String Id"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetAction",
+      "kind": "abstract-class",
+      "members": [
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef)",
+        "Property: System.String WidgetId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetActionList",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBorder",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.Widget)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowser",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor()",
+        "Method: Boolean ApplyLoadResult(Icod.Widgets.WidgetBrowserLoadResult)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestRoots()",
+        "Method: Void Dispose()",
+        "Property: Icod.Widgets.WidgetBrowserError Error",
+        "Property: Icod.Widgets.WidgetDirectorySnapshot Snapshot",
+        "Property: System.String PendingLocation"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserError",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetBrowserErrorKind, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetBrowserError)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetBrowserError \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetBrowserErrorKind ByRef, System.String ByRef)",
+        "Property: Icod.Widgets.WidgetBrowserErrorKind Kind",
+        "Property: System.String Message"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserErrorKind",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetBrowserErrorKind AccessDenied",
+        "Field: Icod.Widgets.WidgetBrowserErrorKind InvalidPath",
+        "Field: Icod.Widgets.WidgetBrowserErrorKind IoError",
+        "Field: Icod.Widgets.WidgetBrowserErrorKind NotFound",
+        "Field: Icod.Widgets.WidgetBrowserErrorKind TooManyEntries",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserLoadRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetBrowserRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetBrowserLoadRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetBrowserLoadRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetBrowserRequest ByRef)",
+        "Property: Icod.Widgets.WidgetBrowserRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserLoadResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetBrowserRequest, Icod.Widgets.WidgetDirectorySnapshot, Icod.Widgets.WidgetBrowserError)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetBrowserLoadResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetBrowserLoadResult \u003CClone\u003E$()",
+        "Method: Icod.Widgets.WidgetBrowserLoadResult Failure(Icod.Widgets.WidgetBrowserRequest, Icod.Widgets.WidgetBrowserError)",
+        "Method: Icod.Widgets.WidgetBrowserLoadResult Success(Icod.Widgets.WidgetBrowserRequest, Icod.Widgets.WidgetDirectorySnapshot)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetBrowserRequest ByRef, Icod.Widgets.WidgetDirectorySnapshot ByRef, Icod.Widgets.WidgetBrowserError ByRef)",
+        "Property: Icod.Widgets.WidgetBrowserError Error",
+        "Property: Icod.Widgets.WidgetBrowserRequest Request",
+        "Property: Icod.Widgets.WidgetDirectorySnapshot Snapshot"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserLoader",
+      "kind": "abstract-class",
+      "members": [
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetBrowserLoadResult] LoadAsync(Icod.Widgets.IWidgetFileSystemProvider, Icod.Widgets.WidgetBrowserRequest, System.Threading.CancellationToken)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetBrowserRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetBrowserRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetBrowserRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, System.String ByRef)",
+        "Property: Boolean IsRoots",
+        "Property: Int64 Generation",
+        "Property: System.Guid BrowserId",
+        "Property: System.String Location"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetButton",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.String)",
+        "Property: Boolean IsFocusable",
+        "Property: System.String CommandId",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetCaretIntent",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Boolean, Int32, Int32, System.Nullable\u00601[Icod.DCurses.CursesCursorStyle], Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetCaretIntent)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetCaretIntent \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Boolean ByRef, Int32 ByRef, Int32 ByRef, System.Nullable\u00601[Icod.DCurses.CursesCursorStyle] ByRef, Int64 ByRef)",
+        "Property: Boolean IsVisible",
+        "Property: Int32 Column",
+        "Property: Int32 Row",
+        "Property: Int64 FocusGeneration",
+        "Property: System.Nullable\u00601[Icod.DCurses.CursesCursorStyle] PreferredStyle"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetCheckBox",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean)",
+        "Property: Boolean IsChecked",
+        "Property: Boolean IsFocusable",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetCheckedInvokedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetCheckedInvokedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetCheckedInvokedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Boolean ByRef)",
+        "Property: Boolean IsChecked",
+        "Property: System.String CommandId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetClipboardOperation",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetClipboardOperation Copy",
+        "Field: Icod.Widgets.WidgetClipboardOperation Cut",
+        "Field: Icod.Widgets.WidgetClipboardOperation Paste",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetClipboardRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, System.Guid, System.Guid, Int64, Int64, Int64, Int64, Int64, Int64, Icod.Widgets.WidgetClipboardOperation, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetClipboardRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetClipboardRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, System.Guid ByRef, System.Guid ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Icod.Widgets.WidgetClipboardOperation ByRef, System.String ByRef)",
+        "Property: Icod.Widgets.WidgetClipboardOperation Operation",
+        "Property: Int64 AttachmentGeneration",
+        "Property: Int64 FocusGeneration",
+        "Property: Int64 Revision",
+        "Property: Int64 SelectionEnd",
+        "Property: Int64 SelectionEpoch",
+        "Property: Int64 SelectionStart",
+        "Property: System.Guid DocumentId",
+        "Property: System.Guid RequestId",
+        "Property: System.Guid ViewId",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetClipboardRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetClipboardRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetClipboardRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetClipboardRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetClipboardRequest ByRef)",
+        "Property: Icod.Widgets.WidgetClipboardRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetClipboardResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Icod.Widgets.WidgetClipboardStatus, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetClipboardResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetClipboardResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Icod.Widgets.WidgetClipboardStatus ByRef, System.String ByRef)",
+        "Property: Icod.Widgets.WidgetClipboardStatus Status",
+        "Property: System.Guid RequestId",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetClipboardStatus",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetClipboardStatus Canceled",
+        "Field: Icod.Widgets.WidgetClipboardStatus Denied",
+        "Field: Icod.Widgets.WidgetClipboardStatus Failed",
+        "Field: Icod.Widgets.WidgetClipboardStatus InvalidText",
+        "Field: Icod.Widgets.WidgetClipboardStatus Success",
+        "Field: Icod.Widgets.WidgetClipboardStatus TimedOut",
+        "Field: Icod.Widgets.WidgetClipboardStatus TooLarge",
+        "Field: Icod.Widgets.WidgetClipboardStatus Unsupported",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetCommandResult",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetCommandResult Disabled",
+        "Field: Icod.Widgets.WidgetCommandResult Executed",
+        "Field: Icod.Widgets.WidgetCommandResult NotApplicable",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetContainer",
+      "kind": "abstract-class",
+      "members": [
+        "Method: Boolean Remove(Icod.Widgets.Widget)",
+        "Method: Void Add(Icod.Widgets.Widget)",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.Widget] Children"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetContentHost",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)",
+        "Method: Void SetContent(Icod.Widgets.Widget)",
+        "Property: Icod.Widgets.Widget Content"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialog",
+      "kind": "abstract-class",
+      "members": [
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsOpen",
+        "Property: System.String Title"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Icod.Widgets.WidgetDialogOutcome)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Icod.Widgets.WidgetDialogOutcome ByRef)",
+        "Property: Boolean IsCancel",
+        "Property: Boolean IsDefault",
+        "Property: Boolean IsEnabled",
+        "Property: Boolean RequiresValidation",
+        "Property: Icod.Widgets.WidgetDialogOutcome Outcome",
+        "Property: System.Object Value",
+        "Property: System.String Id",
+        "Property: System.String Label"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogCompletedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetDialogResult)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogCompletedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogCompletedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetDialogResult ByRef)",
+        "Property: Icod.Widgets.WidgetDialogResult Result"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogOutcome",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetDialogOutcome Accepted",
+        "Field: Icod.Widgets.WidgetDialogOutcome Cancel",
+        "Field: Icod.Widgets.WidgetDialogOutcome DontSave",
+        "Field: Icod.Widgets.WidgetDialogOutcome No",
+        "Field: Icod.Widgets.WidgetDialogOutcome Ok",
+        "Field: Icod.Widgets.WidgetDialogOutcome Save",
+        "Field: Icod.Widgets.WidgetDialogOutcome Yes",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetDialogOutcome, System.Object)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetDialogOutcome ByRef, System.Object ByRef)",
+        "Property: Icod.Widgets.WidgetDialogOutcome Outcome",
+        "Property: System.Object Value"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogValidationRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogValidationRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogValidationRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, System.String ByRef)",
+        "Property: Int64 Generation",
+        "Property: System.Guid DialogId",
+        "Property: System.String ActionId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogValidationRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetDialogValidationRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogValidationRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogValidationRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetDialogValidationRequest ByRef)",
+        "Property: Icod.Widgets.WidgetDialogValidationRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDialogValidationResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetDialogValidationRequest, Boolean, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDialogValidationResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDialogValidationResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetDialogValidationRequest ByRef, Boolean ByRef, System.String ByRef)",
+        "Property: Boolean IsValid",
+        "Property: Icod.Widgets.WidgetDialogValidationRequest Request",
+        "Property: System.String Error"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDirectorySnapshot",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDirectorySnapshot)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDirectorySnapshot \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry] ByRef)",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry] Entries",
+        "Property: System.String Location",
+        "Property: System.String ParentLocation"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDispatchResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Boolean, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetAction])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetDispatchResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetDispatchResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Boolean ByRef, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetAction] ByRef)",
+        "Property: Boolean Handled",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetAction] Actions"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetDropDown",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetListItem], System.String)",
+        "Method: Void Dismiss()",
+        "Method: Void Open()",
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsOpen",
+        "Property: Icod.DCurses.CursesRectangle PopupBounds",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetListItem] Items",
+        "Property: System.String PreviewKey",
+        "Property: System.String SelectedKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetEditCommand",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetEditCommand Copy",
+        "Field: Icod.Widgets.WidgetEditCommand Cut",
+        "Field: Icod.Widgets.WidgetEditCommand Paste",
+        "Field: Icod.Widgets.WidgetEditCommand Redo",
+        "Field: Icod.Widgets.WidgetEditCommand SelectAll",
+        "Field: Icod.Widgets.WidgetEditCommand Undo",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetEditorOptions",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor()",
+        "Field: Int32 MaximumSupportedCachedRows",
+        "Field: Int32 MaximumSupportedCachedSourceUnits",
+        "Field: Int32 MaximumSupportedClipboardBytes",
+        "Field: Int32 MaximumSupportedClusterScan",
+        "Field: Int32 MaximumSupportedPendingPasteUnits",
+        "Field: Int32 MaximumSupportedProjectionSourceUnits",
+        "Field: Int32 MaximumSupportedWorkPerUpdate",
+        "Method: Boolean Equals(Icod.Widgets.WidgetEditorOptions)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetEditorOptions \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Property: Boolean AllowTypingCoalescence",
+        "Property: Boolean AutoIndent",
+        "Property: Icod.DCurses.CursesTextWrapMode WrapMode",
+        "Property: Int32 MaximumCachedRows",
+        "Property: Int32 MaximumCachedSourceUnits",
+        "Property: Int32 MaximumClipboardBytes",
+        "Property: Int32 MaximumClusterScan",
+        "Property: Int32 MaximumPendingPasteUnits",
+        "Property: Int32 MaximumProjectionSourceUnits",
+        "Property: Int32 MaximumWorkPerUpdate",
+        "Property: Int32 TabWidth",
+        "Property: System.String Indentation",
+        "Property: System.String NewLine"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFileFilter",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Property: Boolean IsAllFiles",
+        "Property: Icod.Widgets.WidgetFileFilter AllFiles",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Suffixes",
+        "Property: System.String Name"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFilePicker",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.IWidgetFileSystemProvider, System.String, Boolean, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileFilter])",
+        "Method: Boolean ApplyLoadResult(Icod.Widgets.WidgetBrowserLoadResult)",
+        "Method: Boolean ApplyValidationResult(Icod.Widgets.WidgetPickerValidationResult)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
+        "Method: Icod.Widgets.WidgetPickerValidationRequest RequestAccept()",
+        "Method: Void SelectFilter(System.String)",
+        "Method: Void SetRoots(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry])",
+        "Method: Void ToggleFile(System.String)",
+        "Property: Boolean AllowMultiple",
+        "Property: Icod.Widgets.IWidgetFileSystemProvider Provider",
+        "Property: Icod.Widgets.WidgetBrowser Browser",
+        "Property: Icod.Widgets.WidgetFileFilter SelectedFilter",
+        "Property: Icod.Widgets.WidgetFileSelectionBasket Basket",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileFilter] Filters",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry] VisibleEntries",
+        "Property: System.String StartLocation",
+        "Property: System.String ValidationError"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFileSelectionBasket",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.StringComparer)",
+        "Method: Boolean Remove(System.String)",
+        "Method: Boolean Toggle(System.String)",
+        "Method: Void Clear()",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Paths"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFileSelectionKind",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetFileSelectionKind Directory",
+        "Field: Icod.Widgets.WidgetFileSelectionKind File",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFileSelectionValidation",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Boolean, System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetFileSelectionValidation)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetFileSelectionValidation \u003CClone\u003E$()",
+        "Method: Icod.Widgets.WidgetFileSelectionValidation Invalid(System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Boolean ByRef, System.Collections.Generic.IReadOnlyList\u00601[System.String] ByRef)",
+        "Property: Boolean IsValid",
+        "Property: Icod.Widgets.WidgetFileSelectionValidation Valid",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] FailedPaths"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFileSystemEntry",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetFileSystemEntry)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetFileSystemEntry \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Boolean ByRef, Boolean ByRef)",
+        "Property: Boolean IsDirectory",
+        "Property: Boolean IsLink",
+        "Property: System.String DisplayName",
+        "Property: System.String Path"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFolderPicker",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.IWidgetFileSystemProvider, System.String)",
+        "Method: Boolean ApplyLoadResult(Icod.Widgets.WidgetBrowserLoadResult)",
+        "Method: Boolean ApplyValidationResult(Icod.Widgets.WidgetPickerValidationResult)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
+        "Method: Icod.Widgets.WidgetPickerValidationRequest RequestAccept()",
+        "Method: Void SetRoots(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetFileSystemEntry])",
+        "Property: Icod.Widgets.IWidgetFileSystemProvider Provider",
+        "Property: Icod.Widgets.WidgetBrowser Browser",
+        "Property: System.String StartLocation",
+        "Property: System.String ValidationError"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetFormDialog",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetDialogAction], System.String)",
+        "Method: Boolean ApplyValidationResult(Icod.Widgets.WidgetDialogValidationResult)",
+        "Method: Icod.Widgets.WidgetFormDialog SaveDontSaveCancel(System.String, System.String, System.String)",
+        "Method: Void SetActionEnabled(System.String, Boolean)",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetDialogAction] Actions",
+        "Property: System.String Error",
+        "Property: System.String Message"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetGoToLineDialog",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Method: Void SetContext(System.Guid, System.Guid, Int64)",
+        "Property: Icod.Widgets.WidgetTextInput LineInput",
+        "Property: System.String Error"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetGoToLineRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, System.Guid, System.Guid, Int64, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetGoToLineRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetGoToLineRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, System.Guid ByRef, System.Guid ByRef, Int64 ByRef, Int64 ByRef)",
+        "Property: Int64 LineNumber",
+        "Property: Int64 Revision",
+        "Property: System.Guid DocumentId",
+        "Property: System.Guid RequestId",
+        "Property: System.Guid ViewId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetGrid",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Int32)",
+        "Property: Int32 Columns"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetHelpBinding",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetHelpBinding)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetHelpBinding \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, System.String ByRef)",
+        "Property: System.String CommandId",
+        "Property: System.String Description",
+        "Property: System.String Gesture"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetHelpOverlay",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetHelpBinding])",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetHelpBinding] Bindings"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetHost",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.DCurses.CursesScreen, Icod.Widgets.WidgetTheme)",
+        "Constructor: Void .ctor(Icod.DCurses.CursesSession, Icod.Widgets.WidgetTheme)",
+        "Method: Boolean ApplyClipboardResult(Icod.Widgets.WidgetClipboardResult)",
+        "Method: Boolean Detach(Icod.Widgets.Widget)",
+        "Method: Boolean Focus(Icod.Widgets.Widget)",
+        "Method: Boolean MoveFocus(Icod.DCurses.CursesFocusDirection)",
+        "Method: Icod.Widgets.WidgetCaretIntent GetCaretIntent()",
+        "Method: Icod.Widgets.WidgetCommandResult ExecuteEditCommand(Icod.Widgets.WidgetEditCommand, System.TimeSpan)",
+        "Method: Icod.Widgets.WidgetDispatchResult Process(Icod.DCurses.CursesInputEvent, System.TimeSpan)",
+        "Method: Icod.Widgets.WidgetDispatchResult Process(Icod.Widgets.WidgetInput, System.TimeSpan)",
+        "Method: Icod.Widgets.WidgetDispatchResult Update(System.TimeSpan)",
+        "Method: Icod.Widgets.WidgetModalLease ShowModal(Icod.Widgets.WidgetDialog)",
+        "Method: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetAction] DrainActions()",
+        "Method: Void Arrange(Icod.DCurses.CursesRectangle)",
+        "Method: Void Attach(Icod.Widgets.Widget)",
+        "Method: Void Dispose()",
+        "Method: Void Render()",
+        "Property: Icod.DCurses.CursesScreen Screen",
+        "Property: Icod.Widgets.Widget FocusedWidget",
+        "Property: Icod.Widgets.WidgetTheme Theme",
+        "Property: Int32 AttachedCount",
+        "Property: Int32 ModalDepth",
+        "Property: System.TimeSpan CurrentTime"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetInput",
+      "kind": "class",
+      "members": [
+        "Method: Boolean Equals(Icod.Widgets.WidgetInput)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetInput \u003CClone\u003E$()",
+        "Method: Icod.Widgets.WidgetInput FocusChanged(Icod.DCurses.CursesFocusState)",
+        "Method: Icod.Widgets.WidgetInput From(Icod.DCurses.CursesInputEvent)",
+        "Method: Icod.Widgets.WidgetInput FunctionKey(Int32, Icod.Widgets.WidgetInputModifiers)",
+        "Method: Icod.Widgets.WidgetInput Key(Icod.Widgets.WidgetKey, Icod.Widgets.WidgetInputModifiers, System.Nullable\u00601[System.Text.Rune])",
+        "Method: Icod.Widgets.WidgetInput Paste(System.String)",
+        "Method: Icod.Widgets.WidgetInput PasteChunk(Icod.DCurses.CursesPastePhase, System.String)",
+        "Method: Icod.Widgets.WidgetInput PointerInput(Icod.DCurses.CursesMouseEvent)",
+        "Method: Icod.Widgets.WidgetInput TextInput(System.Text.Rune)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Property: Icod.DCurses.CursesKeyModifiers SourceModifiers",
+        "Property: Icod.DCurses.CursesMouseEvent Pointer",
+        "Property: Icod.Widgets.WidgetInputKind Kind",
+        "Property: Icod.Widgets.WidgetInputModifiers Modifiers",
+        "Property: Icod.Widgets.WidgetKey KeyCode",
+        "Property: System.Nullable\u00601[Icod.DCurses.CursesFocusState] FocusState",
+        "Property: System.Nullable\u00601[Icod.DCurses.CursesKeyEventPhase] KeyPhase",
+        "Property: System.Nullable\u00601[Icod.DCurses.CursesPastePhase] PastePhase",
+        "Property: System.Nullable\u00601[System.Int32] FunctionKeyNumber",
+        "Property: System.Nullable\u00601[System.Text.Rune] BaseLayoutCharacter",
+        "Property: System.Nullable\u00601[System.Text.Rune] Character",
+        "Property: System.Nullable\u00601[System.Text.Rune] ShiftedCharacter",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetInputKind",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetInputKind EndOfInput",
+        "Field: Icod.Widgets.WidgetInputKind Focus",
+        "Field: Icod.Widgets.WidgetInputKind Key",
+        "Field: Icod.Widgets.WidgetInputKind Paste",
+        "Field: Icod.Widgets.WidgetInputKind Pointer",
+        "Field: Icod.Widgets.WidgetInputKind Text",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetInputModifiers",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetInputModifiers Alt",
+        "Field: Icod.Widgets.WidgetInputModifiers Control",
+        "Field: Icod.Widgets.WidgetInputModifiers None",
+        "Field: Icod.Widgets.WidgetInputModifiers Shift",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetInventoryList",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetInvokedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetInvokedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetInvokedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef)",
+        "Property: System.String CommandId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetKey",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetKey Backspace",
+        "Field: Icod.Widgets.WidgetKey Character",
+        "Field: Icod.Widgets.WidgetKey Delete",
+        "Field: Icod.Widgets.WidgetKey Down",
+        "Field: Icod.Widgets.WidgetKey End",
+        "Field: Icod.Widgets.WidgetKey Enter",
+        "Field: Icod.Widgets.WidgetKey Escape",
+        "Field: Icod.Widgets.WidgetKey Function",
+        "Field: Icod.Widgets.WidgetKey Home",
+        "Field: Icod.Widgets.WidgetKey Insert",
+        "Field: Icod.Widgets.WidgetKey Left",
+        "Field: Icod.Widgets.WidgetKey None",
+        "Field: Icod.Widgets.WidgetKey PageDown",
+        "Field: Icod.Widgets.WidgetKey PageUp",
+        "Field: Icod.Widgets.WidgetKey Right",
+        "Field: Icod.Widgets.WidgetKey Space",
+        "Field: Icod.Widgets.WidgetKey Tab",
+        "Field: Icod.Widgets.WidgetKey Up",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetLabel",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetLimits",
+      "kind": "abstract-class",
+      "members": [
+        "Field: Int32 MaximumItems",
+        "Field: Int32 MaximumModalDepth",
+        "Field: Int32 MaximumPendingActions",
+        "Field: Int32 MaximumSubmenuDepth",
+        "Field: Int32 MaximumTabs",
+        "Field: Int32 MaximumWidgetsPerHost"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetList",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetSelectionMode)",
+        "Method: Void SetItems(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetListItem])",
+        "Property: Boolean IsFocusable",
+        "Property: Icod.Widgets.WidgetSelectionMode SelectionMode",
+        "Property: Int32 LastRenderVisitedCount",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetListItem] Items",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] SelectedKeys",
+        "Property: System.String CursorKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetListItem",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetListItem)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetListItem \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Boolean ByRef)",
+        "Property: Boolean IsEnabled",
+        "Property: System.String Key",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMenuBar",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem])"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMenuItem",
+      "kind": "class",
+      "members": [
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut], System.Nullable\u00601[Icod.Widgets.WidgetEditCommand])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Char, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Char, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut], System.Nullable\u00601[Icod.Widgets.WidgetEditCommand])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Char, Icod.Widgets.WidgetEditCommand, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Checkable(System.String, System.String, System.String, Icod.Widgets.WidgetEditCommand, Boolean, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut], System.Nullable\u00601[Icod.Widgets.WidgetEditCommand])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Char, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Char, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut], System.Nullable\u00601[Icod.Widgets.WidgetEditCommand])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Char, Icod.Widgets.WidgetEditCommand, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Command(System.String, System.String, System.String, Icod.Widgets.WidgetEditCommand, Boolean, System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut])",
+        "Method: Icod.Widgets.WidgetMenuItem Separator(System.String)",
+        "Method: Icod.Widgets.WidgetMenuItem Submenu(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem], Boolean)",
+        "Method: Icod.Widgets.WidgetMenuItem Submenu(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem], Char, Boolean)",
+        "Property: Boolean IsChecked",
+        "Property: Boolean IsEnabled",
+        "Property: Icod.Widgets.WidgetMenuItemKind Kind",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem] Children",
+        "Property: System.Nullable\u00601[Icod.Widgets.WidgetEditCommand] FocusedEditCommand",
+        "Property: System.Nullable\u00601[Icod.Widgets.WidgetMenuShortcut] Shortcut",
+        "Property: System.Nullable\u00601[System.Char] Mnemonic",
+        "Property: System.String CommandId",
+        "Property: System.String Id",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMenuItemKind",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetMenuItemKind CheckableCommand",
+        "Field: Icod.Widgets.WidgetMenuItemKind Command",
+        "Field: Icod.Widgets.WidgetMenuItemKind Separator",
+        "Field: Icod.Widgets.WidgetMenuItemKind Submenu",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMenuItemPresentation",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetMenuItemPresentation)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetMenuItemPresentation \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Boolean ByRef, Boolean ByRef)",
+        "Property: Boolean IsChecked",
+        "Property: Boolean IsEnabled",
+        "Property: System.String ItemId",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMenuShortcut",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetKey, Icod.Widgets.WidgetInputModifiers, System.Nullable\u00601[System.Char])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetMenuShortcut)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetKey ByRef, Icod.Widgets.WidgetInputModifiers ByRef, System.Nullable\u00601[System.Char] ByRef)",
+        "Property: Icod.Widgets.WidgetInputModifiers Modifiers",
+        "Property: Icod.Widgets.WidgetKey Key",
+        "Property: System.Nullable\u00601[System.Char] Character",
+        "Property: System.Nullable\u00601[System.Int32] FunctionKeyNumber"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMessageDialog",
+      "kind": "class",
+      "members": [
+        "Method: Icod.Widgets.WidgetMessageDialog Ok(System.String, System.String, System.String)",
+        "Method: Icod.Widgets.WidgetMessageDialog OkCancel(System.String, System.String, System.String)",
+        "Method: Icod.Widgets.WidgetMessageDialog YesNo(System.String, System.String, System.String)",
+        "Property: Icod.Widgets.WidgetDialogOutcome SelectedOutcome",
+        "Property: System.String Message"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetMessageHistory",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Int32)",
+        "Method: Void Append(System.String)",
+        "Method: Void Clear()",
+        "Property: Int32 Capacity",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Messages"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetModalLease",
+      "kind": "class",
+      "members": [
+        "Method: Void Dispose()",
+        "Property: Boolean IsActive",
+        "Property: Icod.Widgets.WidgetDialog Dialog"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetNumberPrompt",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.Globalization.CultureInfo, Double, Double, System.String)",
+        "Property: Double Maximum",
+        "Property: Double Minimum",
+        "Property: System.Globalization.CultureInfo Culture",
+        "Property: System.String Error"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetOrientation",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetOrientation Horizontal",
+        "Field: Icod.Widgets.WidgetOrientation Vertical",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPickerValidationLoader",
+      "kind": "abstract-class",
+      "members": [
+        "Method: System.Threading.Tasks.ValueTask\u00601[Icod.Widgets.WidgetPickerValidationResult] ValidateAsync(Icod.Widgets.IWidgetFileSystemProvider, Icod.Widgets.WidgetPickerValidationRequest, System.Threading.CancellationToken)"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPickerValidationRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, System.Collections.Generic.IReadOnlyList\u00601[System.String], Icod.Widgets.WidgetFileSelectionKind)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetPickerValidationRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetPickerValidationRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, System.Collections.Generic.IReadOnlyList\u00601[System.String] ByRef, Icod.Widgets.WidgetFileSelectionKind ByRef)",
+        "Property: Icod.Widgets.WidgetFileSelectionKind Kind",
+        "Property: Int64 Generation",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Paths",
+        "Property: System.Guid PickerId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPickerValidationRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetPickerValidationRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetPickerValidationRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetPickerValidationRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetPickerValidationRequest ByRef)",
+        "Property: Icod.Widgets.WidgetPickerValidationRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPickerValidationResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetPickerValidationRequest, Icod.Widgets.WidgetFileSelectionValidation)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetPickerValidationResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetPickerValidationResult \u003CClone\u003E$()",
+        "Method: Icod.Widgets.WidgetPickerValidationResult Failure(Icod.Widgets.WidgetPickerValidationRequest, System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Method: Icod.Widgets.WidgetPickerValidationResult Success(Icod.Widgets.WidgetPickerValidationRequest)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetPickerValidationRequest ByRef, Icod.Widgets.WidgetFileSelectionValidation ByRef)",
+        "Property: Icod.Widgets.WidgetFileSelectionValidation Validation",
+        "Property: Icod.Widgets.WidgetPickerValidationRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetPopupMenu",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItem])",
+        "Method: Void Close()",
+        "Method: Void Open()",
+        "Method: Void SetPresentation(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetMenuItemPresentation])",
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsOpen",
+        "Property: Icod.DCurses.CursesRectangle RenderBounds",
+        "Property: Icod.Widgets.WidgetMenuItem CurrentItem",
+        "Property: Int32 Depth"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetRadioGroup",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[System.String], System.String)",
+        "Property: Boolean IsFocusable",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Keys",
+        "Property: System.String SelectedKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetInspectionRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetSaveTargetRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSaveTargetInspectionRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSaveTargetInspectionRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetSaveTargetRequest ByRef)",
+        "Property: Icod.Widgets.WidgetSaveTargetRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetInspectionResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetSaveTargetRequest, Icod.Widgets.WidgetSaveTargetObservation)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSaveTargetInspectionResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSaveTargetInspectionResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetSaveTargetRequest ByRef, Icod.Widgets.WidgetSaveTargetObservation ByRef)",
+        "Property: Icod.Widgets.WidgetSaveTargetObservation Observation",
+        "Property: Icod.Widgets.WidgetSaveTargetRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetObservation",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Boolean, Boolean, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSaveTargetObservation)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSaveTargetObservation \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Boolean ByRef, Boolean ByRef, System.String ByRef)",
+        "Property: Boolean Exists",
+        "Property: Boolean IsValid",
+        "Property: System.String Error",
+        "Property: System.String TargetPath"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetPicker",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.IWidgetFileSystemProvider, Icod.Widgets.IWidgetSaveTargetProvider, System.String, System.String)",
+        "Method: Boolean ApplyInspectionResult(Icod.Widgets.WidgetSaveTargetInspectionResult)",
+        "Method: Boolean ApplyLoadResult(Icod.Widgets.WidgetBrowserLoadResult)",
+        "Method: Icod.Widgets.WidgetBrowserRequest RequestDirectory(System.String)",
+        "Method: Icod.Widgets.WidgetSaveTargetRequest RequestAccept()",
+        "Property: Icod.Widgets.IWidgetFileSystemProvider BrowserProvider",
+        "Property: Icod.Widgets.IWidgetSaveTargetProvider TargetProvider",
+        "Property: Icod.Widgets.WidgetBrowser Browser",
+        "Property: Icod.Widgets.WidgetTextInput NameInput",
+        "Property: System.String StartLocation",
+        "Property: System.String ValidationError"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, System.String, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSaveTargetRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSaveTargetRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, System.String ByRef, System.String ByRef)",
+        "Property: Int64 Generation",
+        "Property: System.Guid PickerId",
+        "Property: System.String Directory",
+        "Property: System.String FileName"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSaveTargetSelection",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSaveTargetSelection)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSaveTargetSelection \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Boolean ByRef)",
+        "Property: Boolean ExistedAtInspection",
+        "Property: System.String TargetPath"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetScrollBar",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetScrollOrientation)",
+        "Method: Void SetRange(Int64, Int64, Int64)",
+        "Property: Boolean IsFocusable",
+        "Property: Icod.Widgets.WidgetScrollOrientation Orientation",
+        "Property: Int64 Offset"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetScrollChangedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetScrollChangedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetScrollChangedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Int64 ByRef)",
+        "Property: Int64 Offset"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetScrollIndicator",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)",
+        "Property: Int32 Offset",
+        "Property: Int32 Total",
+        "Property: Int32 Visible"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetScrollOrientation",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetScrollOrientation Horizontal",
+        "Field: Icod.Widgets.WidgetScrollOrientation Vertical",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetScrollRange",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Int64, Int64, Int64, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetScrollRange)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Int64 ByRef, Int64 ByRef, Int64 ByRef, Boolean ByRef)",
+        "Property: Boolean IsExtentExact",
+        "Property: Int64 Extent",
+        "Property: Int64 Offset",
+        "Property: Int64 Viewport"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchDirection",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetSearchDirection Backward",
+        "Field: Icod.Widgets.WidgetSearchDirection Forward",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchForm",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean)",
+        "Method: Boolean ApplyResult(Icod.Widgets.WidgetSearchResult)",
+        "Method: Icod.Widgets.WidgetSearchRequest Submit(Icod.Widgets.WidgetSearchIntent)",
+        "Method: Void SetContext(System.Guid, System.Guid, Int64)",
+        "Method: Void SetOptions(Icod.Widgets.WidgetSearchOptions)",
+        "Property: Icod.Widgets.WidgetSearchOptions Options",
+        "Property: Icod.Widgets.WidgetTextInput QueryInput",
+        "Property: Icod.Widgets.WidgetTextInput ReplacementInput",
+        "Property: System.String Error"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchIntent",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetSearchIntent Find",
+        "Field: Icod.Widgets.WidgetSearchIntent ReplaceAll",
+        "Field: Icod.Widgets.WidgetSearchIntent ReplaceOne",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchOptions",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Boolean, Boolean, Boolean, Icod.Widgets.WidgetSearchDirection)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSearchOptions)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSearchOptions \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Boolean ByRef, Boolean ByRef, Boolean ByRef, Icod.Widgets.WidgetSearchDirection ByRef)",
+        "Property: Boolean MatchCase",
+        "Property: Boolean UseRegularExpression",
+        "Property: Boolean WholeWord",
+        "Property: Icod.Widgets.WidgetSearchDirection Direction"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchRequest",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, System.Guid, Int64, System.Guid, System.Guid, Int64, Icod.Widgets.WidgetSearchIntent, System.String, System.String, Icod.Widgets.WidgetSearchOptions)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSearchRequest)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSearchRequest \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, System.Guid ByRef, Int64 ByRef, System.Guid ByRef, System.Guid ByRef, Int64 ByRef, Icod.Widgets.WidgetSearchIntent ByRef, System.String ByRef, System.String ByRef, Icod.Widgets.WidgetSearchOptions ByRef)",
+        "Property: Icod.Widgets.WidgetSearchIntent Intent",
+        "Property: Icod.Widgets.WidgetSearchOptions Options",
+        "Property: Int64 Generation",
+        "Property: Int64 Revision",
+        "Property: System.Guid DocumentId",
+        "Property: System.Guid FormId",
+        "Property: System.Guid RequestId",
+        "Property: System.Guid ViewId",
+        "Property: System.String Query",
+        "Property: System.String Replacement"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetSearchRequest)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSearchRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSearchRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Icod.Widgets.WidgetSearchRequest ByRef)",
+        "Property: Icod.Widgets.WidgetSearchRequest Request"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSearchResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetSearchRequest, Boolean, System.Nullable\u00601[System.Int64], Int64, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSearchResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSearchResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetSearchRequest ByRef, Boolean ByRef, System.Nullable\u00601[System.Int64] ByRef, Int64 ByRef, System.String ByRef)",
+        "Property: Boolean Found",
+        "Property: Icod.Widgets.WidgetSearchRequest Request",
+        "Property: Int64 MatchLength",
+        "Property: System.Nullable\u00601[System.Int64] MatchStart",
+        "Property: System.String Error"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSelectionChangedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetSelectionChangedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetSelectionChangedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.Collections.Generic.IReadOnlyList\u00601[System.String] ByRef)",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] Keys"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetSelectionMode",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetSelectionMode Multiple",
+        "Field: Icod.Widgets.WidgetSelectionMode Single",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetStack",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetOrientation)",
+        "Property: Icod.Widgets.WidgetOrientation Orientation"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetStatusBar",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)",
+        "Method: Void SetFields(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetStatusField])",
+        "Property: Boolean IsFocusable",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetStatusField] Fields",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] VisibleFieldNames",
+        "Property: System.String FocusedFieldName"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetStatusField",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Int32)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetStatusField)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetStatusField \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Int32 ByRef)",
+        "Property: Boolean IsEnabled",
+        "Property: Int32 Priority",
+        "Property: System.String CommandId",
+        "Property: System.String Name",
+        "Property: System.String Text"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTab",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, Boolean, Boolean, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTab)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTab \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef, Boolean ByRef, Boolean ByRef, Boolean ByRef)",
+        "Property: Boolean IsClosable",
+        "Property: Boolean IsEnabled",
+        "Property: Boolean IsModified",
+        "Property: System.String Caption",
+        "Property: System.String Key"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTabActivationRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTabActivationRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTabActivationRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef)",
+        "Property: System.String TabKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTabCloseRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTabCloseRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTabCloseRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.String ByRef)",
+        "Property: System.String TabKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTabStrip",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String)",
+        "Method: Void SetTabs(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetTab], System.String)",
+        "Property: Boolean AcceptsTab",
+        "Property: Boolean IsFocusable",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetTab] Tabs",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[System.String] VisibleKeys",
+        "Property: System.String ActiveKey"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextChange",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Int64, Int64, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextChange)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Int64 ByRef, Int64 ByRef, Int64 ByRef)",
+        "Property: Int64 NewLength",
+        "Property: Int64 OldLength",
+        "Property: Int64 Start"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextChangeReason",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetTextChangeReason Apply",
+        "Field: Icod.Widgets.WidgetTextChangeReason Redo",
+        "Field: Icod.Widgets.WidgetTextChangeReason Undo",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextDocument",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Collections.Generic.IEnumerable\u00601[System.ReadOnlyMemory\u00601[System.Char]], Icod.Widgets.WidgetTextDocumentOptions)",
+        "Event: System.EventHandler\u00601[Icod.Widgets.WidgetTextDocumentChangedEventArgs] Changed",
+        "Method: Boolean IsTextElementBoundary(Int64)",
+        "Method: Icod.Widgets.WidgetTextEditResult Apply(System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetTextEdit], Int64, Icod.Widgets.WidgetTextEditContext)",
+        "Method: Icod.Widgets.WidgetTextEditResult Redo()",
+        "Method: Icod.Widgets.WidgetTextEditResult Undo()",
+        "Method: Icod.Widgets.WidgetTextLine GetLine(Int64)",
+        "Method: Icod.Widgets.WidgetTextSnapshot CreateSnapshot()",
+        "Method: Int64 GetLineIndex(Int64)",
+        "Method: System.String Read(Int64, Int32)",
+        "Method: Void MarkSaved(Icod.Widgets.WidgetTextSnapshot)",
+        "Property: Boolean CanRedo",
+        "Property: Boolean CanUndo",
+        "Property: Boolean IsModified",
+        "Property: Int64 Length",
+        "Property: Int64 LineCount",
+        "Property: Int64 Revision",
+        "Property: Int64 StateId",
+        "Property: System.Guid Id"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextDocumentChangedEventArgs",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, Int64, Icod.Widgets.WidgetTextChangeReason, System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetTextChange])",
+        "Property: Icod.Widgets.WidgetTextChangeReason Reason",
+        "Property: Int64 Revision",
+        "Property: Int64 StateId",
+        "Property: System.Collections.Generic.IReadOnlyList\u00601[Icod.Widgets.WidgetTextChange] Changes",
+        "Property: System.Guid DocumentId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextDocumentOptions",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor()",
+        "Field: Int32 MaximumSupportedHistoryGroups",
+        "Field: Int32 MaximumSupportedSingleEditLength",
+        "Field: Int32 MaximumSupportedSnapshots",
+        "Field: Int32 MaximumSupportedTextElementScan",
+        "Field: Int64 MaximumSupportedDocumentLength",
+        "Field: Int64 MaximumSupportedHistoryRetainedUnits",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextDocumentOptions)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextDocumentOptions \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Property: Int32 MaximumHistoryGroups",
+        "Property: Int32 MaximumSingleEditLength",
+        "Property: Int32 MaximumSnapshots",
+        "Property: Int32 MaximumTextElementScan",
+        "Property: Int64 MaximumDocumentLength",
+        "Property: Int64 MaximumHistoryRetainedUnits"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEdit",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Int64, Int64, System.String)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextEdit)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextEdit \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Int64 ByRef, Int64 ByRef, System.String ByRef)",
+        "Property: Int64 DeleteLength",
+        "Property: Int64 Start",
+        "Property: System.String InsertText"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditContext",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.Guid, Int64, Int64, Int64, Int64, Icod.Widgets.WidgetTextEditKind, System.TimeSpan, Boolean)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextEditContext)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextEditContext \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.Guid ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Int64 ByRef, Icod.Widgets.WidgetTextEditKind ByRef, System.TimeSpan ByRef, Boolean ByRef)",
+        "Property: Boolean AllowCoalescing",
+        "Property: Icod.Widgets.WidgetTextEditKind Kind",
+        "Property: Int64 AfterAnchor",
+        "Property: Int64 AfterCaret",
+        "Property: Int64 BeforeAnchor",
+        "Property: Int64 BeforeCaret",
+        "Property: System.Guid ViewId",
+        "Property: System.TimeSpan Timestamp"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditKind",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetTextEditKind Backspace",
+        "Field: Icod.Widgets.WidgetTextEditKind Cut",
+        "Field: Icod.Widgets.WidgetTextEditKind Delete",
+        "Field: Icod.Widgets.WidgetTextEditKind Indent",
+        "Field: Icod.Widgets.WidgetTextEditKind NewLine",
+        "Field: Icod.Widgets.WidgetTextEditKind Outdent",
+        "Field: Icod.Widgets.WidgetTextEditKind Overwrite",
+        "Field: Icod.Widgets.WidgetTextEditKind Paste",
+        "Field: Icod.Widgets.WidgetTextEditKind Programmatic",
+        "Field: Icod.Widgets.WidgetTextEditKind Typing",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditResult",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetTextEditStatus, Int64, Int64, System.Nullable\u00601[System.Guid], System.Nullable\u00601[Icod.Widgets.WidgetTextSelection])",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextEditResult)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextEditResult \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.Widgets.WidgetTextEditStatus ByRef, Int64 ByRef, Int64 ByRef, System.Nullable\u00601[System.Guid] ByRef, System.Nullable\u00601[Icod.Widgets.WidgetTextSelection] ByRef)",
+        "Property: Icod.Widgets.WidgetTextEditStatus Status",
+        "Property: Int64 Revision",
+        "Property: Int64 StateId",
+        "Property: System.Nullable\u00601[Icod.Widgets.WidgetTextSelection] Selection",
+        "Property: System.Nullable\u00601[System.Guid] ViewId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditStatus",
+      "kind": "enum",
+      "members": [
+        "Field: Icod.Widgets.WidgetTextEditStatus Applied",
+        "Field: Icod.Widgets.WidgetTextEditStatus InvalidRange",
+        "Field: Icod.Widgets.WidgetTextEditStatus LimitExceeded",
+        "Field: Icod.Widgets.WidgetTextEditStatus NoChange",
+        "Field: Icod.Widgets.WidgetTextEditStatus Stale",
+        "Field: Int32 value__",
+        "Field: Int32 value__"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Guid, Int64, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextEditedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextEditedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.Guid ByRef, Int64 ByRef, Int64 ByRef)",
+        "Property: Int64 Revision",
+        "Property: Int64 StateId",
+        "Property: System.Guid DocumentId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextEditor",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Icod.Widgets.WidgetTextViewState, Icod.Widgets.WidgetEditorOptions)",
+        "Method: Boolean CanExecuteEditCommand(Icod.Widgets.WidgetEditCommand)",
+        "Method: Icod.Widgets.WidgetCommandResult ExecuteEditCommand(Icod.Widgets.WidgetEditCommand, System.TimeSpan)",
+        "Property: Boolean AcceptsTab",
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsOverwriteMode",
+        "Property: Boolean IsReadOnly",
+        "Property: Icod.Widgets.WidgetScrollRange HorizontalScrollRange",
+        "Property: Icod.Widgets.WidgetScrollRange VerticalScrollRange",
+        "Property: Icod.Widgets.WidgetTextViewState View"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextInput",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String)",
+        "Method: Boolean CanExecuteEditCommand(Icod.Widgets.WidgetEditCommand)",
+        "Method: Icod.Widgets.WidgetCommandResult ExecuteEditCommand(Icod.Widgets.WidgetEditCommand, System.TimeSpan)",
+        "Method: Void SetSelection(Int32, Int32)",
+        "Property: Boolean HasSelection",
+        "Property: Boolean IsFocusable",
+        "Property: Boolean IsReadOnly",
+        "Property: Int32 Anchor",
+        "Property: Int32 Caret",
+        "Property: Int32 MaxTextElements",
+        "Property: Int32 MaximumClipboardBytes",
+        "Property: Int32 SelectionEnd",
+        "Property: Int32 SelectionStart",
+        "Property: System.String Value"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextLine",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Int64, Int64, Int32)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextLine)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Int64 ByRef, Int64 ByRef, Int32 ByRef)",
+        "Property: Int32 LineEndingLength",
+        "Property: Int64 ContentLength",
+        "Property: Int64 End",
+        "Property: Int64 Length",
+        "Property: Int64 Start"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextPrompt",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.String)",
+        "Property: Int32 MaxTextElements",
+        "Property: System.String Value"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextSelection",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Int64, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextSelection)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Int64 ByRef, Int64 ByRef)",
+        "Property: Int64 Anchor",
+        "Property: Int64 Caret"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextSelectionChangedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.Guid, Int64, Int64)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTextSelectionChangedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTextSelectionChangedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, System.Guid ByRef, Int64 ByRef, Int64 ByRef)",
+        "Property: Int64 Anchor",
+        "Property: Int64 Caret",
+        "Property: System.Guid ViewId"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextSnapshot",
+      "kind": "class",
+      "members": [
+        "Method: Icod.Widgets.WidgetTextLine GetLine(Int64)",
+        "Method: System.String Read(Int64, Int32)",
+        "Method: Void Dispose()",
+        "Property: Int64 Length",
+        "Property: Int64 LineCount",
+        "Property: Int64 Revision",
+        "Property: Int64 StateId",
+        "Property: System.Guid Id"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTextViewState",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.Widgets.WidgetTextDocument)",
+        "Method: Void Dispose()",
+        "Method: Void SetScroll(Int64, Int64)",
+        "Method: Void SetSelection(Int64, Int64)",
+        "Property: Boolean HasSelection",
+        "Property: Icod.DCurses.CursesTextWrapMode WrapMode",
+        "Property: Icod.Widgets.WidgetTextDocument Document",
+        "Property: Int32 TabWidth",
+        "Property: Int64 Anchor",
+        "Property: Int64 Caret",
+        "Property: Int64 HorizontalOffset",
+        "Property: Int64 SelectionEnd",
+        "Property: Int64 SelectionEpoch",
+        "Property: Int64 SelectionStart",
+        "Property: Int64 VerticalOffset",
+        "Property: Int64 ViewRevision",
+        "Property: System.Guid Id",
+        "Property: System.Nullable\u00601[System.Int32] PreferredColumn"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetTheme",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(Icod.DCurses.CursesStyle, Icod.DCurses.CursesStyle, Icod.DCurses.CursesStyle, Icod.DCurses.CursesStyle, Icod.DCurses.CursesStyle, Icod.DCurses.CursesStyle)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetTheme)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetTheme \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(Icod.DCurses.CursesStyle ByRef, Icod.DCurses.CursesStyle ByRef, Icod.DCurses.CursesStyle ByRef, Icod.DCurses.CursesStyle ByRef, Icod.DCurses.CursesStyle ByRef, Icod.DCurses.CursesStyle ByRef)",
+        "Property: Icod.DCurses.CursesStyle Border",
+        "Property: Icod.DCurses.CursesStyle Disabled",
+        "Property: Icod.DCurses.CursesStyle Error",
+        "Property: Icod.DCurses.CursesStyle Focused",
+        "Property: Icod.DCurses.CursesStyle Normal",
+        "Property: Icod.DCurses.CursesStyle Selected",
+        "Property: Icod.Widgets.WidgetTheme Default"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetValueChangedAction\u00601",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, T)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetValueChangedAction\u00601[T])",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetValueChangedAction\u00601[T] \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, T ByRef)",
+        "Property: T Value"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetWizardDialog",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, System.String, System.Collections.Generic.IReadOnlyList\u00601[System.String])",
+        "Method: Void ApplyNavigation(Int32)",
+        "Method: Void RejectNavigation(System.String)",
+        "Property: Boolean CanNext",
+        "Property: Boolean CanPrevious",
+        "Property: Int32 PageIndex",
+        "Property: System.String Error",
+        "Property: System.String Page"
+      ]
+    },
+    {
+      "name": "Icod.Widgets.WidgetWizardNavigationRequestedAction",
+      "kind": "class",
+      "members": [
+        "Constructor: Void .ctor(System.String, Int32, Int32)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetAction)",
+        "Method: Boolean Equals(Icod.Widgets.WidgetWizardNavigationRequestedAction)",
+        "Method: Boolean Equals(System.Object)",
+        "Method: Icod.Widgets.WidgetWizardNavigationRequestedAction \u003CClone\u003E$()",
+        "Method: Int32 GetHashCode()",
+        "Method: System.String ToString()",
+        "Method: Void Deconstruct(System.String ByRef, Int32 ByRef, Int32 ByRef)",
+        "Property: Int32 FromPage",
+        "Property: Int32 ToPage"
+      ]
+    }
+  ]
+}
