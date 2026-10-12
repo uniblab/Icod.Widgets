@@ -116,6 +116,47 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void ActiveUnfocusedTabModifiedMarkerAndScrollbarPartsKeepIndependentStyles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.TabStrip, Red ).With( WidgetStyleRole.TabActive, Blue )
+			.With( WidgetStyleRole.TabModified, Red ).With( WidgetStyleRole.TabClose, Red )
+			.With( WidgetStyleRole.ScrollTrack, Blue ).With( WidgetStyleRole.ScrollThumb, Red );
+		CursesScreen screen = new( 16, 3 ); WidgetTheme theme = WidgetTheme.Default with { Parts = parts };
+		WidgetTabStrip tabs = new( "tabs" ); tabs.Arrange( new CursesRectangle( 0, 0, 1, 16 ) );
+		tabs.SetTabs( [ new WidgetTab( "one", "File", IsClosable: true, IsModified: true ) ], "one" );
+		tabs.OnRender( screen, theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 1 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 6 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 8 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 15 ).Style );
+		WidgetScrollBar bar = new( "bar", WidgetScrollOrientation.Horizontal ); bar.Arrange( new CursesRectangle( 1, 0, 1, 10 ) );
+		bar.SetRange( 100, 20, 0 ); bar.OnRender( screen, theme, false );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 9 ).Style );
+	}
+
+	[Fact]
+	public void StatusActionsUseTheirOwnStyleWithinStyledSurface() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.StatusSurface, Red )
+			.With( WidgetStyleRole.StatusAction, Blue ).With( WidgetStyleRole.StatusField, Blue );
+		CursesScreen screen = new( 12, 1 ); WidgetStatusBar bar = new( "bar" );
+		bar.SetFields( [ new WidgetStatusField( "line", "Ln1", 10 ) { CommandId = "go" } ] );
+		bar.Arrange( screen.Bounds ); bar.OnRender( screen, WidgetTheme.Default with { Parts = parts }, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 11 ).Style );
+	}
+
+	[Fact]
+	public void MessageHistoryRepaintsEmptyRowsOnThemeSwitch() {
+		CursesScreen screen = new( 8, 3 ); WidgetMessageHistory history = new( "history" ); history.Append( "Hi" );
+		using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.MessageSurface, Red ) } );
+		host.Attach( history ); history.Arrange( screen.Bounds ); host.Render();
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 7 ).Style );
+		host.SetTheme( host.Theme with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.MessageSurface, Blue ) } ); host.Render();
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 2, 7 ).Style );
+	}
+
+	[Fact]
 	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
 		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
 		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };

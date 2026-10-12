@@ -94,17 +94,28 @@ public sealed class WidgetTabStrip( string id ) : Widget( id ) {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		screen.StandardWindow.FillRectangle( area.Row, area.Column, 1, area.Columns, CursesCell.Blank( theme.Normal ) );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, 1, area.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.TabStrip ) ) );
 		foreach ( Segment segment in this.segments ) {
 			WidgetTab tab = this.tabs[ segment.Index ]; int column = this.Bounds.Column + segment.Column;
 			if ( column < area.Column || column >= area.Column + area.Columns ) continue;
 			string label = $" {tab.Caption}{( tab.IsModified ? " ●" : "" )}{( tab.IsClosable ? " ×" : "" )} ";
-			string clipped = CursesText.TruncateToColumns( label, Math.Min( segment.Columns, area.Column + area.Columns - column ), screen.TextWidthProvider );
+			int available = Math.Min( segment.Columns, area.Column + area.Columns - column );
+			string clipped = CursesText.TruncateToColumns( label, available, screen.TextWidthProvider );
+			CursesStyle style = this.Style( theme, !tab.IsEnabled ? WidgetStyleRole.Disabled : StringComparer.Ordinal.Equals( tab.Key, this.ActiveKey ) ? focused && !this.HasPartStyle( theme, WidgetStyleRole.TabActive ) ? WidgetStyleRole.Focused : WidgetStyleRole.TabActive : WidgetStyleRole.TabInactive );
+			screen.StandardWindow.FillRectangle( area.Row, column, 1, available, CursesCell.Blank( style ) );
 			screen.StandardWindow.Move( area.Row, column );
-			screen.StandardWindow.Write( clipped, !tab.IsEnabled ? theme.Disabled : StringComparer.Ordinal.Equals( tab.Key, this.ActiveKey ) && focused ? theme.Focused : theme.Normal );
+			screen.StandardWindow.Write( clipped, style );
+			int marker = CursesText.MeasureColumns( " " + tab.Caption, screen.TextWidthProvider ) + 1;
+			if ( tab.IsModified && marker < available ) {
+				screen.StandardWindow.Move( area.Row, column + marker ); screen.StandardWindow.Write( "●", this.Style( theme, WidgetStyleRole.TabModified ) );
+			}
+			if ( tab.IsClosable ) {
+				int close = marker + ( tab.IsModified ? 2 : 0 );
+				if ( close < available ) { screen.StandardWindow.Move( area.Row, column + close ); screen.StandardWindow.Write( "×", this.Style( theme, WidgetStyleRole.TabClose ) ); }
+			}
 		}
 		if ( this.overflowColumn >= 0 && this.Bounds.Column + this.overflowColumn < area.Column + area.Columns ) {
-			screen.StandardWindow.Move( area.Row, this.Bounds.Column + this.overflowColumn ); screen.StandardWindow.Write( "›", theme.Normal );
+			screen.StandardWindow.Move( area.Row, this.Bounds.Column + this.overflowColumn ); screen.StandardWindow.Write( "›", this.Style( theme, WidgetStyleRole.TabOverflow ) );
 		}
 	}
 

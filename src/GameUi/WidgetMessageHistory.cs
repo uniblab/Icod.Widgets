@@ -33,7 +33,9 @@ public sealed class WidgetMessageHistory : Widget {
 	public void Clear() => this.messages.Clear();
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return; int start = Math.Max( 0, this.messages.Count - area.Rows );
-		for ( int row = 0; row < area.Rows && start + row < this.messages.Count; row++ ) { screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( this.messages[ start + row ], area.Columns, screen.TextWidthProvider ), theme.Normal ); }
+		CursesStyle style = this.Style( theme, WidgetStyleRole.MessageSurface );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) );
+		for ( int row = 0; row < area.Rows && start + row < this.messages.Count; row++ ) { screen.StandardWindow.Move( area.Row + row, area.Column ); screen.StandardWindow.Write( CursesText.TruncateToColumns( this.messages[ start + row ], area.Columns, screen.TextWidthProvider ), style ); }
 	}
 }
 
