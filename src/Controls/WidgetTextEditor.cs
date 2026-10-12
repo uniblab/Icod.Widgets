@@ -149,6 +149,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	}
 
 	protected override void OnCaptureCanceled() => this.CancelPointerSelection();
+	internal override void OnDetached() { this.CancelPointerSelection(); this.CancelPendingPaste(); this.View.InvalidatePendingOperations(); }
 
 	protected override void OnUpdate( TimeSpan timestamp ) {
 		if ( !this.pointerSelecting || ( 0 == this.horizontalAutoScroll && 0 == this.verticalAutoScroll ) || this.pointerWidthProvider is null ) return;

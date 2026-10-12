@@ -27,8 +27,9 @@
 		<AssemblyName>Icod.Widgets.BinaryCompatibilityConsumer</AssemblyName>
 		<RootNamespace>Icod.Widgets.BinaryCompatibilityConsumer</RootNamespace>
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<BaselineVersion Condition="'$(BaselineVersion)' == ''">1.0.0</BaselineVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Icod.Widgets" Version="1.0.0" />
+		<PackageReference Include="Icod.Widgets" Version="$(BaselineVersion)" />
 	</ItemGroup>
 </Project>

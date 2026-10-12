@@ -3,7 +3,7 @@
 **Target:** `1.2.0` — Document Workspace\
 **Decision date:** 2026-10-12\
 **Baseline:** `d71b74d0a68792c2001b609978b434bffb14f030` on `main`; 1.1.0 merged stable source\
-**State:** design approved; W12xx planning proposed for review; implementation not started\
+**State:** W1201–W1210 implemented and recorded; W1211 stable qualification in progress; owner merge/tag/publication pending\
 **Execution:** sequential, native C# work; no subagent delegation
 
 ## Goal and boundaries
@@ -16,9 +16,9 @@ external changes, save safety, close approval, and search/regex execution.
 
 Read the [approved design](docs/superpowers/specs/2026-10-12-icod-widgets-1.2-document-workspace-design.md)
 and the focused implementation plans together. This roadmap owns sequence and
-release gates; the design owns behavior; the plans own proposed signatures,
-files, test-first increments, and commit boundaries. The public API is proposed
-in these plans and frozen at W1210 only after public-consumer review.
+release gates; the design owns behavior; the plans record signatures,
+files, test-first increments, and commit boundaries. The public API was frozen
+at W1210 after public-consumer review.
 
 ## Compatibility contract
 
@@ -51,6 +51,10 @@ in these plans and frozen at W1210 only after public-consumer review.
 | W1209 | Integrated in-memory workspace sample and documentation | W1202–W1208 | Multi-document smoke, guidance, and external consumer demonstrate public composition without file writes |
 | W1210 | Performance, API/compatibility freeze, RC qualification | W1201–W1209 | Measured stress, three-framework CI, package-only consumer, API fingerprint, exact prerelease package audit |
 | W1211 | Stable qualification and owner handoff | W1210 | Exact `1.2.0` package metadata/artifact, changelog, release notes, README and sample parity, scoped live results |
+
+Implementation and candidate evidence are in the `docs/W1201`–`W1210` records;
+exact stable results and unavailable live environments are recorded in
+[`W1211`](docs/W1211-Stable-Qualification.md).
 
 The dependency graph permits focused test development, but the chosen execution
 is sequential. Each tranche ends with tests, review, and a `docs/W12xx-*.md`

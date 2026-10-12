@@ -21,7 +21,7 @@
 
 namespace Icod.Widgets;
 
-public enum WidgetDialogOutcome { Yes, No, Ok, Accepted, Cancel }
+public enum WidgetDialogOutcome { Yes, No, Ok, Accepted, Cancel, Save, DontSave }
 
 public sealed record WidgetDialogResult( WidgetDialogOutcome Outcome, object? Value = null );
 

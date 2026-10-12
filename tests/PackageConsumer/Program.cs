@@ -42,10 +42,23 @@ bool undone = host.ExecuteEditCommand( WidgetEditCommand.Undo, TimeSpan.FromMill
 WidgetClipboardRequest paste = RequestClipboard( host, WidgetEditCommand.Paste, TimeSpan.FromMilliseconds( 8 ) ); view.SetSelection( document.Length, document.Length );
 bool staleClipboard = !host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, "stale" ) );
 using WidgetTextSnapshot snapshot = document.CreateSnapshot(); document.MarkSaved( snapshot );
+WidgetTabStrip tabs = new( "tabs" ); tabs.SetTabs( [ new WidgetTab( "one", "One" ), new WidgetTab( "two", "Two", true ) ], "two" );
+WidgetContentHost content = new( "content" ); content.SetContent( new WidgetTextEditor( "workspace-editor", new WidgetTextViewState( document ) ) );
+WidgetPopupMenu dynamicMenu = new( "dynamic", [ WidgetMenuItem.Command( "copy", "Copy", "edit.copy", WidgetEditCommand.Copy ) ] );
+dynamicMenu.SetPresentation( [ new WidgetMenuItemPresentation( "copy", "Copy selection", true ) ] );
+WidgetStatusField statusField = new( "find", "Find", 10 ) { CommandId = "edit.find" };
+WidgetStatusBar statusBar = new( "status" ); statusBar.SetFields( [ statusField ] ); statusBar.Arrange( new CursesRectangle( 0, 0, 1, 24 ) );
+WidgetFormDialog decision = WidgetFormDialog.SaveDontSaveCancel( "decision", "Close", "Save changes?" );
+WidgetSaveTargetPicker saveTarget = new( "save", new LocalWidgetFileSystemProvider(), new PackageInspector(), "/tmp", "draft.txt" );
+WidgetSearchForm search = new( "search", "Find", true ); search.SetContext( document.Id, view.Id, document.Revision );
+WidgetGoToLineDialog goTo = new( "go-to", "Go To Line" ); goTo.SetContext( document.Id, view.Id, document.Revision );
+bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEditor && dynamicMenu is not null &&
+	statusField.CommandId == "edit.find" && decision.Actions.Count == 3 && saveTarget.NameInput.Value == "draft.txt" &&
+	search.ReplacementInput is not null && goTo.LineInput is not null && WidgetLimits.MaximumTabs == 1024;
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	edited && undone && staleClipboard && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();
@@ -66,4 +79,9 @@ sealed class PublicProbe( string id ) : Widget( id ) {
 
 	protected override void OnUpdate( TimeSpan timestamp ) => this.UpdateCount++;
 	protected override void OnCaptureCanceled() => this.CancellationCount++;
+}
+
+sealed class PackageInspector : IWidgetSaveTargetProvider {
+	public ValueTask<WidgetSaveTargetObservation> InspectTargetAsync( string directory, string fileName, CancellationToken token ) =>
+		ValueTask.FromResult( new WidgetSaveTargetObservation( directory + "/" + fileName, false, true ) );
 }

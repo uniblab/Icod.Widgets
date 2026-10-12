@@ -41,6 +41,8 @@ public sealed partial class WidgetHost {
 		CursesScreen staging = new( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
 		staging.StandardWindow.WrapMode = CursesWrapMode.Clip;
 		widget.OnRender( staging, this.Theme, ReferenceEquals( widget, this.FocusedWidget ) );
+		if ( widget is WidgetDialog dialog ) foreach ( Widget child in dialog.DescendantsAndSelf().Skip( 1 ) )
+			if ( child.IsEffectivelyVisible ) child.OnRender( staging, this.Theme, ReferenceEquals( child, this.FocusedWidget ) );
 		staging.StandardWindow.CopyRectangleTo( this.GetPresentationWindow( widget ), bounds.Row, bounds.Column, bounds.Rows, bounds.Columns, 0, 0 );
 	}
 }

@@ -1,0 +1,7 @@
+# W1204 Dynamic Menus and Edit Routing
+
+`WidgetPopupMenu.SetPresentation` applies a fully validated caller-controlled snapshot by stable menu item ID, including captions, enabled state, and checked state. Duplicate or unknown IDs and excessive snapshots fail before mutation. An open menu preserves selection by ID when possible, then chooses the next enabled sibling, then an earlier enabled sibling; if no item is enabled it closes. Definitions remain unchanged. Controlled checkable items emit the requested next state; existing checkable items retain their original self-toggle behavior.
+
+Command and checkable factories accept an optional trailing `focusedEditCommand`. The host sends it to the focused edit target first. An executed or disabled edit consumes the command; only a non-applicable edit falls back to one application command action. Primary pointer press/release selects popup rows, and release outside cannot activate the old selection. Existing mnemonic and shortcut behavior remains distinct.
+
+Verification: the new menu tests initially failed to compile for absent presentation and factory members. Six focused tests passed after implementation. The first full net10 run found one 1.1 compatibility failure from changing initial selection of a disabled menu item; restoring the original initial selection yielded 251 passing tests and zero failures. Offline Roslyn/VSTest was used with existing dependency assemblies; restored SDK build and net8/net9 remain pending.

@@ -76,14 +76,15 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		this.Dialog = dialog; this.Host.ShowModal( dialog );
 		if ( dialog is WidgetFilePicker file ) this.Load( file.RequestDirectory( file.StartLocation ) );
 		else if ( dialog is WidgetFolderPicker folder ) this.Load( folder.RequestDirectory( folder.StartLocation ) );
+		else if ( dialog is WidgetSaveTargetPicker save ) this.Load( save.RequestDirectory( save.StartLocation ) );
 	}
-	private IWidgetFileSystemProvider Provider => this.Dialog switch { WidgetFilePicker file => file.Provider, WidgetFolderPicker folder => folder.Provider, _ => throw new InvalidOperationException( "No picker." ) };
+	private IWidgetFileSystemProvider Provider => this.Dialog switch { WidgetFilePicker file => file.Provider, WidgetFolderPicker folder => folder.Provider, WidgetSaveTargetPicker save => save.BrowserProvider, _ => throw new InvalidOperationException( "No picker." ) };
 	protected void QueueWork( Func<CancellationToken, Task<Action>> work ) => this.jobs.Add( Task.Run( () => work( this.stop.Token ), this.stop.Token ) );
 	private void Load( WidgetBrowserRequest request ) {
 		WidgetDialog? dialog = this.Dialog; IWidgetFileSystemProvider provider = this.Provider;
 		this.jobs.Add( Task.Run( async () => {
 			WidgetBrowserLoadResult result = await WidgetBrowserLoader.LoadAsync( provider, request, this.stop.Token );
-			return (Action)( () => { if ( dialog is WidgetFilePicker file ) file.ApplyLoadResult( result ); else if ( dialog is WidgetFolderPicker folder ) folder.ApplyLoadResult( result ); } );
+			return (Action)( () => { if ( dialog is WidgetFilePicker file ) file.ApplyLoadResult( result ); else if ( dialog is WidgetFolderPicker folder ) folder.ApplyLoadResult( result ); else if ( dialog is WidgetSaveTargetPicker save ) save.ApplyLoadResult( result ); } );
 		}, this.stop.Token ) );
 	}
 	private void Validate( WidgetPickerValidationRequest request ) {

@@ -9,6 +9,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Six pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI |
 | Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an existing file into an exact, editable in-memory document |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
+| Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
 Append `-- --smoke` for deterministic checks without opening a terminal. These
 checks exercise the same application controllers as live mode. CI runs them on
@@ -34,5 +35,9 @@ files (1 MiB sample limit), replaces its in-memory document, and never writes
 them. The roguelike sample is a UI
 integration witness with no dungeon/rules engine.
 
-See the [`1.1 stable qualification record`](../docs/W1113-Stable-Qualification.md)
+The [workspace sample](Icod.Widgets.Workspace.Sample/README.md) demonstrates
+caller-owned document lifetime, Cancel and Don't Save close decisions, and
+typed search/save requests. It contains no file-writing code.
+
+See the [`1.2 stable qualification record`](../docs/W1211-Stable-Qualification.md)
 for automated coverage and the explicitly unavailable live environments.

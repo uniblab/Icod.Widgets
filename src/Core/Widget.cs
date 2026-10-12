@@ -67,6 +67,7 @@ public abstract class Widget {
 	protected virtual void OnUpdate( TimeSpan timestamp ) { }
 	protected virtual WidgetCaretIntent? GetCaretIntent() => null;
 	internal virtual void OnPointerCaptureCanceled() => this.OnCaptureCanceled();
+	internal virtual void OnDetached() { }
 	internal void OnHostUpdate( TimeSpan timestamp ) => this.OnUpdate( timestamp );
 	internal WidgetCaretIntent? GetHostCaretIntent() => this.GetCaretIntent();
 

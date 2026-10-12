@@ -28,5 +28,6 @@ public static class WidgetLimits {
 	public const int MaximumModalDepth = 16;
 	public const int MaximumSubmenuDepth = 16;
 	public const int MaximumItems = 100_000;
+	public const int MaximumTabs = 1024;
 }
 

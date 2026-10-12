@@ -74,7 +74,7 @@ jobs:
       - name: Public sample smoke workflows
         shell: pwsh
         run: |
-          foreach ($sample in @('Gallery', 'Editor', 'Roguelike')) {
+          foreach ($sample in @('Gallery', 'Editor', 'Roguelike', 'Workspace')) {
             dotnet run --project "samples/Icod.Widgets.$sample.Sample" -c Staging -f net10.0 --no-build --no-restore -- --smoke
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }

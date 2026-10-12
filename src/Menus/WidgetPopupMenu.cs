@@ -26,13 +26,20 @@ using Icod.DCurses;
 /// <summary>Provides keyboard-operated bounded popup and submenu navigation.</summary>
 public class WidgetPopupMenu : Widget {
 	private sealed class Level( IReadOnlyList<WidgetMenuItem> items ) { public IReadOnlyList<WidgetMenuItem> Items { get; } = items; public int Cursor { get; set; } }
-	private readonly WidgetMenuItem[] rootItems;
+	private readonly WidgetMenuItem[] rootDefinitions;
+	private WidgetMenuItem[] rootItems;
 	private readonly List<Level> levels = [];
+	private int pressedIndex = -1;
 
 	public WidgetPopupMenu( string id, IReadOnlyList<WidgetMenuItem> items ) : base( id ) {
 		ArgumentNullException.ThrowIfNull( items ); if ( 0 == items.Count ) throw new ArgumentException( "A menu requires at least one item.", nameof( items ) );
-		this.rootItems = items.ToArray();
+		this.rootDefinitions = items.ToArray(); this.rootItems = this.rootDefinitions;
 		if ( MaximumDepth( this.rootItems ) > WidgetLimits.MaximumSubmenuDepth ) throw new ArgumentException( $"A menu cannot exceed {WidgetLimits.MaximumSubmenuDepth} levels.", nameof( items ) );
+		HashSet<string> itemIds = new( StringComparer.Ordinal ); int itemCount = 0;
+		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) {
+			if ( item is null || !itemIds.Add( item.Id ) ) throw new ArgumentException( "Menu item IDs must be unique across the menu tree.", nameof( items ) );
+			if ( ++itemCount > WidgetLimits.MaximumItems ) throw new ArgumentOutOfRangeException( nameof( items ) );
+		}
 		ValidateMnemonics( this.rootItems, nameof( items ) );
 		HashSet<( WidgetKey Key, WidgetInputModifiers Modifiers, char? Character, int? FunctionKeyNumber )> shortcuts = [];
 		foreach ( WidgetMenuItem item in Flatten( this.rootItems ) ) if ( item.Shortcut is { } shortcut ) {
@@ -49,13 +56,56 @@ public class WidgetPopupMenu : Widget {
 	public WidgetMenuItem? CurrentItem => 0 == this.levels.Count ? null : this.levels[ ^1 ].Items[ this.levels[ ^1 ].Cursor ];
 	public CursesRectangle RenderBounds { get; private set; }
 
+	/// <summary>Applies a validated presentation snapshot without changing the immutable menu definitions.</summary>
+	public void SetPresentation( IReadOnlyList<WidgetMenuItemPresentation> presentation ) {
+		ArgumentNullException.ThrowIfNull( presentation );
+		if ( presentation.Count > WidgetLimits.MaximumItems ) throw new ArgumentOutOfRangeException( nameof( presentation ) );
+		HashSet<string> known = new( Flatten( this.rootDefinitions ).Select( item => item.Id ), StringComparer.Ordinal );
+		Dictionary<string, WidgetMenuItemPresentation> supplied = new( StringComparer.Ordinal );
+		foreach ( WidgetMenuItemPresentation item in presentation ) {
+			if ( item is null || !known.Contains( item.ItemId ) || item.Text is null || !supplied.TryAdd( item.ItemId, item ) )
+				throw new ArgumentException( "Presentation entries require distinct known IDs and nonnull text.", nameof( presentation ) );
+		}
+		WidgetMenuItem[] updated = Clone( this.rootDefinitions, supplied );
+		string?[] selectedIds = this.levels.Select( level => level.Items[ level.Cursor ].Id ).ToArray();
+		this.rootItems = updated;
+		if ( !this.IsOpen ) return;
+		this.levels.Clear(); IReadOnlyList<WidgetMenuItem> current = updated;
+		for ( int depth = 0; depth < selectedIds.Length; depth++ ) {
+			int selected = current.ToList().FindIndex( item => StringComparer.Ordinal.Equals( item.Id, selectedIds[ depth ] ) );
+			if ( selected < 0 ) selected = 0;
+			int cursor = FindEligible( current, selected );
+			if ( cursor < 0 ) { this.Close(); return; }
+			Level level = new( current ) { Cursor = cursor }; this.levels.Add( level );
+			if ( depth + 1 == selectedIds.Length ) break;
+			WidgetMenuItem parent = current[ cursor ];
+			if ( parent.Kind != WidgetMenuItemKind.Submenu || parent.Children.Count == 0 ) break;
+			current = parent.Children;
+		}
+	}
+
+	private static WidgetMenuItem[] Clone( IReadOnlyList<WidgetMenuItem> items, Dictionary<string, WidgetMenuItemPresentation> supplied ) =>
+		items.Select( item => item.WithPresentation( supplied.GetValueOrDefault( item.Id ), Clone( item.Children, supplied ) ) ).ToArray();
+
+	private static int FindEligible( IReadOnlyList<WidgetMenuItem> items, int from ) {
+		for ( int i = from; i < items.Count; i++ ) if ( items[ i ].IsEnabled && items[ i ].Kind != WidgetMenuItemKind.Separator ) return i;
+		for ( int i = from - 1; i >= 0; i-- ) if ( items[ i ].IsEnabled && items[ i ].Kind != WidgetMenuItemKind.Separator ) return i;
+		return -1;
+	}
+
 	public void Open() { if ( this.IsOpen ) return; this.Host?.OpenPopup( this, this.Bounds ); this.levels.Clear(); this.levels.Add( new Level( this.rootItems ) ); this.IsOpen = true; }
-	public void Close() { this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+	public void Close() { this.pressedIndex = -1; this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+	protected override void OnCaptureCanceled() => this.pressedIndex = -1;
 
 	protected override void OnArrange( CursesRectangle bounds ) { if ( this.IsOpen ) this.Host?.UpdatePopup( this, bounds ); }
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
-		if ( !this.IsOpen ) { if ( WidgetInputKind.Key == input.Kind && input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; } return false; }
+		if ( !this.IsOpen ) {
+			if ( WidgetInputKind.Key == input.Kind && input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; }
+			if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { Button: CursesMouseButton.Primary, Action: CursesMouseAction.Press } pointer && this.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.Open(); return true; }
+			return false;
+		}
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } mouse ) return this.OnPointer( mouse, host );
 		if ( WidgetInputKind.Key == input.Kind && this.TryShortcut( input, host ) ) return true;
 		if ( this.TryCurrentMnemonic( input, host ) ) return true;
 		if ( WidgetInputKind.Key != input.Kind ) return false;
@@ -65,6 +115,28 @@ public class WidgetPopupMenu : Widget {
 			if ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 ); else this.Close(); return true;
 		}
 		if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space ) return this.Activate( host );
+		return false;
+	}
+
+	private bool OnPointer( CursesMouseEvent pointer, WidgetHost host ) {
+		if ( CursesMouseButton.Primary != pointer.Button || this.levels.Count == 0 ) return false;
+		CursesRectangle area = this.Bounds.Intersect( host.Screen.Bounds );
+		bool border = area.Rows >= 3 && area.Columns >= 3; int inset = border ? 1 : 0;
+		int rows = Math.Min( area.Rows, this.levels[ ^1 ].Items.Count + inset * 2 ) - inset * 2;
+		int offset = rows > 0 ? Math.Clamp( this.levels[ ^1 ].Cursor - rows + 1, 0, Math.Max( 0, this.levels[ ^1 ].Items.Count - rows ) ) : 0;
+		int row = pointer.Row - area.Row - inset;
+		int index = row >= 0 && row < rows && pointer.Column >= area.Column + inset && pointer.Column < area.Column + area.Columns - inset ? offset + row : -1;
+		if ( index >= this.levels[ ^1 ].Items.Count ) index = -1;
+		if ( CursesMouseAction.Press == pointer.Action ) {
+			this.pressedIndex = index;
+			if ( index >= 0 && this.levels[ ^1 ].Items[ index ].IsEnabled ) this.levels[ ^1 ].Cursor = index;
+			return index >= 0;
+		}
+		if ( CursesMouseAction.Release == pointer.Action ) {
+			bool matching = index >= 0 && index == this.pressedIndex; this.pressedIndex = -1;
+			if ( matching ) { this.levels[ ^1 ].Cursor = index; return this.Activate( host ); }
+			return false;
+		}
 		return false;
 	}
 
@@ -111,9 +183,9 @@ public class WidgetPopupMenu : Widget {
 	private bool Activate( WidgetHost host ) {
 		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Separator == item.Kind ) return false;
 		if ( WidgetMenuItemKind.Submenu == item.Kind ) return this.OpenSubmenu();
-		if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, !item.IsChecked ) ); item.IsChecked = !item.IsChecked; }
-		else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
-		this.Close(); return true;
+		bool? checkedValue = WidgetMenuItemKind.CheckableCommand == item.Kind ? !item.IsChecked : null;
+		if ( checkedValue.HasValue && !item.IsPresentationControlled ) item.IsChecked = checkedValue.Value;
+		this.Close(); host.DispatchFocusedEditOrApplication( item, this.Id, checkedValue ); return true;
 	}
 
 	protected bool TryRootMnemonic( WidgetInput input, WidgetHost host ) {
@@ -142,9 +214,9 @@ public class WidgetPopupMenu : Widget {
 			if ( item.Shortcut is not { } shortcut || shortcut.Key != input.KeyCode || shortcut.Modifiers != input.Modifiers ||
 				!ShortcutCharacterMatches( shortcut, input ) || !ShortcutFunctionKeyMatches( shortcut, input ) ) continue;
 			if ( item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
-			if ( WidgetMenuItemKind.CheckableCommand == item.Kind ) { item.IsChecked = !item.IsChecked; host.Enqueue( new WidgetCheckedInvokedAction( this.Id, item.CommandId!, item.IsChecked ) ); }
-			else host.Enqueue( new WidgetInvokedAction( this.Id, item.CommandId! ) );
-			this.Close(); return true;
+			bool? checkedValue = WidgetMenuItemKind.CheckableCommand == item.Kind ? !item.IsChecked : null;
+			if ( checkedValue.HasValue && !item.IsPresentationControlled ) item.IsChecked = checkedValue.Value;
+			this.Close(); host.DispatchFocusedEditOrApplication( item, this.Id, checkedValue ); return true;
 		}
 		return false;
 	}
