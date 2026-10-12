@@ -83,7 +83,8 @@ dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0
 ```
 
 It starts with three documents and demonstrates stable-key tabs, close
-decisions, Find, Save As inspection, and actionable status. It never writes files.
+decisions, Find/Find Next, Save As inspection, and actionable status. Use F6 to
+move between the editor, tabs, and status fields. It never writes files.
 
 Applications create a `WidgetHost`, attach a widget tree, and supply input and
 time. This is **an excerpt from an application loop**, not a standalone program:
@@ -134,8 +135,10 @@ for complete session setup, input, resizing, rendering, and cleanup.
 - Inventory/action lists, bounded message history, status bars, help overlays,
   and text/number prompts.
 
-Tab/Shift+Tab traverses controls; arrows navigate; Enter activates or commits;
-Space toggles. Menu mnemonics navigate structure (`Alt+V`, then plain `F`), while
+Tab/Shift+Tab traverses controls unless a control consumes Tab; the multiline
+editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.
+Arrows navigate; Enter activates or commits; Space toggles. Menu mnemonics
+navigate structure (`Alt+V`, then plain `F`), while
 shortcuts invoke commands directly. Escape cancels the top dialog/menu;
 **even an OK-only dialog returns Cancel on Escape**, not acknowledgement.
 

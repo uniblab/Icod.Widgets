@@ -48,6 +48,14 @@ public sealed class WidgetSearchFormTests {
 	}
 
 	[Fact]
+	public void FindOnlyPromptDoesNotAdvertiseReplace() {
+		using WidgetHost host = new( new CursesScreen( 40, 7 ), WidgetTheme.Default ); WidgetSearchForm form = new( "search", "Find", false );
+		form.SetContext( Guid.NewGuid(), Guid.NewGuid(), 0 ); using WidgetModalLease lease = host.ShowModal( form ); host.Render(); CursesWindow window = host.GetPresentationWindow( form );
+		string rendered = string.Concat( Enumerable.Range( 0, window.Rows ).SelectMany( row => Enumerable.Range( 0, window.Columns ).Select( column => window.GetCell( row, column ).Content ) ) );
+		Assert.Contains( "Enter: Find", rendered ); Assert.DoesNotContain( "Replace", rendered );
+	}
+
+	[Fact]
 	public void QueryChangedOptionsChangedAndForeignContextRejectOldResults() {
 		using WidgetHost host = new( new CursesScreen( 30, 7 ), WidgetTheme.Default ); WidgetSearchForm form = new( "search", "Find", true );
 		Guid document = Guid.NewGuid(), view = Guid.NewGuid(); form.SetContext( document, view, 0 ); using WidgetModalLease lease = host.ShowModal( form );

@@ -11,6 +11,8 @@ All notable changes to Icod.Widgets are recorded here.
   non-writing save-target inspector, and typed search/navigation requests.
 - Added an in-memory multi-document workspace sample, public package consumer,
   API compatibility snapshot, and bounded workload measurements.
+- Hardened the sample's empty-workspace commands, added F6 focus movement and
+  F3 Find Next, and made Find-only forms advertise only available actions.
 - Preserved the `1.0.0.0` assembly identity, net8.0/net9.0/net10.0 targets,
   and sole direct `Icod.DCurses 2.4.0` dependency.
 

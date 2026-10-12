@@ -28,6 +28,13 @@ fallback when the terminal does not provide it. Status text reports modified and
 clipboard outcomes. The sample preserves mixed line endings and edits only in
 memory: it deliberately provides no save command and never overwrites a file.
 
+In the document workspace, Ctrl+Tab/Shift+Ctrl+Tab switches documents. F6 and
+Shift+F6 move focus among the editor, tab strip, and actionable status fields;
+Delete requests a close while the tab strip has focus. Ctrl+F opens Find, and F3
+repeats the last successful query after the form closes. Alt+V followed by plain
+F demonstrates scoped menu command dispatch. Save As inspects a proposed target
+and never writes it.
+
 The application owns DCurses input, time, resize/layout, provider jobs, actions,
 render/refresh, leases and session cleanup. Provider jobs never mutate widgets;
 results apply on the loop. Pickers return paths; the editor application reads
@@ -35,9 +42,10 @@ files (1 MiB sample limit), replaces its in-memory document, and never writes
 them. The roguelike sample is a UI
 integration witness with no dungeon/rules engine.
 
-The [workspace sample](Icod.Widgets.Workspace.Sample/README.md) demonstrates
-caller-owned document lifetime, Cancel and Don't Save close decisions, and
-typed search/save requests. It contains no file-writing code.
+The [workspace sample](Icod.Widgets.Workspace.Sample/README.md) includes a
+step-by-step walkthrough of caller-owned document lifetime, close decisions,
+typed search/save requests, and the empty-workspace state. It contains no
+file-writing code.
 
 See the [`1.2 stable qualification record`](../docs/W1211-Stable-Qualification.md)
 for automated coverage and the explicitly unavailable live environments.

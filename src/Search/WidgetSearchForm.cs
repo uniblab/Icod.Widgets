@@ -93,6 +93,7 @@ public sealed class WidgetSearchForm : WidgetDialog {
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
-		WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error ?? "Enter: Find | Ctrl+R: Replace | Esc: Cancel", this.Error is null ? theme.Normal : theme.Error );
+		string help = this.allowReplace ? "Enter: Find | Ctrl+R: Replace | Esc: Cancel" : "Enter: Find | Esc: Cancel";
+		WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error ?? help, this.Error is null ? theme.Normal : theme.Error );
 	}
 }

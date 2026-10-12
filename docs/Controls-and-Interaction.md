@@ -73,6 +73,10 @@ Activation and close actions are requests; the application decides whether to
 switch or remove a document. `WidgetContentHost.SetContent` detaches the old
 caller-owned widget tree without disposing its document or view. Use separate
 `WidgetTextViewState` instances per document and retain them in the application.
+The multiline editor consumes Tab/Shift+Tab for indentation; applications that
+place it beside workspace controls should provide an explicit focus key such as
+F6. The workspace sample uses F6/Shift+F6 for the editor, tabs, and status fields.
+Delete emits a close request when the tab strip has focus.
 
 Menu presentation snapshots can update captions, checked/enabled state, and
 selection while a menu is open. `FocusedEditCommand` first routes to the focused
