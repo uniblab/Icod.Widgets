@@ -69,6 +69,7 @@ public abstract class Widget {
 			if ( current.Styles.TryGetValue( role, out CursesStyle style ) ) return style;
 		return theme.Resolve( role );
 	}
+	internal CursesStyle ResolveStyle( WidgetTheme theme, WidgetStyleRole role ) => this.Style( theme, role );
 	protected void EnsureActionCapacity( int count = 1 ) => this.RequireHost().EnsureActionCapacityFor( this, count );
 	protected void EmitAction( WidgetAction action ) => this.RequireHost().EmitFor( this, action );
 	protected WidgetClipboardRequest RegisterClipboardRequest( WidgetClipboardRequest request ) => this.RequireHost().RegisterClipboardRequest( this, request );

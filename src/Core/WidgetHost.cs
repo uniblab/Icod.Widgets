@@ -47,7 +47,11 @@ public sealed partial class WidgetHost : IDisposable {
 	}
 
 	public CursesScreen Screen { get; }
-	public WidgetTheme Theme { get; }
+	public WidgetTheme Theme { get; private set; }
+	/// <summary>Replaces the immutable theme; the application repaints on its next render/refresh.</summary>
+	public void SetTheme( WidgetTheme theme ) {
+		this.ThrowIfDisposed(); this.Theme = theme ?? throw new ArgumentNullException( nameof( theme ) );
+	}
 	public int AttachedCount => this.attachedCount;
 	public TimeSpan CurrentTime => this.currentTime ?? TimeSpan.Zero;
 

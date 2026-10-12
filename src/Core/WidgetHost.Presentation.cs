@@ -40,6 +40,8 @@ public sealed partial class WidgetHost {
 		// Render through the existing public control seam, then copy only the overlay rectangle.
 		CursesScreen staging = new( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
 		staging.StandardWindow.WrapMode = CursesWrapMode.Clip;
+		WidgetStyleRole surface = widget is WidgetDialog ? WidgetStyleRole.DialogSurface : WidgetStyleRole.PopupSurface;
+		staging.StandardWindow.FillRectangle( bounds.Row, bounds.Column, bounds.Rows, bounds.Columns, CursesCell.Blank( widget.ResolveStyle( this.Theme, surface ) ) );
 		widget.OnRender( staging, this.Theme, ReferenceEquals( widget, this.FocusedWidget ) );
 		if ( widget is WidgetDialog dialog ) foreach ( Widget child in dialog.DescendantsAndSelf().Skip( 1 ) )
 			if ( child.IsEffectivelyVisible ) child.OnRender( staging, this.Theme, ReferenceEquals( child, this.FocusedWidget ) );

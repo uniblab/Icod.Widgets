@@ -68,7 +68,29 @@ public sealed class WidgetColorThemeTests {
 		Assert.Equal( Red, screen.StandardWindow.GetCell( first.Bounds.Row, 0 ).Style );
 	}
 
+	[Fact]
+	public void ThemeSwitchRepaintsWithoutChangingFocusOrQueuedActions() {
+		CursesScreen screen = new( 5, 2 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.Text, Red ) } );
+		Probe control = new( "control" ); host.Attach( control ); control.Arrange( screen.Bounds ); host.Focus( control ); host.Render();
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		host.SetTheme( WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.Text, Blue ) } ); host.Render();
+		Assert.Same( control, host.FocusedWidget ); Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Empty( host.DrainActions() );
+	}
+
+	[Fact]
+	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
+		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
+		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };
+		using WidgetHost host = new( screen, theme ); WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "ok", "Title", "Short" );
+		host.ShowModal( dialog ); host.Render();
+		Assert.Equal( Blue, host.GetPresentationWindow( dialog ).GetCell( 2, 18 ).Style );
+		host.CloseModal( dialog, WidgetDialogOutcome.Cancel ); host.Render();
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 18 ).Style );
+	}
+
 	private sealed class Probe( string id ) : Widget( id ) {
+		public override bool IsFocusable => true;
 		protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 			screen.StandardWindow.Move( this.Bounds.Row, this.Bounds.Column );
 			screen.StandardWindow.Write( "X", this.Style( theme, WidgetStyleRole.Text ) );
