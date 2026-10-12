@@ -171,7 +171,7 @@ public sealed class WidgetTextInput : Widget, IWidgetEditTarget, IWidgetClipboar
 		int selectionStart = Math.Clamp( this.SelectionStart, start, end ); int selectionEnd = Math.Clamp( this.SelectionEnd, start, end );
 		screen.StandardWindow.Move( area.Row, area.Column );
 		if ( selectionStart > start ) screen.StandardWindow.Write( this.value[ start..selectionStart ], style );
-		if ( selectionEnd > selectionStart ) screen.StandardWindow.Write( this.value[ selectionStart..selectionEnd ], this.Style( theme, WidgetStyleRole.FieldSelection ) );
+		if ( selectionEnd > selectionStart ) screen.StandardWindow.Write( this.value[ selectionStart..selectionEnd ], this.Style( theme, this.IsEffectivelyEnabled ? WidgetStyleRole.FieldSelection : WidgetStyleRole.Disabled ) );
 		if ( end > selectionEnd ) screen.StandardWindow.Write( this.value[ selectionEnd..end ], style );
 	}
 

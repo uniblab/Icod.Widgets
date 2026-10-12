@@ -11,7 +11,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 | Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
-On the 1.3 branch, the gallery's **Ctrl+T** cycles dark, light, and
+The gallery's **Ctrl+T** cycles dark, light, and
 terminal-default presentation. Dark/light use the running DCurses session's
 color/attribute observations; default demonstrates the legacy six-role theme.
 Try the same widget and overlay under each mode. The gallery smoke also cycles
@@ -53,5 +53,5 @@ step-by-step walkthrough of caller-owned document lifetime, close decisions,
 typed search/save requests, and the empty-workspace state. It contains no
 file-writing code.
 
-See the [`1.2 stable qualification record`](../docs/W1211-Stable-Qualification.md)
+See the [`1.3 stable qualification record`](../docs/W1310-Stable-Qualification.md)
 for automated coverage and the explicitly unavailable live environments.

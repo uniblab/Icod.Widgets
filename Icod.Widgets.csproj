@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.3.0-rc.1</Version>
-		<PackageVersion>1.3.0-rc.1</PackageVersion>
+		<Version>1.3.0</Version>
+		<PackageVersion>1.3.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
-		<Description>Reusable terminal UI widgets for .NET, including Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Release candidate for opt-in widget color themes over Icod.DCurses 2.5.0. Local qualification only; the maintainer controls publication.</PackageReleaseNotes>
+		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
+		<PackageReleaseNotes>Widget color themes with independently styled foreground/background, capability-aware palettes, scoped overrides, and a seven-page gallery. Requires Icod.DCurses 2.5.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -48,7 +48,7 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<PackageTags>console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;document-tabs;dotnet;editor;file-picker;forms;menu;search;terminal;terminal-ui;text-editor;text-input;text-ui;tui;ui;widgets</PackageTags>
+		<PackageTags>console-ui;controls;cross-platform;csharp;curses;dcurses;dialog;document-tabs;dotnet;editor;file-picker;forms;menu;search;terminal;terminal-ui;text-editor;text-input;text-ui;tui;ui;widgets;color-theme;palette</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(PlatformTarget)' == ''">
 		<PlatformTarget>AnyCPU</PlatformTarget>

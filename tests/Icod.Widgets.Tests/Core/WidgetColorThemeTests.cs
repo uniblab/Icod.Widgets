@@ -229,6 +229,22 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void DisabledSelectionUsesDisabledStyleAndDialogActionsRespectTheirStates() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.Disabled, Red ).With( WidgetStyleRole.FieldSelection, Blue )
+			.With( WidgetStyleRole.TextSelection, Blue ).With( WidgetStyleRole.DialogDisabledAction, Red )
+			.With( WidgetStyleRole.DialogDefaultAction, Blue ).With( WidgetStyleRole.DialogAction, CursesStyle.Default );
+		WidgetTheme theme = WidgetTheme.Default with { Parts = parts }; CursesScreen screen = new( 32, 7 );
+		WidgetTextInput field = new( "field", "ab" ) { IsEnabled = false };
+		field.SetSelection( 0, 1 ); field.Arrange( new CursesRectangle( 0, 0, 1, 32 ) ); field.OnRender( screen, theme, true );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		WidgetFormDialog dialog = new( "form", "Actions", [ new WidgetDialogAction( "save", "Save", WidgetDialogOutcome.Save ) { IsDefault = true },
+			new WidgetDialogAction( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { IsEnabled = false } ] );
+		dialog.Arrange( new CursesRectangle( 1, 0, 6, 32 ) ); dialog.OnRender( screen, theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 5, 2 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 5, 9 ).Style );
+	}
+
+	[Fact]
 	public void RepeatedModalThemeSwitchesReusePresentationStorage() {
 		CursesScreen screen = new( 80, 25 ); using WidgetHost host = new( screen, WidgetTheme.Default );
 		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "modal", "Title", "Body" ); host.ShowModal( dialog ); host.Render();

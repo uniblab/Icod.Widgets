@@ -3,7 +3,7 @@
 **Decision date:** 2026-10-12\
 **Baseline:** 1.2.0 document workspace merged on `main` at `a009190c1b79e3aa761919466e8b854fe8a2ea8c`\
 **Next target:** 1.3.0 widget color themes over Icod.DCurses 2.5.0\
-**State:** 1.3.0 direction selected; detailed roadmap proposed for review; no 1.3 implementation yet
+**State:** 1.3.0 implementation and local stable qualification complete in PR #6; owner merge, tag and publication pending
 
 ## Purpose
 
@@ -29,8 +29,8 @@ loop into Widgets.
 | Application / dedit | File identity, encoding/BOM/EOL policy, metadata-aware dirty state, safe save, external changes, document lifetime/close, search execution, loop and timing |
 
 One direct runtime dependency remains `Icod.DCurses`. The merged 1.2.0 package
-declares **2.4.0**; the 1.3.0 implementation will adopt the published stable
-**2.5.0** in its first tranche, with Terminal 1.29.0 transitive. The DCurses
+declares **2.4.0**; the 1.3.0 source adopts the published stable
+**2.5.0**, with Terminal 1.29.0 transitive. The DCurses
 2.5.0 public style API is unchanged. Do not add direct Terminal/TermInfo
 references, protocol escapes, another input reader, hidden timers, or a
 filesystem-writing service to Widgets.
@@ -47,7 +47,7 @@ samples and tests remain GPL-3.0-or-later with their prescribed full headers.
 | 1.0.0 — released | Forms, lists/drop-downs, menus, captioned dialogs, existing-file/folder pickers, game UI, public samples | Existing text input is single-line; editor sample is an open/browse witness |
 | 1.1.0 — released | Reusable document/editing foundation; Unicode editing, bounded undo/redo and view projection; input/focus/capture repairs; scrollbars; explicit clipboard and caret integration; better single-line fields | Single-document editing is useful on its own; no tabbed application or file-save engine |
 | 1.2.0 — merged | Cohesive Document Workspace: tabs, composable forms/dialogs, save-target picker, dynamic command/menu state, find/replace/navigation forms, actionable status fields, and public composition seams | App owns documents, file writes, search/regex, close approval, and metadata |
-| 1.3.0 — selected | Capability-aware color theme selection, part/state styles, complete surface painting, and a themed gallery above DCurses 2.5.0 | Existing monochrome theme and public APIs remain compatible; applications still control presentation choices and repaint timing |
+| 1.3.0 — prepared in PR #6 | Capability-aware color theme selection, part/state styles, complete surface painting, and a themed gallery above DCurses 2.5.0 | Existing monochrome theme and public APIs remain compatible; applications still control presentation choices and repaint timing |
 | Later — unscheduled | Data tables/trees, virtualized data sources, richer accessibility, advanced forms | Separate requirements, design, and approval; not blockers for dedit's first release |
 
 ## 1.1.0 — editing foundation
@@ -123,13 +123,10 @@ remains on its historical DCurses 2.4.0 dependency; the 1.3 track updates it.
 
 ## 1.3.0 — widget color themes
 
-`WidgetTheme` already holds six complete `CursesStyle` values, so applications
-can request colored foreground/background pairs today. The new work addresses
-the remaining presentation contract: a focused editor currently applies the
-same broad style to all its text, tabs distinguish active state only when the
-strip has focus, and menus, scrollbars, status fields, dialogs and pickers need
-their own part styles. Popup and clipped regions must paint their owned blank
-cells consistently, including after an overlay is closed or resized.
+`WidgetTheme` retains six complete `CursesStyle` values. The 1.3 source adds
+scoped part styles and capability-aware palettes. Tabs distinguish active
+state even when the editor has focus. Menus, scrollbars, status fields,
+dialogs, pickers, and clipped popup regions paint their owned cells.
 
 - Preserve the six-role positional `WidgetTheme` constructor/deconstruction and
   `WidgetTheme.Default` appearance. Add opt-in styles for control surfaces and
@@ -151,7 +148,8 @@ cells consistently, including after an overlay is closed or resized.
 
 The [1.3 development roadmap](Icod.Widgets-1.3.0-Development-Roadmap.md)
 orders W1301–W1310, defines compatibility and package gates, and names the
-acceptance scenarios. This is planning scope, not a shipped 1.3 feature.
+acceptance scenarios. The local stable artifact and qualification record are
+in PR #6; merge, tag, publication and the final remote CI gate remain.
 
 ## Deliberately outside this programme
 
@@ -166,12 +164,12 @@ Keep 1.0 qualification and release history in [W1014](docs/W1014-Stable-Qualific
 the [1.0 roadmap](Icod.Widgets-1.0.0-Development-Roadmap.md), and
 [CHANGELOG](CHANGELOG.md). Do not turn historical untested platforms into passes.
 
-Each 1.3 tranche will record exact source/package versions, changes, tests,
+Each 1.3 tranche records exact source/package versions, changes, tests,
 limitations, and acceptance evidence. Freeze API and package metadata before
 stable qualification, then verify the exact merged artifact. No calendar date
 or green documentation PR substitutes for implementation or release readiness.
 
 The 1.1 editing foundation and 1.2 Document Workspace are merged. The 1.3 color
-theme track is selected for planning; implementation and release qualification
+theme track is implemented and locally qualified; remote CI and owner handoff
 remain. The owner performs merge, tag, and publication. No change to
 `uniblab/.github` is required.

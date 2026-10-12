@@ -182,7 +182,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		}
 		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < area.Columns; column++ ) {
 			CursesCell cell = screen.StandardWindow.GetCell( area.Row + span.Row, area.Column + column );
-			RestyleCell( screen.StandardWindow, area.Row + span.Row, area.Column + column, cell, this.Style( theme, focused ? WidgetStyleRole.TextSelection : WidgetStyleRole.TextSelectionInactive ) );
+			RestyleCell( screen.StandardWindow, area.Row + span.Row, area.Column + column, cell, this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.TextSelection : WidgetStyleRole.TextSelectionInactive ) );
 		}
 	}
 

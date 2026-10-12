@@ -3,7 +3,7 @@
 **Target:** `1.3.0` — widget color themes\
 **Decision date:** 2026-10-12\
 **Baseline:** `main` merge `a009190c1b79e3aa761919466e8b854fe8a2ea8c` (1.2.0 Document Workspace)\
-**State:** planning; W1301–W1310 not implemented\
+**State:** W1301–W1309 implemented and pushed; W1310 stable source qualified locally, remote CI pending\
 **PR:** [#6](https://github.com/uniblab/Icod.Widgets/pull/6)
 
 ## Goal
