@@ -3,7 +3,7 @@
 **Decision date:** 2026-10-12\
 **Baseline:** 1.1.0 stable source merged at `d71b74d0a68792c2001b609978b434bffb14f030`\
 **Next target:** 1.2.0 document workspace\
-**State:** scope and architecture approved; detailed implementation planning follows design review
+**State:** scope and architecture approved; W12xx roadmap and implementation plans proposed for review
 
 ## Purpose
 
@@ -114,9 +114,10 @@ I/O, asynchronous work, and document lifetime.
 
 The [versioned 1.2 design](docs/superpowers/specs/2026-10-12-icod-widgets-1.2-document-workspace-design.md)
 defines the approved behavior, ownership boundaries, failure model, and release
-acceptance scenarios. Freeze public signatures only in the implementation plan
-after that design is reviewed against the merged 1.1 contracts. These are
-direction commitments, not shipped features.
+acceptance scenarios. The [1.2 development roadmap](Icod.Widgets-1.2.0-Development-Roadmap.md)
+orders W1201–W1211 and links focused test-first implementation plans. Public
+signatures are proposed there and freeze only after implementation and public
+consumer qualification. These are plans, not shipped features.
 
 ## Deliberately outside this programme
 
