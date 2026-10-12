@@ -99,18 +99,18 @@ internal sealed class WidgetBrowserView {
 	internal void Render( CursesScreen screen, WidgetTheme theme, WidgetDialog owner, WidgetBrowser browser, string? error, string? filter, IReadOnlyList<string>? selected ) {
 		CursesRectangle area = owner.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
 		string location = this.roots ? "Roots / drives" : this.basket ? "Selected files (Enter/Space/Delete removes)" : browser.Snapshot?.Location ?? "No folder loaded";
-		WriteLine( screen, area, 0, location + ( filter is null ? "" : " | " + filter ), theme.Normal );
-		WriteLine( screen, area, 1, error ?? browser.Error?.Message ?? ( browser.PendingLocation is { } pending ? "Loading: " + pending : "Arrows move; Enter opens/toggles; Ctrl+S selects; Esc cancels" ), error is not null || browser.Error is not null ? theme.Error : theme.Normal );
+		WriteLine( screen, area, 0, location + ( filter is null ? "" : " | " + filter ), owner.ResolveStyle( theme, WidgetStyleRole.PickerPath ) );
+		WriteLine( screen, area, 1, error ?? browser.Error?.Message ?? ( browser.PendingLocation is { } pending ? "Loading: " + pending : "Arrows move; Enter opens/toggles; Ctrl+S selects; Esc cancels" ), owner.ResolveStyle( theme, error is not null || browser.Error is not null ? WidgetStyleRole.PickerError : WidgetStyleRole.PickerSurface ) );
 		this.visibleRows = Math.Max( 1, area.Rows - 4 ); this.EnsureVisible();
 		this.listingBounds = new CursesRectangle( area.Row + Math.Min( 2, area.Rows ), area.Column, Math.Max( 0, area.Rows - 4 ), area.Columns );
 		for ( int row = 0; row < this.listingBounds.Rows && row + this.offset < this.entries.Length; row++ ) {
 			WidgetFileSystemEntry entry = this.entries[ row + this.offset ];
 			bool marked = selected?.Contains( entry.Path ) ?? false;
-			WriteLine( screen, area, row + 2, ( marked ? "* " : "  " ) + ( entry.IsDirectory ? "[D] " : "    " ) + entry.DisplayName, row + this.offset == this.cursor ? theme.Focused : marked ? theme.Selected : theme.Normal );
+			WriteLine( screen, area, row + 2, ( marked ? "* " : "  " ) + ( entry.IsDirectory ? "[D] " : "    " ) + entry.DisplayName, owner.ResolveStyle( theme, row + this.offset == this.cursor ? WidgetStyleRole.ListFocused : marked ? WidgetStyleRole.ListSelected : WidgetStyleRole.ListItem ) );
 		}
-		WriteLine( screen, area, area.Rows - 2, selected is null ? "Select current folder with Space or Ctrl+S" : "Selected: " + string.Join( "; ", selected ), theme.Selected );
-		WriteLine( screen, area, area.Rows - 1, "Backspace parent | Ctrl+L path | Ctrl+R roots | Ctrl+F filter | Ctrl+B basket", theme.Border );
-		if ( this.pathEditor is not null ) { WriteLine( screen, area, 0, "Path (type/paste, Enter loads, Esc returns):", theme.Border ); this.pathEditor.Arrange( new CursesRectangle( area.Row + Math.Min( 1, area.Rows - 1 ), area.Column, 1, area.Columns ) ); this.pathEditor.OnRender( screen, theme, true ); }
+		WriteLine( screen, area, area.Rows - 2, selected is null ? "Select current folder with Space or Ctrl+S" : "Selected: " + string.Join( "; ", selected ), owner.ResolveStyle( theme, WidgetStyleRole.Selected ) );
+		WriteLine( screen, area, area.Rows - 1, "Backspace parent | Ctrl+L path | Ctrl+R roots | Ctrl+F filter | Ctrl+B basket", owner.ResolveStyle( theme, WidgetStyleRole.DialogAction ) );
+		if ( this.pathEditor is not null ) { WriteLine( screen, area, 0, "Path (type/paste, Enter loads, Esc returns):", owner.ResolveStyle( theme, WidgetStyleRole.PickerPath ) ); this.pathEditor.Arrange( new CursesRectangle( area.Row + Math.Min( 1, area.Rows - 1 ), area.Column, 1, area.Columns ) ); this.pathEditor.OnRender( screen, theme, true ); }
 	}
 	internal static void WriteLine( CursesScreen screen, CursesRectangle area, int row, string text, CursesStyle style ) {
 		if ( row < 0 || row >= area.Rows || area.Columns == 0 ) return;

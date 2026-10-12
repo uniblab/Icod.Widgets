@@ -157,6 +157,46 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void DropDownStylesFramedPopupBorderRowsAndEmptyCells() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.PopupSurface, Red ).With( WidgetStyleRole.PopupBorder, Blue )
+			.With( WidgetStyleRole.PopupFocused, Blue ).With( WidgetStyleRole.PopupDisabled, Red );
+		CursesScreen screen = new( 15, 7 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
+		WidgetDropDown drop = new( "drop", [ new( "a", "Alpha" ), new( "b", "Beta", false ) ], "a" );
+		host.Attach( drop ); drop.Arrange( new CursesRectangle( 0, 0, 1, 15 ) ); host.Focus( drop ); drop.Open(); host.Render();
+		CursesWindow popup = host.GetPresentationWindow( drop );
+		Assert.Equal( Blue, popup.GetCell( 0, 0 ).Style );
+		Assert.Equal( Blue, popup.GetCell( 1, 12 ).Style );
+		Assert.Equal( Red, popup.GetCell( 2, 12 ).Style );
+		Assert.Equal( Blue, popup.GetCell( 1, 14 ).Style );
+	}
+
+	[Fact]
+	public void MenuShortcutAndCheckedIndicatorUseStylesApartFromFocusedRow() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.PopupSurface, Red ).With( WidgetStyleRole.PopupBorder, Blue )
+			.With( WidgetStyleRole.PopupFocused, Red ).With( WidgetStyleRole.PopupShortcut, Blue ).With( WidgetStyleRole.PopupCheck, Blue );
+		CursesScreen screen = new( 24, 6 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
+		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Checkable( "show", "Show", "show", true,
+			shortcut: new WidgetMenuShortcut( WidgetKey.Character, WidgetInputModifiers.Control, 's' ) ) ] );
+		host.Attach( menu ); menu.Arrange( screen.Bounds ); host.Focus( menu ); menu.Open(); host.Render();
+		CursesWindow popup = host.GetPresentationWindow( menu );
+		Assert.Equal( Blue, popup.GetCell( 0, 0 ).Style );
+		Assert.Equal( Blue, popup.GetCell( 1, 1 ).Style );
+		Assert.Equal( Red, popup.GetCell( 1, 7 ).Style );
+		Assert.Equal( Blue, popup.GetCell( 1, 18 ).Style );
+	}
+
+	[Fact]
+	public void DialogCaptionAndBorderCanUseDifferentStyles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Red ).With( WidgetStyleRole.DialogBorder, Red )
+			.With( WidgetStyleRole.DialogTitle, Blue );
+		CursesScreen screen = new( 30, 5 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
+		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "ok", "Title", "Body" );
+		host.ShowModal( dialog ); host.Render(); CursesWindow panel = host.GetPresentationWindow( dialog );
+		Assert.Equal( Red, panel.GetCell( 0, 0 ).Style );
+		Assert.Equal( Blue, panel.GetCell( 0, 3 ).Style );
+	}
+
+	[Fact]
 	public void OpaqueDialogPaddingUsesItsSurfaceAndClosePreservesBorrowedBackground() {
 		CursesScreen screen = new( 20, 5 ); screen.StandardWindow.FillRectangle( 0, 0, 5, 20, CursesCell.Blank( Red ) );
 		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Blue ) };

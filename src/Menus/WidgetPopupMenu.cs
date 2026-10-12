@@ -142,10 +142,11 @@ public class WidgetPopupMenu : Widget {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		if ( !this.IsOpen || 0 == this.levels.Count ) { this.RenderBounds = default;
-			CursesRectangle closedArea = this.Bounds.Intersect( screen.Bounds ); WidgetBrowserView.WriteLine( screen, closedArea, 0, string.Join( " | ", this.rootItems.Where( item => item.Kind != WidgetMenuItemKind.Separator ).Select( item => item.Text ) ), focused ? theme.Focused : theme.Normal ); return; }
+			CursesRectangle closedArea = this.Bounds.Intersect( screen.Bounds ); WidgetBrowserView.WriteLine( screen, closedArea, 0, string.Join( " | ", this.rootItems.Where( item => item.Kind != WidgetMenuItemKind.Separator ).Select( item => item.Text ) ), this.Style( theme, focused ? WidgetStyleRole.PopupFocused : WidgetStyleRole.PopupItem ) ); return; }
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); bool border = area.Rows >= 3 && area.Columns >= 3; int inset = border ? 1 : 0;
 		this.RenderBounds = new CursesRectangle( area.Row, area.Column, Math.Min( area.Rows, this.levels[ ^1 ].Items.Count + inset * 2 ), area.Columns );
 		int contentRows = this.RenderBounds.Rows - inset * 2; int contentColumns = this.RenderBounds.Columns - inset * 2;
+		screen.StandardWindow.FillRectangle( this.RenderBounds.Row, this.RenderBounds.Column, this.RenderBounds.Rows, this.RenderBounds.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.PopupSurface ) ) );
 		if ( border ) this.RenderPopupBorder( screen, theme );
 		for ( int row = 0; row < contentRows; row++ ) {
 			int index = Math.Clamp( this.levels[ ^1 ].Cursor - contentRows + 1, 0, Math.Max( 0, this.levels[ ^1 ].Items.Count - contentRows ) ) + row;
@@ -153,17 +154,26 @@ public class WidgetPopupMenu : Widget {
 			string prefix = WidgetMenuItemKind.CheckableCommand == item.Kind ? ( item.IsChecked ? "[x] " : "[ ] " ) : string.Empty;
 			string suffix = WidgetMenuItemKind.Submenu == item.Kind ? " >" : string.Empty;
 			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', contentColumns ) : ComposeRow( item, prefix + item.Text + suffix, contentColumns, screen );
-			CursesStyle style = !item.IsEnabled ? theme.Disabled : index == this.levels[ ^1 ].Cursor && focused ? theme.Focused : theme.Normal;
+			CursesStyle style = this.Style( theme, !item.IsEnabled ? WidgetStyleRole.PopupDisabled : index == this.levels[ ^1 ].Cursor && focused ? WidgetStyleRole.PopupFocused : WidgetStyleRole.PopupItem );
+			screen.StandardWindow.FillRectangle( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset, 1, contentColumns, CursesCell.Blank( style ) );
 			screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset ); screen.StandardWindow.Write( value, style );
+			if ( item.Shortcut is { } shortcut && item.IsEnabled && this.HasPartStyle( theme, WidgetStyleRole.PopupShortcut ) ) {
+				string gesture = FormatShortcut( shortcut ); int width = CursesText.MeasureColumns( gesture, screen.TextWidthProvider );
+				if ( contentColumns >= width + 2 ) { screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset + contentColumns - width ); screen.StandardWindow.Write( gesture, this.Style( theme, WidgetStyleRole.PopupShortcut ) ); }
+			}
+			if ( WidgetMenuItemKind.CheckableCommand == item.Kind && item.IsEnabled && contentColumns >= 4 && this.HasPartStyle( theme, WidgetStyleRole.PopupCheck ) ) {
+				screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset ); screen.StandardWindow.Write( prefix, this.Style( theme, WidgetStyleRole.PopupCheck ) );
+			}
 		}
 	}
 
 	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme ) {
 		int right = this.RenderBounds.Column + this.RenderBounds.Columns - 1; int bottom = this.RenderBounds.BottomExclusive - 1;
 		string horizontal = new( '─', this.RenderBounds.Columns - 2 );
-		screen.StandardWindow.Move( this.RenderBounds.Row, this.RenderBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", theme.Border );
-		for ( int row = this.RenderBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.RenderBounds.Column ); screen.StandardWindow.Write( "│", theme.Border ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", theme.Border ); }
-		screen.StandardWindow.Move( bottom, this.RenderBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", theme.Border );
+		CursesStyle style = this.Style( theme, WidgetStyleRole.PopupBorder );
+		screen.StandardWindow.Move( this.RenderBounds.Row, this.RenderBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", style );
+		for ( int row = this.RenderBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.RenderBounds.Column ); screen.StandardWindow.Write( "│", style ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", style ); }
+		screen.StandardWindow.Move( bottom, this.RenderBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", style );
 	}
 
 	private bool Move( int direction ) {

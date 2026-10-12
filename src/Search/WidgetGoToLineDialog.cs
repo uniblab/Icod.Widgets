@@ -55,6 +55,6 @@ public sealed class WidgetGoToLineDialog : WidgetDialog {
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
-		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, this.Error ?? "Enter: Go | Esc: Cancel", this.Error is null ? theme.Normal : theme.Error );
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, this.Error ?? "Enter: Go | Esc: Cancel", this.Style( theme, this.Error is null ? WidgetStyleRole.DialogAction : WidgetStyleRole.Error ) );
 	}
 }

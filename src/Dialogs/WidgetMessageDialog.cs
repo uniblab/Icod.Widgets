@@ -48,10 +48,10 @@ public sealed class WidgetMessageDialog : WidgetDialog {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
-		CursesTextLayout layout = CursesTextLayout.Create( this.Message, new CursesTextLayoutOptions( area.Columns ) { WrapMode = CursesTextWrapMode.Word, WidthProvider = screen.TextWidthProvider, DefaultStyle = theme.Normal } );
+		CursesTextLayout layout = CursesTextLayout.Create( this.Message, new CursesTextLayoutOptions( area.Columns ) { WrapMode = CursesTextWrapMode.Word, WidthProvider = screen.TextWidthProvider, DefaultStyle = this.Style( theme, WidgetStyleRole.Text ) } );
 		screen.StandardWindow.PresentTextLayout( layout, 0, Math.Min( layout.Lines.Count, Math.Max( 0, area.Rows - 1 ) ), area.Row, area.Column );
 		string choices = string.Join( "  ", this.choices.Select( ( choice, index ) => index == this.selectedIndex ? $"[{choice.Label}]" : choice.Label ) );
-		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, choices + " (Esc cancels)", theme.Focused );
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, choices + " (Esc cancels)", this.Style( theme, WidgetStyleRole.DialogFocusedAction ) );
 	}
 }
 

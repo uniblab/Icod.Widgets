@@ -63,6 +63,7 @@ public abstract class WidgetDialog( string id, string title ) : WidgetContainer(
 		string top = 0 == titleColumns ? topLeft + new string( horizontal, area.Columns - 2 ) + topRight :
 			topLeft + new string( horizontal, 1 ) + " " + clippedTitle + " " + new string( horizontal, area.Columns - titleColumns - 5 ) + topRight;
 		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( top, this.Style( theme, WidgetStyleRole.DialogBorder ) );
+		if ( titleColumns > 0 ) { screen.StandardWindow.Move( area.Row, area.Column + 3 ); screen.StandardWindow.Write( clippedTitle, this.Style( theme, WidgetStyleRole.DialogTitle ) ); }
 		int right = area.Column + area.Columns - 1;
 		for ( int row = area.Row + 1; row < area.BottomExclusive - 1; row++ ) { screen.StandardWindow.Move( row, area.Column ); screen.StandardWindow.Write( vertical.ToString(), this.Style( theme, WidgetStyleRole.DialogBorder ) ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( vertical.ToString(), this.Style( theme, WidgetStyleRole.DialogBorder ) ); }
 		screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( bottomLeft + new string( horizontal, area.Columns - 2 ) + bottomRight, this.Style( theme, WidgetStyleRole.DialogBorder ) );

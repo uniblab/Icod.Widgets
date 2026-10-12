@@ -106,12 +106,12 @@ public sealed class WidgetTabStrip( string id ) : Widget( id ) {
 			screen.StandardWindow.Move( area.Row, column );
 			screen.StandardWindow.Write( clipped, style );
 			int marker = CursesText.MeasureColumns( " " + tab.Caption, screen.TextWidthProvider ) + 1;
-			if ( tab.IsModified && marker < available ) {
+			if ( tab.IsModified && marker < available && this.HasPartStyle( theme, WidgetStyleRole.TabModified ) ) {
 				screen.StandardWindow.Move( area.Row, column + marker ); screen.StandardWindow.Write( "●", this.Style( theme, WidgetStyleRole.TabModified ) );
 			}
 			if ( tab.IsClosable ) {
 				int close = marker + ( tab.IsModified ? 2 : 0 );
-				if ( close < available ) { screen.StandardWindow.Move( area.Row, column + close ); screen.StandardWindow.Write( "×", this.Style( theme, WidgetStyleRole.TabClose ) ); }
+				if ( close < available && this.HasPartStyle( theme, WidgetStyleRole.TabClose ) ) { screen.StandardWindow.Move( area.Row, column + close ); screen.StandardWindow.Write( "×", this.Style( theme, WidgetStyleRole.TabClose ) ); }
 			}
 		}
 		if ( this.overflowColumn >= 0 && this.Bounds.Column + this.overflowColumn < area.Column + area.Columns ) {

@@ -90,19 +90,24 @@ public sealed class WidgetDropDown : Widget {
 		this.RenderSelection( screen, theme, focused );
 		if ( !this.IsOpen || this.PopupBounds.IsEmpty ) return;
 		int inset = this.HasPopupBorder ? 1 : 0; int contentRows = this.PopupBounds.Rows - inset * 2; int contentColumns = this.PopupBounds.Columns - inset * 2;
+		screen.StandardWindow.FillRectangle( this.PopupBounds.Row, this.PopupBounds.Column, this.PopupBounds.Rows, this.PopupBounds.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.PopupSurface ) ) );
 		if ( 0 != inset ) this.RenderPopupBorder( screen, theme );
 		for ( int row = 0; row < contentRows; row++ ) {
 			int index = Math.Clamp( this.previewIndex - contentRows + 1, 0, Math.Max( 0, this.items.Length - contentRows ) ) + row;
 			WidgetListItem item = this.items[ index ]; string value = CursesText.TruncateToColumns( item.Text, contentColumns, screen.TextWidthProvider );
+			CursesStyle style = this.Style( theme, !item.IsEnabled ? WidgetStyleRole.PopupDisabled : index == this.previewIndex ? WidgetStyleRole.PopupFocused : WidgetStyleRole.PopupItem );
+			screen.StandardWindow.FillRectangle( this.PopupBounds.Row + row + inset, this.PopupBounds.Column + inset, 1, contentColumns, CursesCell.Blank( style ) );
 			screen.StandardWindow.Move( this.PopupBounds.Row + row + inset, this.PopupBounds.Column + inset );
-			screen.StandardWindow.Write( value, !item.IsEnabled ? theme.Disabled : index == this.previewIndex ? theme.Focused : theme.Normal );
+			screen.StandardWindow.Write( value, style );
 		}
 	}
 
 	internal void RenderSelection( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( !area.IsEmpty ) {
 			string value = CursesText.TruncateToColumns( this.items[ this.selectedIndex ].Text + " ▾", area.Columns, screen.TextWidthProvider );
-			screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, focused ? theme.Focused : theme.Normal );
+			CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.Focused : WidgetStyleRole.PopupItem );
+			screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) );
+			screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, style );
 		}
 	}
 
@@ -120,8 +125,9 @@ public sealed class WidgetDropDown : Widget {
 	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme ) {
 		int right = this.PopupBounds.Column + this.PopupBounds.Columns - 1; int bottom = this.PopupBounds.BottomExclusive - 1;
 		string horizontal = new( '─', this.PopupBounds.Columns - 2 );
-		screen.StandardWindow.Move( this.PopupBounds.Row, this.PopupBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", theme.Border );
-		for ( int row = this.PopupBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.PopupBounds.Column ); screen.StandardWindow.Write( "│", theme.Border ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", theme.Border ); }
-		screen.StandardWindow.Move( bottom, this.PopupBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", theme.Border );
+		CursesStyle style = this.Style( theme, WidgetStyleRole.PopupBorder );
+		screen.StandardWindow.Move( this.PopupBounds.Row, this.PopupBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", style );
+		for ( int row = this.PopupBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.PopupBounds.Column ); screen.StandardWindow.Write( "│", style ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", style ); }
+		screen.StandardWindow.Move( bottom, this.PopupBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", style );
 	}
 }
