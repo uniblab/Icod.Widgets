@@ -1,6 +1,6 @@
 # W1211 Stable Qualification and Owner Handoff
 
-**Source:** PR #5, `docs/1.2.0-document-workspace-design` (final SHA and CI results to be recorded after push)<br>
+**Source:** PR #5, `docs/1.2.0-document-workspace-design`; qualified implementation tree `6d5c5e39e1baab682cbff2b6b194f8273b3a3425` at remote commit `8c61d0a467e582d2a8733dcc8b985f9abd5c29d2`<br>
 **Package:** `Icod.Widgets 1.2.0`<br>
 **Assembly:** `1.0.0.0`<br>
 **Direct dependency:** `Icod.DCurses 2.4.0`<br>
@@ -22,6 +22,12 @@ From the repository root, using the locally installed SDK and restored packages:
 The content-host invariant was tested red and then green through the base
 `WidgetContainer.Add` reference; a caller cannot add a second child through that
 public entry point. The original public `Add` signature remains unchanged.
+
+GitHub Actions [PR run 38282514083](https://github.com/uniblab/Icod.Widgets/actions/runs/38282514083)
+at the qualified implementation tree completed successfully: metadata, Windows,
+Linux, and macOS jobs all concluded **success**. Its matrix ran Staging restore,
+build, tests, sample smokes, package checks, and package-only consumer. These
+are automated CI checks, not live interactive-terminal checks.
 
 ## Artifact and compatibility
 
@@ -53,7 +59,7 @@ Only .NET 10 is installed in this local environment. net8/net9 builds and the
 package-only consumer compiled, but their runtime tests were **Not tested** here.
 Windows, macOS, and Linux live terminal interactions were **Not tested** here;
 headless sample smokes do not qualify interactive rendering/input. The remote
-PR platform matrix is recorded separately after the final push. PowerShell
+PR platform matrix is recorded above. PowerShell
 package-verifier execution was **Not tested**; direct archive/nuspec inspection
 is recorded above.
 

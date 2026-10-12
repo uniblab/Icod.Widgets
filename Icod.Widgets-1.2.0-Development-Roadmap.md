@@ -3,7 +3,7 @@
 **Target:** `1.2.0` — Document Workspace\
 **Decision date:** 2026-10-12\
 **Baseline:** `d71b74d0a68792c2001b609978b434bffb14f030` on `main`; 1.1.0 merged stable source\
-**State:** W1201–W1210 implemented and recorded; W1211 stable qualification in progress; owner merge/tag/publication pending\
+**State:** W1201–W1211 implemented and qualified; owner merge/tag/publication pending\
 **Execution:** sequential, native C# work; no subagent delegation
 
 ## Goal and boundaries
