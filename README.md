@@ -67,6 +67,15 @@ dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
 
 Use Ctrl+N/Ctrl+P to visit its six pages and Ctrl+Q to exit.
 
+To exercise the 1.1 multiline editing foundation, run the editor sample:
+
+```text
+dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0
+```
+
+Use Ctrl+O to load an existing text file into memory, F6 to move focus between
+the editor and Open button, and Ctrl+Q to exit. The sample never writes files.
+
 Applications create a `WidgetHost`, attach a widget tree, and supply input and
 time. This is **an excerpt from an application loop**, not a standalone program:
 `session` is an open `CursesSession`, `inputEvent` is the current normalized input

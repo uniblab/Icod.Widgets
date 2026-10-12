@@ -50,7 +50,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 	}
 	internal void Input( WidgetInput input ) {
 		bool controlQ = ( input.Modifiers & WidgetInputModifiers.Control ) != 0 && input.Character?.Value is 'q' or 'Q';
-		bool quit = this.Host.ModalDepth == 0 && this.Host.FocusedWidget is not WidgetTextInput && ( input.KeyCode == WidgetKey.Escape || input.Character?.Value is 'q' or 'Q' );
+		bool quit = this.Host.ModalDepth == 0 && this.Host.FocusedWidget is not IWidgetEditTarget && ( input.KeyCode == WidgetKey.Escape || input.Character?.Value is 'q' or 'Q' );
 		if ( input.Kind == WidgetInputKind.EndOfInput || controlQ || quit ) { this.Running = false; return; }
 		if ( this.Host.ModalDepth == 0 && this.OnShortcut( input ) ) return;
 		this.Actions( this.Host.Process( input, this.clock.Elapsed ).Actions );

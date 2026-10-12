@@ -34,4 +34,5 @@ files (1 MiB sample limit), replaces its in-memory document, and never writes
 them. The roguelike sample is a UI
 integration witness with no dungeon/rules engine.
 
-See [`live qualification`](../docs/W1014-Stable-Qualification.md).
+See the [`1.1 stable qualification record`](../docs/W1113-Stable-Qualification.md)
+for automated coverage and the explicitly unavailable live environments.

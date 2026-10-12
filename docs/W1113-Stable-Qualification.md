@@ -26,8 +26,8 @@
 The local Release package contains README, LGPL license, icon, and DLL/XML assets
 for all three TFMs, with no sample/test binaries. The exact local hashes are:
 
-- nupkg SHA-256: `4cec0e818054fb6a32802576fad03a87916546a54650feed57d46ab6574ca439`
-- snupkg SHA-256: `46b5972721fc1af294a7bcfbbda93cdf119667015fd5f174acfbde68c049ee58`
+- nupkg SHA-256: `307015ca58310712a2b1854ad21d83ce802c328c93acd04796d085302ebedace`
+- snupkg SHA-256: `e4a36ba10aff1918f7429b0f29e7bec5cc48dda30e76bde1b2c0193b258a6913`
 
 The tag workflow must rebuild from the exact merged commit. Its SourceLink/repository
 commit and hashes may therefore differ from this pre-merge artifact; version,

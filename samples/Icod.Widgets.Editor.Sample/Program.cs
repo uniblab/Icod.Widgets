@@ -37,9 +37,17 @@ internal static class Program {
 			if ( app.Text != "!hello\r\nwidgets\n" || !app.IsModified ) return 2;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
 			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 3;
+			app.Input( WidgetInput.TextInput( new System.Text.Rune( 'q' ) ) );
+			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 4;
+			app.Input( WidgetInput.Key( WidgetKey.Escape ) );
+			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 5;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 6;
 			app.Open(); await app.PollAsync( true ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
-			if ( app.Text != "hello\r\nwidgets\n" ) return 4;
-			Console.WriteLine( "PASS exact file load, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
+			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
+			if ( app.Running ) return 8;
+			Console.WriteLine( "PASS exact file load, in-memory edit, text-field quit routing, undo to checkpoint, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
 	private sealed class Editor : WidgetSampleApplication {
