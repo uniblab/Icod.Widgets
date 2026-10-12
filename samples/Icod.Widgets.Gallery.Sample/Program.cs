@@ -26,18 +26,34 @@ using Icod.Widgets.Samples;
 
 internal static class Program {
 	private static async Task<int> Main( string[] args ) {
-		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync( screen => new Gallery( screen ) );
+		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync( screen => new Gallery( screen ), ( app, capabilities ) => ( (Gallery)app ).UseCapabilities( capabilities ) );
 		using Gallery app = new( new CursesScreen( 80, 30 ) );
 		app.Arrange(); app.Host.Focus( app.Name ); app.Input( WidgetInput.Paste( "Ada\tLovelace" ) );
 		if ( app.Name.Value != "Ada Lovelace" ) return 1;
 		app.Name.SetSelection( 0, 3 ); app.Input( WidgetInput.TextInput( new System.Text.Rune( 'X' ) ) );
 		if ( app.Name.Value != "X Lovelace" || WidgetCommandResult.Executed != app.Host.ExecuteEditCommand( WidgetEditCommand.Undo, app.Host.CurrentTime + TimeSpan.FromMilliseconds( 1 ) ) || app.Name.Value != "Ada Lovelace" ) return 1;
 		app.Host.DrainActions();
-		for ( int page = 0; page < 6; page++ ) { app.SelectPage( page ); app.Draw(); }
+		for ( int palette = 0; palette < 3; palette++ ) {
+			for ( int page = 0; page < 7; page++ ) { app.SelectPage( page ); app.Draw(); }
+			Widget? focusBeforeThemeSwitch = app.Host.FocusedWidget;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 't' ) ) ); app.Draw();
+			if ( !ReferenceEquals( focusBeforeThemeSwitch, app.Host.FocusedWidget ) ) return 3;
+		}
+		if ( app.PaletteIndex != 0 ) return 3;
+		app.SelectPage( 6 );
+		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetTextEditor ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetStatusBar ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
+		app.Input( WidgetInput.FunctionKey( 6, WidgetInputModifiers.Shift ) );
+		if ( app.Host.FocusedWidget is not WidgetStatusBar ) return 4;
 		app.SelectPage( 4 ); app.OpenFiles( true ); await app.PollAsync( true ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		app.SelectPage( 3 ); app.OpenWizard(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		if ( app.Host.ModalDepth != 0 ) return 2;
-		Console.WriteLine( "PASS six gallery pages, forms, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
+		Console.WriteLine( "PASS seven gallery pages, theme cycle, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
 	}
 	private sealed class Gallery : WidgetSampleApplication {
 		private readonly List<Widget[]> pages = [];
@@ -45,9 +61,13 @@ internal static class Program {
 		private int dialogId;
 		private WidgetWizardDialog? wizard;
 		private bool rejected;
+		private CursesPresentationCapabilities capabilities;
+		private int paletteIndex;
+		private readonly WidgetTextViewState workspaceView = new( new WidgetTextDocument( [ "Colors and styles across tabs, editor selections, scrollbars, and status.\nSecond line with 界 wide text.".AsMemory() ] ) );
+		internal int PaletteIndex => this.paletteIndex;
 		internal WidgetTextInput Name { get; } = new( "name" );
-		protected override string Heading => "Icod.Widgets gallery — " + new[] { "Forms", "Lists / drop-down", "Menus", "Dialogs / wizard", "Folders / files", "Game UI" }[ this.page ];
-		protected override string Keys => "Ctrl+N next page | Ctrl+P previous page | Tab chooses control | Enter activates";
+		protected override string Heading => "Icod.Widgets gallery — " + new[] { "Forms", "Lists / drop-down", "Menus", "Dialogs / wizard", "Folders / files", "Game UI", "Workspace color" }[ this.page ] + " — " + new[] { "dark", "light", "default" }[ this.paletteIndex ];
+		protected override string Keys => this.page == 6 ? "Ctrl+N/P pages | Ctrl+T theme | F6 / Shift+F6 focus | Enter activate" : "Ctrl+N/P pages | Ctrl+T theme | Tab focus | Enter activate";
 		internal Gallery( CursesScreen screen ) : base( screen ) {
 			WidgetList single = new( "single", WidgetSelectionMode.Single ); single.SetItems( Items() );
 			WidgetList multiple = new( "multiple", WidgetSelectionMode.Multiple ); multiple.SetItems( Items() );
@@ -60,16 +80,22 @@ internal static class Program {
 			WidgetInventoryList inventory = new( "inventory" ); inventory.SetItems( Items() );
 			WidgetMessageHistory history = new( "history" ); history.Append( "The library receives items and messages from the application." ); history.Append( "No game rules live in Icod.Widgets." );
 			WidgetStatusBar status = new( "status" ); status.SetFields( [ new( "hp", "HP 12/20", 10 ), new( "depth", "Depth 3", 5 ) ] );
+			WidgetTabStrip tabs = new( "workspace-tabs" ); tabs.SetTabs( [ new( "first", "First", IsModified: true ), new( "second", "Second" ) ], "first" );
+			WidgetScrollBar scrollbar = new( "workspace-scroll", WidgetScrollOrientation.Horizontal ); scrollbar.SetRange( 100, 20, 30 );
+			WidgetStatusBar workspaceStatus = new( "workspace-status" ); workspaceStatus.SetFields( [ new( "line", "Ln 2, Col 8", 10 ), new( "mode", "Go to line", 5 ) { CommandId = "workspace.goto" } ] );
 			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode, selection, paste, undo), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
 			this.pages.Add( [ new WidgetLabel( "list-hint", "Single: Enter commits | Multi: Space toggles, Ctrl+A all, Shift+arrows range" ), single, multiple, new WidgetDropDown( "drop", Items(), "potion" ) ] );
 			this.pages.Add( [ new WidgetLabel( "menu-hint", "Alt+F/V opens | letter invokes | Ctrl+R shortcut | arrows navigate | Esc closes" ), new WidgetMenuBar( "bar", menuItems ), menu ] );
 			this.pages.Add( [ Button( "ok", "OK", "dialog.ok" ), Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
 			this.pages.Add( [ Button( "folder", "Select folder", "picker.folder" ), Button( "file", "Select one existing file", "picker.file" ), Button( "files", "Select multiple existing files", "picker.files" ) ] );
 			this.pages.Add( [ inventory, history, status, Button( "help", "Show help", "game.help" ) ] );
+			this.pages.Add( [ tabs, new WidgetTextEditor( "workspace-editor", this.workspaceView ), scrollbar, workspaceStatus ] );
 			foreach ( Widget[] widgets in this.pages ) foreach ( Widget widget in widgets ) this.Host.Attach( widget );
 			this.SelectPage( 0 );
 		}
 		private static WidgetButton Button( string id, string text, string command ) => new( id, text, command );
+		internal void UseCapabilities( CursesPresentationCapabilities capabilities ) { this.capabilities = capabilities; this.ApplyPalette(); }
+		private void ApplyPalette() => this.Host.SetTheme( this.paletteIndex == 2 ? WidgetTheme.Default : WidgetPalette.Create( this.capabilities, this.paletteIndex == 0 ? WidgetPaletteVariant.Dark : WidgetPaletteVariant.Light ) );
 		private static WidgetListItem[] Items() => [ new( "potion", "Healing potion" ), new( "sword", "Sword 界" ), new( "disabled", "Unavailable item", false ), new( "armour", "Armour" ), new( "scroll", "Scroll á" ), new( "key", "Key" ) ];
 		internal void SelectPage( int next ) {
 			this.page = next;
@@ -78,15 +104,22 @@ internal static class Program {
 		}
 		internal override void Arrange() {
 			CursesScreen screen = this.Host.Screen; int available = Math.Max( 0, screen.Rows - 4 ); int row = Math.Min( 2, screen.Rows );
-			Widget[] widgets = this.pages[ this.page ]; int growing = widgets.Count( widget => widget is WidgetList or WidgetPopupMenu or WidgetMessageHistory );
+			Widget[] widgets = this.pages[ this.page ]; int growing = widgets.Count( widget => widget is WidgetList or WidgetPopupMenu or WidgetMessageHistory or WidgetTextEditor );
 			int fixedCount = widgets.Length - growing; int growSize = growing == 0 ? 1 : Math.Max( 1, ( available - fixedCount ) / growing );
-			foreach ( Widget widget in widgets ) { int rows = Math.Min( Math.Max( 0, screen.Rows - 2 - row ), widget is WidgetList or WidgetPopupMenu or WidgetMessageHistory ? growSize : 1 ); widget.Arrange( new CursesRectangle( row, 0, rows, screen.Columns ) ); row += rows; }
+			foreach ( Widget widget in widgets ) { int rows = Math.Min( Math.Max( 0, screen.Rows - 2 - row ), widget is WidgetList or WidgetPopupMenu or WidgetMessageHistory or WidgetTextEditor ? growSize : 1 ); widget.Arrange( new CursesRectangle( row, 0, rows, screen.Columns ) ); row += rows; }
 			if ( this.Dialog is { IsOpen: true } dialog ) dialog.Arrange( screen.Bounds );
 		}
 		protected override bool OnShortcut( WidgetInput input ) {
+			if ( this.page == 6 && input.Kind == WidgetInputKind.Key && input.KeyCode == WidgetKey.Function && input.FunctionKeyNumber == 6 ) {
+				Widget[] targets = this.pages[ 6 ].Where( widget => widget.IsFocusable && widget is WidgetTabStrip or WidgetTextEditor or WidgetStatusBar ).ToArray();
+				int current = Array.FindIndex( targets, widget => ReferenceEquals( widget, this.Host.FocusedWidget ) );
+				if ( targets.Length > 0 ) this.Host.Focus( targets[ current < 0 ? 0 : ( current + ( ( input.Modifiers & WidgetInputModifiers.Shift ) != 0 ? targets.Length - 1 : 1 ) ) % targets.Length ] );
+				return true;
+			}
 			if ( ( input.Modifiers & WidgetInputModifiers.Control ) == 0 ) return false;
-			if ( input.Character?.Value is 'n' or 'N' ) { this.SelectPage( ( this.page + 1 ) % 6 ); return true; }
-			if ( input.Character?.Value is 'p' or 'P' ) { this.SelectPage( ( this.page + 5 ) % 6 ); return true; }
+			if ( input.Character?.Value is 't' or 'T' ) { this.paletteIndex = ( this.paletteIndex + 1 ) % 3; this.ApplyPalette(); this.Status = "Theme: " + new[] { "dark", "light", "terminal default" }[ this.paletteIndex ]; return true; }
+			if ( input.Character?.Value is 'n' or 'N' ) { this.SelectPage( ( this.page + 1 ) % 7 ); return true; }
+			if ( input.Character?.Value is 'p' or 'P' ) { this.SelectPage( ( this.page + 6 ) % 7 ); return true; }
 			return false;
 		}
 		internal void OpenFiles( bool multiple ) => this.Show( new WidgetFilePicker( "files." + ++this.dialogId, new LocalWidgetFileSystemProvider(), Environment.CurrentDirectory, multiple, [ new WidgetFileFilter( "Text / C#", [ ".txt", ".md", ".cs" ] ), WidgetFileFilter.AllFiles ] ) );
@@ -109,5 +142,6 @@ internal static class Program {
 				default: base.OnAction( action ); break;
 			}
 		}
+		public override void Dispose() { base.Dispose(); this.workspaceView.Dispose(); }
 	}
 }

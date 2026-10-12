@@ -30,7 +30,8 @@ public sealed class WidgetLabel( string id, string text ) : Widget( id ) {
 		CursesRectangle clipped = this.Bounds.Intersect( screen.Bounds );
 		if ( clipped.IsEmpty ) return;
 		string value = CursesText.SliceByColumns( this.Text, clipped.Column - this.Bounds.Column, clipped.Columns, screen.TextWidthProvider );
+		screen.StandardWindow.FillRectangle( clipped.Row, clipped.Column, clipped.Rows, clipped.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.Surface ) ) );
 		screen.StandardWindow.Move( clipped.Row, clipped.Column );
-		screen.StandardWindow.Write( value, this.IsEffectivelyEnabled ? theme.Normal : theme.Disabled );
+		screen.StandardWindow.Write( value, this.Style( theme, this.IsEffectivelyEnabled ? WidgetStyleRole.Text : WidgetStyleRole.Disabled ) );
 	}
 }

@@ -74,14 +74,16 @@ public sealed class WidgetStatusBar( string id ) : Widget( id ) {
 	}
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		screen.StandardWindow.FillRectangle( area.Row, area.Column, 1, area.Columns, CursesCell.Blank( theme.Normal ) );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, 1, area.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.StatusSurface ) ) );
 		int previousEnd = 0;
 		foreach ( Segment segment in this.visible ) {
 			int column = this.Bounds.Column + segment.Column; if ( column < area.Column || column >= area.Column + area.Columns ) continue;
-			if ( segment.Column - previousEnd == 3 ) { screen.StandardWindow.Move( area.Row, this.Bounds.Column + previousEnd ); screen.StandardWindow.Write( " | ", theme.Normal ); }
+			if ( segment.Column - previousEnd == 3 ) { screen.StandardWindow.Move( area.Row, this.Bounds.Column + previousEnd ); screen.StandardWindow.Write( " | ", this.Style( theme, WidgetStyleRole.StatusSurface ) ); }
 			string label = CursesText.TruncateToColumns( segment.Field.Text, Math.Min( segment.Columns, area.Column + area.Columns - column ), screen.TextWidthProvider );
 			if ( label.Length == 0 && segment.Columns > 0 ) label = "›";
-			screen.StandardWindow.Move( area.Row, column ); screen.StandardWindow.Write( label, focused && StringComparer.Ordinal.Equals( segment.Field.Name, this.focusedFieldName ) ? theme.Focused : theme.Normal );
+			CursesStyle style = this.Style( theme, !segment.Field.IsEnabled ? WidgetStyleRole.Disabled : focused && StringComparer.Ordinal.Equals( segment.Field.Name, this.focusedFieldName ) && IsActionable( segment.Field ) ? WidgetStyleRole.StatusFocusedAction : IsActionable( segment.Field ) ? WidgetStyleRole.StatusAction : WidgetStyleRole.StatusField );
+			screen.StandardWindow.FillRectangle( area.Row, column, 1, Math.Min( segment.Columns, area.Column + area.Columns - column ), CursesCell.Blank( style ) );
+			screen.StandardWindow.Move( area.Row, column ); screen.StandardWindow.Write( label, style );
 			previousEnd = segment.Column + segment.Columns;
 		}
 	}

@@ -71,12 +71,16 @@ public sealed class WidgetScrollBar : Widget {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return; int length = this.TrackLength;
-		( int thumbStart, int thumbLength ) = this.GetThumb( length ); CursesStyle style = !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal;
+		( int thumbStart, int thumbLength ) = this.GetThumb( length );
+		CursesStyle track = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.ScrollTrack );
+		CursesStyle thumb = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.ScrollFocusedThumb : WidgetStyleRole.ScrollThumb );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( track ) );
 		for ( int index = 0; index < length; index++ ) {
 			int row = WidgetScrollOrientation.Vertical == this.Orientation ? this.Bounds.Row + index : this.Bounds.Row;
 			int column = WidgetScrollOrientation.Horizontal == this.Orientation ? this.Bounds.Column + index : this.Bounds.Column;
 			if ( !screen.Bounds.Contains( row, column ) ) continue; screen.StandardWindow.Move( row, column );
-			screen.StandardWindow.Write( index >= thumbStart && index < thumbStart + thumbLength ? "█" : "░", style );
+			bool insideThumb = index >= thumbStart && index < thumbStart + thumbLength;
+			screen.StandardWindow.Write( insideThumb ? "█" : "░", insideThumb ? thumb : track );
 		}
 	}
 

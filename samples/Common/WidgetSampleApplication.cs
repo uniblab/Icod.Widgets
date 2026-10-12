@@ -105,10 +105,11 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		}
 		IReadOnlyList<WidgetAction> actions = this.Host.DrainActions(); this.Actions( actions ); return changed || actions.Count > 0;
 	}
-	internal static async Task<int> RunAsync( Func<CursesScreen, WidgetSampleApplication> create ) {
+	internal static async Task<int> RunAsync( Func<CursesScreen, WidgetSampleApplication> create, Action<WidgetSampleApplication, CursesPresentationCapabilities>? configure = null ) {
 		await using CursesSession session = await CursesSession.OpenAsync( new CursesSessionOptions { InputMode = CursesInputMode.Raw } );
 		session.StandardScreen.WrapMode = CursesWrapMode.Clip;
 		using WidgetSampleApplication app = create( session.Screen );
+		configure?.Invoke( app, session.PresentationCapabilities );
 		await using WidgetSampleCaretCoordinator caret = new( session );
 		app.clipboard = new WidgetSampleClipboardAdapter( session );
 		List<CursesInputProtocolLease> leases = [];

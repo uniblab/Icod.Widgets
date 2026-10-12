@@ -54,7 +54,9 @@ public sealed class WidgetRadioGroup : Widget {
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string value = CursesText.TruncateToColumns( $"(*) {this.SelectedKey}", area.Columns, screen.TextWidthProvider );
-		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, focused ? theme.Focused : theme.Normal );
+		CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.Focused : WidgetStyleRole.Radio );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) );
+		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( value, style );
 	}
 }
 

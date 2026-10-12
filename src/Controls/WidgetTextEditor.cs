@@ -166,8 +166,9 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
-		CursesStyle baseStyle = !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal;
-		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( baseStyle ) );
+		CursesStyle surface = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.EditorSurface );
+		CursesStyle baseStyle = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused && !this.HasPartStyle( theme, WidgetStyleRole.EditorText ) ? WidgetStyleRole.Focused : WidgetStyleRole.EditorText );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( surface ) );
 		WidgetTextProjectionResult result = this.projection.Project( this.View, screen.TextWidthProvider, new CursesRectangle( 0, 0, area.Rows, area.Columns ) );
 		this.UpdateScrollRanges( result, area.Rows, area.Columns );
 		for ( int index = 0; index < result.Rows.Count; index++ ) {
@@ -177,11 +178,11 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		}
 		for ( int row = 0; row < area.Rows; row++ ) for ( int column = 0; column < area.Columns; column++ ) {
 			CursesCell cell = screen.StandardWindow.GetCell( area.Row + row, area.Column + column );
-			RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, baseStyle );
+			if ( !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, baseStyle );
 		}
 		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < area.Columns; column++ ) {
 			CursesCell cell = screen.StandardWindow.GetCell( area.Row + span.Row, area.Column + column );
-			RestyleCell( screen.StandardWindow, area.Row + span.Row, area.Column + column, cell, theme.Selected );
+			RestyleCell( screen.StandardWindow, area.Row + span.Row, area.Column + column, cell, this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.TextSelection : WidgetStyleRole.TextSelectionInactive ) );
 		}
 	}
 

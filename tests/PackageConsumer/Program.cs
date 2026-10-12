@@ -22,6 +22,10 @@
 using Icod.DCurses;
 using Icod.Widgets;
 using WidgetHost host = new( new CursesScreen( 24, 5 ), WidgetTheme.Default );
+WidgetTheme colored = WidgetPalette.Create( default ) with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.TabActive,
+	new CursesStyle( CursesColor.Indexed( 3 ), CursesColor.Indexed( 4 ) ) ) };
+host.SetTheme( colored );
+bool themeApi = host.Theme.Resolve( WidgetStyleRole.TabActive ).Background == CursesColor.Indexed( 4 );
 WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "run", "Run", "run", 'r' ) ], 'f' ) ] );
 host.Attach( menu ); host.Arrange( host.Screen.Bounds ); host.Focus( menu );
 host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ), TimeSpan.Zero );
@@ -58,7 +62,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	themeApi && edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();

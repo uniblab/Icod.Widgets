@@ -50,8 +50,10 @@ public sealed class WidgetButton( string id, string text, string commandId ) : W
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
 		string text = CursesText.TruncateToColumns( $"[ {this.Text} ]", area.Columns, screen.TextWidthProvider );
+		CursesStyle style = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.ButtonDisabled : focused ? WidgetStyleRole.ButtonFocused : WidgetStyleRole.Button );
+		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( style ) );
 		screen.StandardWindow.Move( area.Row, area.Column );
-		screen.StandardWindow.Write( text, !this.IsEffectivelyEnabled ? theme.Disabled : focused ? theme.Focused : theme.Normal );
+		screen.StandardWindow.Write( text, style );
 	}
 }
 

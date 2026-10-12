@@ -2,6 +2,20 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.3.0 — widget color themes
+
+- Added immutable part/state styles with independent foreground, background,
+  and attributes, nearest-widget scoped overrides, and live host theme replacement.
+- Styled the owned surfaces and states of controls, editors, tabs, status,
+  scrollbars, menus, popups, dialogs, pickers, and game UI. Active tabs remain
+  visible when focus is in another control.
+- Added dark/light palettes based on DCurses' public color/attribute
+  capabilities, with independent fallback of unavailable color axes.
+- Expanded the gallery to seven pages with a workspace color example and a
+  Ctrl+T theme cycle. Its smoke renders each page under all three themes.
+- Updated the sole direct dependency to Icod.DCurses 2.5.0. Retained the
+  `1.0.0.0` assembly identity and the net8.0/net9.0/net10.0 targets.
+
 ## 1.2.0 — document workspace
 
 - Shipped stable-key document tabs and caller-owned active content replacement.

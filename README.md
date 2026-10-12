@@ -12,8 +12,8 @@ ownership of the application's event loop or business logic.
 
 ## Status
 
-Stable release: **1.2.0**. It adds reusable document-workspace controls above
-the 1.1 editing foundation. Applications continue to own document lifetime,
+Stable release: **1.3.0**. It adds capability-aware widget color themes above
+the 1.2 document workspace. Applications continue to own document lifetime,
 file writes, and search execution.
 
 See the [changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
@@ -50,10 +50,10 @@ Widgets has one direct runtime package dependency: `Icod.DCurses`.
 Install the current stable package:
 
 ```text
-dotnet add package Icod.Widgets --version 1.2.0
+dotnet add package Icod.Widgets --version 1.3.0
 ```
 
-The 1.2.0 package declares `Icod.DCurses 2.4.0` as its sole direct runtime
+The 1.3.0 package declares `Icod.DCurses 2.5.0` as its sole direct runtime
 dependency.
 
 For a runnable first step, clone the repository and launch the gallery from its
@@ -65,7 +65,11 @@ cd Icod.Widgets
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0
 ```
 
-Use Ctrl+N/Ctrl+P to visit its six pages and Ctrl+Q to exit.
+Use Ctrl+N/Ctrl+P to visit its seven pages and Ctrl+Q to exit.
+Ctrl+T cycles capability-aware dark and light
+palettes and terminal-default styling. Try the forms, selected lists, framed
+popups, dialog captions, and game status under each palette. On the workspace
+page, F6 and Shift+F6 move among the tabs, editor, and actionable status.
 
 To exercise the 1.1 multiline editing foundation, run the editor sample:
 
@@ -135,6 +139,51 @@ for complete session setup, input, resizing, rendering, and cleanup.
 - Inventory/action lists, bounded message history, status bars, help overlays,
   and text/number prompts.
 
+## Themes and terminal colors
+
+Version 1.3 adds full `CursesStyle` roles for widget parts:
+each style carries foreground, background and attributes. Use
+`WidgetPalette.Create(session.PresentationCapabilities)` after opening a DCurses
+session, or supply your own `WidgetTheme` with immutable `Parts` overrides.
+Change a live host's theme with `host.SetTheme(nextTheme)` and render again.
+Scoped `widget.Styles` overrides take precedence on that widget's subtree;
+the six original theme roles remain supported.
+
+```csharp
+WidgetTheme dark = WidgetPalette.Create(session.PresentationCapabilities);
+WidgetTheme light = WidgetPalette.Create(session.PresentationCapabilities, WidgetPaletteVariant.Light);
+using WidgetHost host = new(session, dark);
+// Attach, arrange and run the application loop as in Quick Start.
+host.SetTheme(light);
+host.Render();
+```
+
+To customize a part, reuse a style from the capability-aware palette. For
+example, this gives one button the palette's selected style when focused;
+other buttons retain the theme's `ButtonFocused` role:
+
+```csharp
+WidgetButton action = new("action", "Apply", "document.apply") {
+    Styles = WidgetStyles.Empty.With(WidgetStyleRole.ButtonFocused, host.Theme.Selected)
+};
+host.Attach(action); // Arrange and render in the application loop.
+```
+
+Use `host.Theme with { Parts = host.Theme.Parts.With(WidgetStyleRole.DialogBorder, host.Theme.Focused) }`
+with `host.SetTheme` to override a role across the theme. Scoped styles resolve
+before theme parts; switching themes does not clear a widget's scoped overrides.
+Reapply palette-derived overrides when changing palettes if they should follow
+the new palette.
+
+Color requests follow DCurses' public capability observations. Unsupported
+foreground and background axes revert independently to terminal defaults;
+RGB and indexed colors are requested only when advertised. A terminal that
+advertises neither color nor attributes may display identical cell styles;
+text markers, borders, labels and focus navigation still work. The terminal
+controls its physical palette, so exact colors vary by profile. The
+[1.3 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.3.0-Development-Roadmap.md)
+records the implementation and qualification gates.
+
 Tab/Shift+Tab traverses controls unless a control consumes Tab; the multiline
 editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.
 Arrows navigate; Enter activates or commits; Space toggles. Menu mnemonics
@@ -157,8 +206,8 @@ PowerShell 5.1. Interactive applications require a usable terminal and a DCurses
 profile supporting cursor motion.
 
 Windows, macOS, and Linux are build/CI targets. Live terminal results are
-environment-specific: [W1211](https://github.com/uniblab/Icod.Widgets/blob/main/docs/W1211-Stable-Qualification.md)
-records the 1.2 qualification scope and explicitly unavailable live environments.
+environment-specific: [W1310](https://github.com/uniblab/Icod.Widgets/blob/main/docs/W1310-Stable-Qualification.md)
+records the 1.3 qualification scope and explicitly unavailable live environments.
 Automated tests are not a claim of live-terminal qualification.
 
 ## Design Boundaries and Guarantees
@@ -188,10 +237,10 @@ covers the gallery, editor, roguelike UI, and document workspace. All four suppo
 Recommended entry points:
 
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
-- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) and [1.2.0 release notes](https://github.com/uniblab/Icod.Widgets/blob/main/docs/releases/1.2.0.md) — shipped history.
+- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) and [1.3.0 release notes](https://github.com/uniblab/Icod.Widgets/blob/main/docs/releases/1.3.0.md) — shipped history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
-- [1.2.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.2.0-Development-Roadmap.md) — tranches, dependencies, and release gates.
-- [1.2 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.2.md), [1.1 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/Public-API-Baseline-1.1.md), and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
+- [1.3.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.3.0-Development-Roadmap.md) — tranches, dependencies, and release gates.
+- [1.3 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.3.md), [1.2 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.2.0/docs/Public-API-Baseline-1.2.md), [1.1 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/Public-API-Baseline-1.1.md), and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
 Release audits, versioned plans, API snapshots, and qualification worksheets
@@ -200,7 +249,7 @@ remain in the repository. They are intentionally not repeated in this README.
 ## Compatibility and Versioning
 
 The stable 1.0 public API is the compatibility floor for the 1.x line. Version
-1.1 and 1.2 evolve it additively, preserve existing control contracts, and retain
+1.1, 1.2, and 1.3 evolve it additively, preserve existing control contracts, and retain
 assembly identity `1.0.0.0`; package versions advance separately.
 
 The README is a product and contributor entry point. Release chronology belongs

@@ -47,10 +47,10 @@ public abstract class WidgetDialog( string id, string title ) : WidgetContainer(
 
 	internal CursesRectangle RenderFrame( CursesScreen screen, WidgetTheme theme, string? caption = null ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return default;
-		for ( int row = 0; row < area.Rows; row++ ) WidgetBrowserView.WriteLine( screen, area, row, string.Empty, theme.Normal );
+		for ( int row = 0; row < area.Rows; row++ ) WidgetBrowserView.WriteLine( screen, area, row, string.Empty, this.Style( theme, WidgetStyleRole.DialogSurface ) );
 		string title = WidgetBrowserView.Sanitize( caption ?? this.Title );
 		if ( area.Rows < 3 || area.Columns < 3 ) {
-			WidgetBrowserView.WriteLine( screen, area, 0, title, theme.Border );
+			WidgetBrowserView.WriteLine( screen, area, 0, title, this.Style( theme, WidgetStyleRole.DialogTitle ) );
 			return this.GetContentBounds( screen );
 		}
 		bool useBoxDrawing = 6 == CursesText.MeasureColumns( "┌─┐│└┘", screen.TextWidthProvider );
@@ -62,10 +62,11 @@ public abstract class WidgetDialog( string id, string title ) : WidgetContainer(
 		int titleColumns = CursesText.MeasureColumns( clippedTitle, screen.TextWidthProvider );
 		string top = 0 == titleColumns ? topLeft + new string( horizontal, area.Columns - 2 ) + topRight :
 			topLeft + new string( horizontal, 1 ) + " " + clippedTitle + " " + new string( horizontal, area.Columns - titleColumns - 5 ) + topRight;
-		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( top, theme.Border );
+		screen.StandardWindow.Move( area.Row, area.Column ); screen.StandardWindow.Write( top, this.Style( theme, WidgetStyleRole.DialogBorder ) );
+		if ( titleColumns > 0 ) { screen.StandardWindow.Move( area.Row, area.Column + 3 ); screen.StandardWindow.Write( clippedTitle, this.Style( theme, WidgetStyleRole.DialogTitle ) ); }
 		int right = area.Column + area.Columns - 1;
-		for ( int row = area.Row + 1; row < area.BottomExclusive - 1; row++ ) { screen.StandardWindow.Move( row, area.Column ); screen.StandardWindow.Write( vertical.ToString(), theme.Border ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( vertical.ToString(), theme.Border ); }
-		screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( bottomLeft + new string( horizontal, area.Columns - 2 ) + bottomRight, theme.Border );
+		for ( int row = area.Row + 1; row < area.BottomExclusive - 1; row++ ) { screen.StandardWindow.Move( row, area.Column ); screen.StandardWindow.Write( vertical.ToString(), this.Style( theme, WidgetStyleRole.DialogBorder ) ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( vertical.ToString(), this.Style( theme, WidgetStyleRole.DialogBorder ) ); }
+		screen.StandardWindow.Move( area.BottomExclusive - 1, area.Column ); screen.StandardWindow.Write( bottomLeft + new string( horizontal, area.Columns - 2 ) + bottomRight, this.Style( theme, WidgetStyleRole.DialogBorder ) );
 		return this.GetContentBounds( screen );
 	}
 

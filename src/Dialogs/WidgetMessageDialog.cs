@@ -26,9 +26,10 @@ using Icod.DCurses;
 /// <summary>Displays a message with explicit safe-default choices.</summary>
 public sealed class WidgetMessageDialog : WidgetDialog {
 	private readonly ( string Label, WidgetDialogOutcome Outcome )[] choices;
+	private readonly int defaultIndex;
 	private int selectedIndex;
 	private WidgetMessageDialog( string id, string title, string message, ( string, WidgetDialogOutcome )[] choices, int defaultIndex ) : base( id, title ) {
-		this.Message = message ?? throw new ArgumentNullException( nameof( message ) ); this.choices = choices; this.selectedIndex = defaultIndex;
+		this.Message = message ?? throw new ArgumentNullException( nameof( message ) ); this.choices = choices; this.selectedIndex = this.defaultIndex = defaultIndex;
 	}
 	public string Message { get; }
 	public WidgetDialogOutcome SelectedOutcome => this.choices[ this.selectedIndex ].Outcome;
@@ -48,10 +49,19 @@ public sealed class WidgetMessageDialog : WidgetDialog {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
-		CursesTextLayout layout = CursesTextLayout.Create( this.Message, new CursesTextLayoutOptions( area.Columns ) { WrapMode = CursesTextWrapMode.Word, WidthProvider = screen.TextWidthProvider, DefaultStyle = theme.Normal } );
+		CursesTextLayout layout = CursesTextLayout.Create( this.Message, new CursesTextLayoutOptions( area.Columns ) { WrapMode = CursesTextWrapMode.Word, WidthProvider = screen.TextWidthProvider, DefaultStyle = this.Style( theme, WidgetStyleRole.Text ) } );
 		screen.StandardWindow.PresentTextLayout( layout, 0, Math.Min( layout.Lines.Count, Math.Max( 0, area.Rows - 1 ) ), area.Row, area.Column );
-		string choices = string.Join( "  ", this.choices.Select( ( choice, index ) => index == this.selectedIndex ? $"[{choice.Label}]" : choice.Label ) );
-		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, choices + " (Esc cancels)", theme.Focused );
+		string[] choices = this.choices.Select( ( choice, index ) => index == this.selectedIndex ? $"[{choice.Label}]" : choice.Label ).ToArray();
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, string.Join( "  ", choices ) + " (Esc cancels)", this.Style( theme, WidgetStyleRole.DialogAction ) );
+		int column = area.Column;
+		for ( int index = 0; index < choices.Length && column < area.Column + area.Columns; index++ ) {
+			string label = WidgetBrowserView.Sanitize( choices[ index ] );
+			CursesStyle style = this.Style( theme, index == this.selectedIndex && focused ? WidgetStyleRole.DialogFocusedAction :
+				index == this.defaultIndex ? WidgetStyleRole.DialogDefaultAction : WidgetStyleRole.DialogAction );
+			screen.StandardWindow.Move( area.BottomExclusive - 1, column );
+			screen.StandardWindow.Write( CursesText.TruncateToColumns( label, area.Column + area.Columns - column, screen.TextWidthProvider ), style );
+			column += CursesText.MeasureColumns( label, screen.TextWidthProvider ) + 2;
+		}
 	}
 }
 

@@ -104,9 +104,19 @@ public sealed class WidgetFormDialog : WidgetDialog {
 	private void Invalidate() { this.pending = null; this.Error = null; this.generation = checked( this.generation + 1 ); }
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
-		if ( this.message is not null ) WidgetBrowserView.WriteLine( screen, area, 0, this.message, theme.Normal );
-		if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error, theme.Error );
-		string labels = string.Join( " ", this.actions.Select( ( action, i ) => i == this.selected ? $"[{action.Label}]" : $" {action.Label} " ) );
-		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, labels, focused ? theme.Focused : theme.Normal );
+		if ( this.message is not null ) WidgetBrowserView.WriteLine( screen, area, 0, this.message, this.Style( theme, WidgetStyleRole.Text ) );
+		if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error, this.Style( theme, WidgetStyleRole.Error ) );
+		string[] labels = this.actions.Select( ( action, i ) => i == this.selected ? $"[{action.Label}]" : $" {action.Label} " ).ToArray();
+		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, string.Join( " ", labels ), this.Style( theme, WidgetStyleRole.DialogAction ) );
+		int column = area.Column;
+		for ( int index = 0; index < labels.Length && column < area.Column + area.Columns; index++ ) {
+			string label = WidgetBrowserView.Sanitize( labels[ index ] );
+			CursesStyle style = this.Style( theme, !this.actions[ index ].IsEnabled ? WidgetStyleRole.DialogDisabledAction :
+				index == this.selected && focused ? WidgetStyleRole.DialogFocusedAction :
+				this.actions[ index ].IsDefault ? WidgetStyleRole.DialogDefaultAction : WidgetStyleRole.DialogAction );
+			screen.StandardWindow.Move( area.BottomExclusive - 1, column );
+			screen.StandardWindow.Write( CursesText.TruncateToColumns( label, area.Column + area.Columns - column, screen.TextWidthProvider ), style );
+			column += CursesText.MeasureColumns( label, screen.TextWidthProvider ) + 1;
+		}
 	}
 }
