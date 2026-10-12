@@ -39,4 +39,24 @@ public sealed record WidgetTheme(
 		CursesStyle.Default.WithAttributes( CursesTextAttributes.Reverse ),
 		CursesStyle.Default.WithAttributes( CursesTextAttributes.Bold ),
 		CursesStyle.Default );
+
+	/// <summary>Gets optional immutable part styles. Unspecified parts fall back to the six established roles.</summary>
+	public WidgetStyles Parts { get; init; } = WidgetStyles.Empty;
+
+	/// <summary>Resolves a complete foreground, background and attribute style for a widget part.</summary>
+	public CursesStyle Resolve( WidgetStyleRole role ) {
+		if ( this.Parts.TryGetValue( role, out CursesStyle style ) ) return style;
+		return role switch {
+			WidgetStyleRole.Focused or WidgetStyleRole.PopupFocused or WidgetStyleRole.ListFocused
+				or WidgetStyleRole.DialogFocusedAction or WidgetStyleRole.ButtonFocused or WidgetStyleRole.StatusFocusedAction => this.Focused,
+			WidgetStyleRole.Disabled or WidgetStyleRole.PopupDisabled or WidgetStyleRole.ListDisabled
+				or WidgetStyleRole.DialogDisabledAction or WidgetStyleRole.ButtonDisabled => this.Disabled,
+			WidgetStyleRole.Selected or WidgetStyleRole.TextSelection or WidgetStyleRole.TextSelectionInactive
+				or WidgetStyleRole.FieldSelection or WidgetStyleRole.ListSelected => this.Selected,
+			WidgetStyleRole.Error or WidgetStyleRole.PickerError => this.Error,
+			WidgetStyleRole.Border or WidgetStyleRole.PopupBorder or WidgetStyleRole.DialogBorder or WidgetStyleRole.DialogTitle => this.Border,
+			_ when Enum.IsDefined( role ) => this.Normal,
+			_ => throw new ArgumentOutOfRangeException( nameof( role ) )
+		};
+	}
 }

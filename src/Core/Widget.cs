@@ -37,6 +37,8 @@ public abstract class Widget {
 	public CursesRectangle Bounds { get; private set; }
 	public virtual bool IsFocusable => false;
 	public virtual bool AcceptsTab => false;
+	/// <summary>Gets or sets optional part styles for this widget and its descendants.</summary>
+	public WidgetStyles Styles { get; set; } = WidgetStyles.Empty;
 	public bool IsEnabled {
 		get => this.isEnabled;
 		set { if ( this.isEnabled == value ) return; this.isEnabled = value; this.Host?.SynchronizeTree( this ); }
@@ -60,6 +62,13 @@ public abstract class Widget {
 	protected virtual void OnArrange( CursesRectangle bounds ) { }
 	protected internal virtual bool OnInput( WidgetInput input, WidgetHost host ) => false;
 	protected internal virtual void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) { }
+	/// <summary>Resolves a style from the nearest widget override, then the host theme.</summary>
+	protected CursesStyle Style( WidgetTheme theme, WidgetStyleRole role ) {
+		ArgumentNullException.ThrowIfNull( theme );
+		for ( Widget? current = this; current is not null; current = current.Parent )
+			if ( current.Styles.TryGetValue( role, out CursesStyle style ) ) return style;
+		return theme.Resolve( role );
+	}
 	protected void EnsureActionCapacity( int count = 1 ) => this.RequireHost().EnsureActionCapacityFor( this, count );
 	protected void EmitAction( WidgetAction action ) => this.RequireHost().EmitFor( this, action );
 	protected WidgetClipboardRequest RegisterClipboardRequest( WidgetClipboardRequest request ) => this.RequireHost().RegisterClipboardRequest( this, request );
