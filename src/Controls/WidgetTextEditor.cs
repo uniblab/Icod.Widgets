@@ -32,6 +32,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private readonly WidgetEditorOptions options;
 	private string newLine;
+	private string indentation;
 	private readonly WidgetTextProjection projection;
 	private StringBuilder? pendingPaste;
 	private long pendingPasteRevision;
@@ -47,7 +48,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private ICursesTextWidthProvider? pointerWidthProvider;
 
 	public WidgetTextEditor( string id, WidgetTextViewState view, WidgetEditorOptions? options = null ) : base( id ) {
-		this.View = view ?? throw new ArgumentNullException( nameof( view ) ); this.options = options ?? new WidgetEditorOptions(); this.options.Validate(); this.newLine = this.options.NewLine;
+		this.View = view ?? throw new ArgumentNullException( nameof( view ) ); this.options = options ?? new WidgetEditorOptions(); this.options.Validate(); this.newLine = this.options.NewLine; this.indentation = this.options.Indentation;
 		this.View.WrapMode = this.options.WrapMode; this.View.TabWidth = this.options.TabWidth; this.projection = new WidgetTextProjection( this.options );
 		this.RefreshScrollRanges();
 	}
@@ -62,6 +63,15 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			if ( value is not "\\n" and not "\\r" and not "\\r\\n" )
 				throw new ArgumentException( "The inserted newline must be LF, CR, or CRLF.", nameof( value ) );
 			this.newLine = value;
+		}
+	}
+	/// <summary>Sets the spaces or tabs inserted by future indentation commands.</summary>
+	public string Indentation {
+		get => this.indentation;
+		set {
+			if ( value is null || value.Any( static character => character is not ' ' and not '\\t' ) )
+				throw new ArgumentException( "Indentation may contain only spaces and tabs.", nameof( value ) );
+			this.indentation = value;
 		}
 	}
 	public bool IsReadOnly {
@@ -353,9 +363,9 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private bool Indent( TimeSpan timestamp ) {
 		if ( this.IsReadOnly ) return true;
-		if ( !this.View.HasSelection ) return this.ReplaceSelection( this.options.Indentation, WidgetTextEditKind.Indent, timestamp, false );
-		if ( 0 == this.options.Indentation.Length ) return true;
-		List<long> starts = this.GetSelectedLineStarts(); List<WidgetTextEdit> edits = starts.Select( start => new WidgetTextEdit( start, 0, this.options.Indentation ) ).ToList();
+		if ( !this.View.HasSelection ) return this.ReplaceSelection( this.Indentation, WidgetTextEditKind.Indent, timestamp, false );
+		if ( 0 == this.Indentation.Length ) return true;
+		List<long> starts = this.GetSelectedLineStarts(); List<WidgetTextEdit> edits = starts.Select( start => new WidgetTextEdit( start, 0, this.Indentation ) ).ToList();
 		return this.ApplySelectionBatch( edits, WidgetTextEditKind.Indent, timestamp );
 	}
 
@@ -364,9 +374,9 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		List<long> starts = this.View.HasSelection ? this.GetSelectedLineStarts() : [ this.View.Document.GetLine( this.View.Document.GetLineIndex( this.View.Caret ) ).Start ];
 		List<WidgetTextEdit> edits = [];
 		foreach ( long start in starts ) {
-			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( start ) ); int count = checked( (int)Math.Min( line.ContentLength, Math.Max( this.options.Indentation.Length, this.View.TabWidth ) ) );
+			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( start ) ); int count = checked( (int)Math.Min( line.ContentLength, Math.Max( this.Indentation.Length, this.View.TabWidth ) ) );
 			string prefix = this.View.Document.Read( start, count ); int remove = 0;
-			if ( 0 < this.options.Indentation.Length && prefix.StartsWith( this.options.Indentation, StringComparison.Ordinal ) ) remove = this.options.Indentation.Length;
+			if ( 0 < this.Indentation.Length && prefix.StartsWith( this.Indentation, StringComparison.Ordinal ) ) remove = this.Indentation.Length;
 			else if ( prefix.StartsWith( '\t' ) ) remove = 1;
 			else while ( remove < prefix.Length && remove < this.View.TabWidth && ' ' == prefix[ remove ] ) remove++;
 			if ( 0 < remove ) edits.Add( new WidgetTextEdit( start, remove, "" ) );
