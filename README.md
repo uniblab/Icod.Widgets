@@ -12,8 +12,10 @@ ownership of the application's event loop or business logic.
 
 ## Status
 
-Stable release: **1.3.0**. It adds capability-aware widget color themes above
-the 1.2 document workspace. Applications continue to own document lifetime,
+Stable release: **1.3.1**. It fixes editor rendering after insertion at the end
+of a cached line, including the first character of an empty document. The 1.3
+series adds capability-aware color themes above the 1.2 document workspace.
+Applications continue to own document lifetime,
 file writes, and search execution.
 
 See the [changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
@@ -50,10 +52,10 @@ Widgets has one direct runtime package dependency: `Icod.DCurses`.
 Install the current stable package:
 
 ```text
-dotnet add package Icod.Widgets --version 1.3.0
+dotnet add package Icod.Widgets --version 1.3.1
 ```
 
-The 1.3.0 package declares `Icod.DCurses 2.5.0` as its sole direct runtime
+The 1.3.1 package declares `Icod.DCurses 2.5.0` as its sole direct runtime
 dependency.
 
 For a runnable first step, clone the repository and launch the gallery from its

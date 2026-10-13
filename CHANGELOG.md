@@ -2,6 +2,14 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.3.1 — editor projection correction
+
+- Invalidate a cached line when text is inserted at its end. This restores the
+  first typed character after rendering a blank document and subsequent
+  appends, without changing the public API or the 1.0.0.0 assembly identity.
+- Retain net8.0/net9.0/net10.0 and Icod.DCurses 2.5.0 as the sole direct
+  dependency.
+
 ## 1.3.0 — widget color themes
 
 - Added immutable part/state styles with independent foreground, background,

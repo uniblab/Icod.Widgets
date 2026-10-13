@@ -91,6 +91,22 @@ public sealed class WidgetTextProjectionTests {
 		Assert.Equal( 1, geometryChanged.CacheMisses );
 	}
 
+	[Theory]
+	[InlineData( "", 0, "x" )]
+	[InlineData( "x", 1, "xy" )]
+	public void InsertionAtCachedLineEndReprojectsVisibleText( string initial, long offset, string expected ) {
+		WidgetTextDocument document = Create( initial ); using WidgetTextViewState view = new( document );
+		WidgetTextProjection projection = new( new WidgetEditorOptions() ); CursesRectangle viewport = new( 0, 0, 1, 20 );
+		Assert.Equal( initial, Assert.Single( projection.Project( view, UnicodeCursesTextWidthProvider.Instance, viewport ).Rows ).Layout.Text );
+
+		document.Apply( [ new WidgetTextEdit( offset, 0, initial.Length == 0 ? "x" : "y" ) ], 0,
+			new WidgetTextEditContext( Guid.NewGuid(), offset, offset, offset + 1, offset + 1, WidgetTextEditKind.Programmatic, TimeSpan.Zero ) );
+		WidgetTextProjectionResult refreshed = projection.Project( view, UnicodeCursesTextWidthProvider.Instance, viewport );
+
+		Assert.Equal( expected, Assert.Single( refreshed.Rows ).Layout.Text );
+		Assert.Equal( 1, refreshed.CacheMisses );
+	}
+
 	[Fact]
 	public void LongLineHasBoundedSlices() {
 		WidgetTextDocument document = Create( new string( 'x', 1_000_000 ) ); using WidgetTextViewState view = new( document );
