@@ -26,6 +26,18 @@ using Xunit;
 
 public sealed class WidgetClipboardTests {
 	[Fact]
+	public void ExistingClipboardConstructorsRemainAvailable() {
+		Assert.NotNull( typeof( WidgetClipboardRequest ).GetConstructor( [
+			typeof( Guid ), typeof( Guid ), typeof( Guid ), typeof( long ), typeof( long ),
+			typeof( long ), typeof( long ), typeof( long ), typeof( long ),
+			typeof( WidgetClipboardOperation ), typeof( string )
+		] ) );
+		Assert.NotNull( typeof( WidgetClipboardResult ).GetConstructor( [
+			typeof( Guid ), typeof( WidgetClipboardStatus ), typeof( string )
+		] ) );
+	}
+
+	[Fact]
 	public void CopyHonorsUtf8ByteBudget() {
 		using Fixture fixture = new( "界a", maximumBytes: 4 ); fixture.View.SetSelection( 0, 2 );
 
