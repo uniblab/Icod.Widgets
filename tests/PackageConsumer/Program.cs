@@ -55,7 +55,7 @@ host.ApplyClipboardResult( new WidgetClipboardResult( lineCopy.RequestId, Widget
 view.SetSelection( 6, 6 );
 WidgetClipboardRequest linePaste = RequestClipboard( host, WidgetEditCommand.Paste, TimeSpan.FromMilliseconds( 10 ) );
 bool linewisePaste = host.ApplyClipboardResult( new WidgetClipboardResult( linePaste.RequestId, WidgetClipboardStatus.Success,
-	lineCopy.Text, IsLinewise: true ) ) && document.Read( 0, checked( (int)document.Length ) ) == "one\r\none\r\ntwo\n";
+	lineCopy.Text ) { IsLinewise = true } ) && document.Read( 0, checked( (int)document.Length ) ) == "one\r\none\r\ntwo\n";
 host.DrainActions();
 host.ExecuteEditCommand( WidgetEditCommand.Undo, TimeSpan.FromMilliseconds( 11 ) );
 using WidgetTextSnapshot snapshot = document.CreateSnapshot(); document.MarkSaved( snapshot );
