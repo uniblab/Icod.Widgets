@@ -9,8 +9,10 @@ All notable changes to Icod.Widgets are recorded here.
   waits for application clipboard success and remains one undoable edit.
 - Clipboard requests and results carry optional linewise metadata. An internal
   linewise paste with no selection inserts at the current line start; an
-  explicit selection is replaced normally. External clipboard text remains
-  plain text unless it matches a retained local copy.
+  explicit selection is replaced normally. If an unterminated copied line is
+  inserted ahead of existing text, the editor adds its current newline as a
+  separator. External clipboard text remains plain text unless it matches a
+  retained local copy.
 - Updated the sample clipboard adapter and package-only consumer. Retained
   net8.0/net9.0/net10.0, assembly version `1.0.0.0`, and Icod.DCurses
   2.5.0 as the sole direct dependency.
