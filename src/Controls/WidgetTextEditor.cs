@@ -101,7 +101,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			if ( ( command is WidgetEditCommand.Copy or WidgetEditCommand.Cut ) && !this.TryGetClipboardText( out text, out isLinewise ) ) return WidgetCommandResult.Disabled;
 			WidgetClipboardOperation operation = command switch { WidgetEditCommand.Copy => WidgetClipboardOperation.Copy, WidgetEditCommand.Cut => WidgetClipboardOperation.Cut, _ => WidgetClipboardOperation.Paste };
 			WidgetClipboardRequest request = new( Guid.NewGuid(), this.View.Id, this.View.Document.Id, 0, 0, this.View.Document.Revision,
-				this.View.SelectionEpoch, this.View.SelectionStart, this.View.SelectionEnd, operation, text, isLinewise );
+				this.View.SelectionEpoch, this.View.SelectionStart, this.View.SelectionEnd, operation, text ) { IsLinewise = isLinewise };
 			request = this.RegisterClipboardRequest( request ); this.EmitAction( new WidgetClipboardRequestedAction( this.Id, request ) ); return WidgetCommandResult.Executed;
 		}
 		if ( WidgetEditCommand.SelectAll == command ) {
