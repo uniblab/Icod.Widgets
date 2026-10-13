@@ -93,6 +93,20 @@ public sealed class WidgetClipboardTests {
 	}
 
 	[Fact]
+	public void LinewisePasteOfUnterminatedLastLineSeparatesFollowingContent() {
+		using Fixture fixture = new( "one\ntwo" );
+		fixture.Editor.NewLine = "\r\n";
+		fixture.View.SetSelection( 5, 5 );
+		WidgetClipboardRequest paste = fixture.Request( WidgetEditCommand.Paste );
+		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult(
+			paste.RequestId, WidgetClipboardStatus.Success, "last" ) { IsLinewise = true } ) );
+		Assert.Equal( "one\nlast\r\ntwo", fixture.Text );
+		fixture.Host.DrainActions();
+		Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime ) );
+		Assert.Equal( "one\ntwo", fixture.Text );
+	}
+
+	[Fact]
 	public void NoSelectionLastLineRetainsMissingTerminatorAndByteBudget() {
 		using Fixture fixture = new( "one\n界", maximumBytes: 2 );
 		fixture.View.SetSelection( 5, 5 );
