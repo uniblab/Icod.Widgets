@@ -184,6 +184,19 @@ public sealed class WidgetTextEditorTests {
 		Assert.Equal( "one\ntwo", fixture.Text );
 	}
 
+	[Fact]
+	public void IndentationPolicyCanChangeWithoutLosingUndoHistory() {
+		using Fixture fixture = new( "one", new WidgetEditorOptions { Indentation = "    " } );
+		fixture.View.SetSelection( 0, 0 );
+		fixture.Editor.Indentation = "  ";
+		fixture.Send( WidgetInput.Key( WidgetKey.Tab ) );
+		Assert.Equal( "  one", fixture.Text );
+		Assert.Throws<ArgumentException>( () => fixture.Editor.Indentation = "x" );
+		Assert.Equal( "  ", fixture.Editor.Indentation );
+		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
+		Assert.Equal( "one", fixture.Text );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text, WidgetEditorOptions? options = null ) {
