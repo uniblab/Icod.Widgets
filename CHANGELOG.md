@@ -10,6 +10,8 @@ All notable changes to Icod.Widgets are recorded here.
 - Existing constructor options remain the initial policies. Invalid changes
   are rejected without changing the current policy; subsequent edits remain
   undoable with the existing document history.
+- The in-memory editor sample lets operators cycle future newline and
+  indentation policies with F7/F8; its smoke checks the resulting edits and undo.
 - Retained net8.0/net9.0/net10.0, assembly version `1.0.0.0`, and the sole
   direct dependency on Icod.DCurses 2.5.0. This entry is a candidate, not a
   published release.
