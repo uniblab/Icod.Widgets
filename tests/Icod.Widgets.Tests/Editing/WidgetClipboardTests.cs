@@ -40,6 +40,57 @@ public sealed class WidgetClipboardTests {
 	}
 
 	[Fact]
+	public void NoSelectionCopyCapturesWholeLogicalLineWithExactCrLf() {
+		using Fixture fixture = new( "one\r\ntwo\n" );
+		fixture.View.SetSelection( 1, 1 );
+		WidgetClipboardRequest request = fixture.Request( WidgetEditCommand.Copy );
+		Assert.Equal( "one\r\n", request.Text );
+		Assert.True( request.IsLinewise );
+		Assert.Equal( "one\r\ntwo\n", fixture.Text );
+	}
+
+	[Fact]
+	public void NoSelectionCutWaitsForSuccessAndDeletesWholeLineAsOneEdit() {
+		using Fixture fixture = new( "one\r\ntwo" );
+		fixture.View.SetSelection( 1, 1 );
+		WidgetClipboardRequest request = fixture.Request( WidgetEditCommand.Cut );
+		Assert.Equal( "one\r\n", request.Text );
+		Assert.True( request.IsLinewise );
+		Assert.Equal( "one\r\ntwo", fixture.Text );
+		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success ) ) );
+		Assert.Equal( "two", fixture.Text );
+		fixture.Host.DrainActions();
+		Assert.Equal( WidgetCommandResult.Executed, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime ) );
+		Assert.Equal( "one\r\ntwo", fixture.Text );
+	}
+
+	[Fact]
+	public void InternalLinewisePasteInsertsAtLineStartAndSelectionPasteReplacesSelection() {
+		using Fixture fixture = new( "one\ntwo" );
+		fixture.View.SetSelection( 5, 5 );
+		WidgetClipboardRequest linePaste = fixture.Request( WidgetEditCommand.Paste );
+		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( linePaste.RequestId,
+			WidgetClipboardStatus.Success, "one\n", IsLinewise: true ) ) );
+		Assert.Equal( "one\none\ntwo", fixture.Text );
+		fixture.Host.DrainActions();
+		fixture.View.SetSelection( 8, 11 );
+		WidgetClipboardRequest replace = fixture.Request( WidgetEditCommand.Paste );
+		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( replace.RequestId,
+			WidgetClipboardStatus.Success, "X", IsLinewise: true ) ) );
+		Assert.Equal( "one\none\nX", fixture.Text );
+	}
+
+	[Fact]
+	public void NoSelectionLastLineRetainsMissingTerminatorAndByteBudget() {
+		using Fixture fixture = new( "one\n界", maximumBytes: 2 );
+		fixture.View.SetSelection( 5, 5 );
+		Assert.Equal( WidgetCommandResult.Disabled, fixture.Host.ExecuteEditCommand( WidgetEditCommand.Copy, fixture.NextTime ) );
+		using Fixture allowed = new( "one\n界", maximumBytes: 3 );
+		allowed.View.SetSelection( 5, 5 );
+		Assert.Equal( "界", allowed.Request( WidgetEditCommand.Copy ).Text );
+	}
+
+	[Fact]
 	public void NoSilentClipboardTruncation() {
 		using Fixture fixture = new( "界ab", maximumBytes: 4 ); fixture.View.SetSelection( 0, 3 );
 
