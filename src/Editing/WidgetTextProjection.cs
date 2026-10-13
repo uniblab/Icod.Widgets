@@ -212,7 +212,7 @@ internal sealed class WidgetTextProjection {
 		long firstChanged = change is null || 0 == change.Changes.Count ? -1 : change.Changes.Min( static item => item.Start );
 		for ( int index = this.cache.Count - 1; index >= 0; index-- ) {
 			CacheEntry entry = this.cache[ index ]; if ( entry.DocumentId != document.Id || entry.Revision == document.Revision ) continue;
-			if ( change is not null && change.Revision == document.Revision && entry.Revision + 1 == document.Revision && 0 <= firstChanged && entry.AffectedEnd <= firstChanged ) entry.Revision = document.Revision;
+			if ( change is not null && change.Revision == document.Revision && entry.Revision + 1 == document.Revision && 0 <= firstChanged && entry.AffectedEnd < firstChanged ) entry.Revision = document.Revision;
 			else this.cache.RemoveAt( index );
 		}
 		this.scans.RemoveAll( state => state.DocumentId == document.Id && state.Revision != document.Revision );

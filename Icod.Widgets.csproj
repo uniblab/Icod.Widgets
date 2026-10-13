@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.3.0</Version>
-		<PackageVersion>1.3.0</PackageVersion>
+		<Version>1.3.1</Version>
+		<PackageVersion>1.3.1</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Widget color themes with independently styled foreground/background, capability-aware palettes, scoped overrides, and a seven-page gallery. Requires Icod.DCurses 2.5.0.</PackageReleaseNotes>
+		<PackageReleaseNotes>Fix stale editor text after insertion at the end of a cached line, including the first character in an empty document. Requires Icod.DCurses 2.5.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
