@@ -82,13 +82,13 @@ public sealed class WidgetClipboardTests {
 		fixture.View.SetSelection( 5, 5 );
 		WidgetClipboardRequest linePaste = fixture.Request( WidgetEditCommand.Paste );
 		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( linePaste.RequestId,
-			WidgetClipboardStatus.Success, "one\n", IsLinewise: true ) ) );
+			WidgetClipboardStatus.Success, "one\n" ) { IsLinewise = true } ) );
 		Assert.Equal( "one\none\ntwo", fixture.Text );
 		fixture.Host.DrainActions();
 		fixture.View.SetSelection( 8, 11 );
 		WidgetClipboardRequest replace = fixture.Request( WidgetEditCommand.Paste );
 		Assert.True( fixture.Host.ApplyClipboardResult( new WidgetClipboardResult( replace.RequestId,
-			WidgetClipboardStatus.Success, "X", IsLinewise: true ) ) );
+			WidgetClipboardStatus.Success, "X" ) { IsLinewise = true } ) );
 		Assert.Equal( "one\none\nX", fixture.Text );
 	}
 
