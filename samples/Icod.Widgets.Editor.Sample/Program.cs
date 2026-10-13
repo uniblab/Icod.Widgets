@@ -37,6 +37,16 @@ internal static class Program {
 			if ( app.Text != "!hello\r\nwidgets\n" || !app.IsModified ) return 2;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
 			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 3;
+			app.Input( WidgetInput.FunctionKey( 7 ) ); app.Input( WidgetInput.FunctionKey( 8 ) );
+			if ( app.Status != "Enter CRLF | Indent 2 spaces" || app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 9;
+			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) ); app.Input( WidgetInput.Key( WidgetKey.Enter ) );
+			if ( app.Text != "\r\nhello\r\nwidgets\n" ) return 10;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 11;
+			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) ); app.Input( WidgetInput.Key( WidgetKey.Tab ) );
+			if ( app.Text != "  hello\r\nwidgets\n" ) return 12;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 13;
 			app.Input( WidgetInput.TextInput( new System.Text.Rune( 'q' ) ) );
 			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 4;
 			app.Input( WidgetInput.Key( WidgetKey.Escape ) );
