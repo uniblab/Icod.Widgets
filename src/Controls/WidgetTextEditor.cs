@@ -31,6 +31,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private static readonly UTF8Encoding StrictUtf8 = new( false, true );
 
 	private readonly WidgetEditorOptions options;
+	private string newLine;
 	private readonly WidgetTextProjection projection;
 	private StringBuilder? pendingPaste;
 	private long pendingPasteRevision;
@@ -46,7 +47,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private ICursesTextWidthProvider? pointerWidthProvider;
 
 	public WidgetTextEditor( string id, WidgetTextViewState view, WidgetEditorOptions? options = null ) : base( id ) {
-		this.View = view ?? throw new ArgumentNullException( nameof( view ) ); this.options = options ?? new WidgetEditorOptions(); this.options.Validate();
+		this.View = view ?? throw new ArgumentNullException( nameof( view ) ); this.options = options ?? new WidgetEditorOptions(); this.options.Validate(); this.newLine = this.options.NewLine;
 		this.View.WrapMode = this.options.WrapMode; this.View.TabWidth = this.options.TabWidth; this.projection = new WidgetTextProjection( this.options );
 		this.RefreshScrollRanges();
 	}
@@ -54,6 +55,15 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	public override bool IsFocusable => true;
 	public override bool AcceptsTab => true;
 	public WidgetTextViewState View { get; }
+	/// <summary>Sets the terminator inserted by future Enter keys without changing existing text.</summary>
+	public string NewLine {
+		get => this.newLine;
+		set {
+			if ( value is not "\\n" and not "\\r" and not "\\r\\n" )
+				throw new ArgumentException( "The inserted newline must be LF, CR, or CRLF.", nameof( value ) );
+			this.newLine = value;
+		}
+	}
 	public bool IsReadOnly {
 		get => this.isReadOnly;
 		set { if ( this.isReadOnly == value ) return; this.isReadOnly = value; this.CancelPendingPaste(); this.View.InvalidatePendingOperations(); }
@@ -331,7 +341,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private bool InsertNewLine( TimeSpan timestamp ) {
 		if ( this.IsReadOnly ) return true;
-		string insertion = this.options.NewLine;
+		string insertion = this.NewLine;
 		if ( this.options.AutoIndent ) {
 			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( this.View.SelectionStart ) );
 			int count = checked( (int)Math.Min( line.ContentLength, this.options.MaximumPendingPasteUnits ) ); string content = this.View.Document.Read( line.Start, count );
