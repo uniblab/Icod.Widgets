@@ -81,8 +81,9 @@ For multiline editors, Copy/Cut without a selection exports the current
 logical line including its existing terminator. `request.IsLinewise` tells the
 application to retain that local metadata. When returning a local clipboard
 value for Paste, pass `IsLinewise: true` in `WidgetClipboardResult` to insert
-at the current line start if there is no selection. A selected range is
-replaced normally. Clipboard transports carry plain text; a new external
+at the current line start if there is no selection. When an unterminated
+copied line precedes existing text, the editor adds its current `NewLine` as
+a separator. A selected range is replaced normally. Clipboard transports carry plain text; a new external
 value has no linewise flag. The sample adapter retains the flag for its own
 local fallback or a terminal read matching its most recent local copy.
 
