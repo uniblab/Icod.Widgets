@@ -171,6 +171,19 @@ public sealed class WidgetTextEditorTests {
 		Assert.Equal( "n", fixture.Host.Screen.StandardWindow.GetCell( 1, 0 ).Content );
 	}
 
+	[Fact]
+	public void NewLinePolicyCanChangeForFutureEnterWithoutRewritingExistingText() {
+		using Fixture fixture = new( "one\ntwo", new WidgetEditorOptions { NewLine = "\n" } );
+		fixture.View.SetSelection( fixture.Document.Length, fixture.Document.Length );
+		fixture.Editor.NewLine = "\r\n";
+		fixture.Send( WidgetInput.Key( WidgetKey.Enter ) );
+		Assert.Equal( "one\ntwo\r\n", fixture.Text );
+		Assert.Throws<ArgumentException>( () => fixture.Editor.NewLine = "invalid" );
+		Assert.Equal( "\r\n", fixture.Editor.NewLine );
+		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
+		Assert.Equal( "one\ntwo", fixture.Text );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text, WidgetEditorOptions? options = null ) {
