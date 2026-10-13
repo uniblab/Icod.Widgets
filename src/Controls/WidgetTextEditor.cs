@@ -60,7 +60,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	public string NewLine {
 		get => this.newLine;
 		set {
-			if ( value is not "\\n" and not "\\r" and not "\\r\\n" )
+			if ( value is not "\n" and not "\r" and not "\r\n" )
 				throw new ArgumentException( "The inserted newline must be LF, CR, or CRLF.", nameof( value ) );
 			this.newLine = value;
 		}
