@@ -50,8 +50,7 @@ Install the latest published package:
 dotnet add package Icod.Widgets
 ```
 
-Pin the version from the [changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
-when your application needs reproducible restores.
+For reproducible restores, add `--version` with a published package version.
 
 For a runnable first step, clone the repository and launch the gallery from its
 root in an interactive terminal with the .NET 10 SDK:
