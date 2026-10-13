@@ -35,7 +35,8 @@ public sealed record WidgetClipboardRequest(
 	long SelectionStart,
 	long SelectionEnd,
 	WidgetClipboardOperation Operation,
-	string? Text );
+	string? Text,
+	bool IsLinewise = false );
 
 internal interface IWidgetClipboardTarget {
 	bool IsClipboardRequestCurrent( WidgetClipboardRequest request );
