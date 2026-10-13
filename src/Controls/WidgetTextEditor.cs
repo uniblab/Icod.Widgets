@@ -69,7 +69,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	public string Indentation {
 		get => this.indentation;
 		set {
-			if ( value is null || value.Any( static character => character is not ' ' and not '\\t' ) )
+			if ( value is null || value.Any( static character => character is not ' ' and not '\t' ) )
 				throw new ArgumentException( "Indentation may contain only spaces and tabs.", nameof( value ) );
 			this.indentation = value;
 		}
