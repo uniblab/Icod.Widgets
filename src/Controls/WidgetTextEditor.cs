@@ -136,8 +136,13 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		if ( result.Text is null || result.Text.Length > this.options.MaximumPendingPasteUnits || !TryGetUtf8ByteCount( result.Text, out int bytes ) || bytes > this.options.MaximumClipboardBytes ) return false;
 		if ( result.IsLinewise && !this.View.HasSelection ) {
 			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( request.SelectionStart ) );
-			long after = checked( line.Start + result.Text.Length );
-			return this.Apply( [ new WidgetTextEdit( line.Start, 0, result.Text ) ],
+			string insertion = result.Text;
+			if ( line.ContentLength > 0 && ( insertion.Length == 0 || insertion[ ^1 ] is not ( '\r' or '\n' ) ) ) {
+				if ( insertion.Length > this.options.MaximumPendingPasteUnits - this.NewLine.Length ) return false;
+				insertion += this.NewLine;
+			}
+			long after = checked( line.Start + insertion.Length );
+			return this.Apply( [ new WidgetTextEdit( line.Start, 0, insertion ) ],
 				WidgetTextEditKind.Paste, timestamp, after, after, false );
 		}
 		return this.ReplaceSelection( result.Text, WidgetTextEditKind.Paste, timestamp, false );
