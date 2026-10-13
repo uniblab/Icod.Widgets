@@ -84,7 +84,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	public bool CanExecuteEditCommand( WidgetEditCommand command ) => command switch {
 		WidgetEditCommand.Copy => this.TryGetClipboardText( out _, out _ ),
-		WidgetEditCommand.Cut => !this.IsReadOnly && this.TryGetClipboardText( out _ ),
+		WidgetEditCommand.Cut => !this.IsReadOnly && this.TryGetClipboardText( out _, out _ ),
 		WidgetEditCommand.Paste => !this.IsReadOnly,
 		WidgetEditCommand.SelectAll => true,
 		WidgetEditCommand.Undo => !this.IsReadOnly && this.View.Document.CanUndo,
