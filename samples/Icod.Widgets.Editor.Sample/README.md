@@ -21,7 +21,12 @@ After opening a file:
   insert/overwrite mode.
 - Arrows, Home/End, and Page Up/Down move the caret. Ctrl+Left/Right moves by
   word; Ctrl+Home/End moves to the document boundaries. Add Shift to select.
-- Tab indents and Shift+Tab outdents the current line or selected lines.
+- F7 cycles the terminator inserted by future Enter keys through LF, CRLF,
+  and CR. F8 cycles future indentation through a tab, two spaces, and four
+  spaces. The status row shows the current choices. Existing text is unchanged;
+  the choices remain active when another file is opened.
+- Tab indents and Shift+Tab outdents the current line or selected lines using
+  the selected indentation.
 - Ctrl+Z/Ctrl+Y undo and redo. Ctrl+X/C/V/A cut, copy, paste, and select all.
 - Drag to select and use the wheel to scroll when mouse reporting is available.
 - F6 or Shift+F6 moves focus between the editor and Open button. Plain Q is text
@@ -35,4 +40,4 @@ and intentionally provides no Save command.
 dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS exact file load, in-memory edit, text-field quit routing, undo to checkpoint, cancellation preserves document`.
+Expected: `PASS exact file load, mutable insertion policies, in-memory edit, undo to checkpoint, cancellation preserves document`.
