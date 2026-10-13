@@ -37,6 +37,16 @@ internal static class Program {
 			if ( app.Text != "!hello\r\nwidgets\n" || !app.IsModified ) return 2;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
 			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 3;
+			app.Input( WidgetInput.FunctionKey( 7 ) ); app.Input( WidgetInput.FunctionKey( 8 ) );
+			if ( app.Status != "Enter CRLF | Indent 2 spaces" || app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 9;
+			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) ); app.Input( WidgetInput.Key( WidgetKey.Enter ) );
+			if ( app.Text != "\r\nhello\r\nwidgets\n" ) return 10;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 11;
+			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) ); app.Input( WidgetInput.Key( WidgetKey.Tab ) );
+			if ( app.Text != "  hello\r\nwidgets\n" ) return 12;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 13;
 			app.Input( WidgetInput.TextInput( new System.Text.Rune( 'q' ) ) );
 			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 4;
 			app.Input( WidgetInput.Key( WidgetKey.Escape ) );
@@ -47,7 +57,7 @@ internal static class Program {
 			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
 			if ( app.Running ) return 8;
-			Console.WriteLine( "PASS exact file load, in-memory edit, text-field quit routing, undo to checkpoint, cancellation preserves document" ); return 0;
+			Console.WriteLine( "PASS exact file load, mutable insertion policies, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
 	private sealed class Editor : WidgetSampleApplication {
@@ -57,10 +67,12 @@ internal static class Program {
 		private WidgetTextViewState view;
 		private WidgetTextEditor editor;
 		private int nextId;
+		private string newLine = "\n";
+		private string indentation = "\t";
 		internal string Text => this.document.Read( 0, checked( (int)this.document.Length ) );
 		internal bool IsModified => this.document.IsModified;
 		protected override string Heading => "Icod.Widgets in-memory editor example";
-		protected override string Keys => "Ctrl+O open | Ctrl+Z/Y undo/redo | Ctrl+X/C/V/A edit | F6 moves focus | Never writes files";
+		protected override string Keys => "F7 Enter style | F8 indent | Ctrl+O open | Ctrl+Z/Y undo/redo | F6 focus | Ctrl+Q exit";
 		internal Editor( CursesScreen screen, string start ) : base( screen ) {
 			this.start = start; this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
 			this.Host.Attach( this.open ); this.Host.Attach( this.editor );
@@ -74,6 +86,16 @@ internal static class Program {
 		}
 		internal void Open() => this.Show( new WidgetFilePicker( "open." + ++this.nextId, new LocalWidgetFileSystemProvider(), this.start, false, [ new WidgetFileFilter( "Text", [ ".txt", ".md", ".cs", ".json" ] ), WidgetFileFilter.AllFiles ] ) );
 		protected override bool OnShortcut( WidgetInput input ) {
+			if ( input.KeyCode == WidgetKey.Function && input.KeyPhase != CursesKeyEventPhase.Release ) {
+				if ( input.FunctionKeyNumber == 7 ) {
+					this.newLine = this.newLine switch { "\n" => "\r\n", "\r\n" => "\r", _ => "\n" };
+					this.editor.NewLine = this.newLine; this.ReportPolicy(); return true;
+				}
+				if ( input.FunctionKeyNumber == 8 ) {
+					this.indentation = this.indentation switch { "\t" => "  ", "  " => "    ", _ => "\t" };
+					this.editor.Indentation = this.indentation; this.ReportPolicy(); return true;
+				}
+			}
 			if ( input.KeyCode == WidgetKey.Function && input.FunctionKeyNumber == 6 ) { this.Host.Focus( ReferenceEquals( this.Host.FocusedWidget, this.editor ) ? this.open : this.editor ); return true; }
 			if ( ( input.Modifiers & WidgetInputModifiers.Control ) == 0 ) return false;
 			if ( input.Character?.Value is 'o' or 'O' ) { this.Open(); return true; }
@@ -98,9 +120,11 @@ internal static class Program {
 				} );
 			} else base.OnAction( action );
 		}
+		private void ReportPolicy() => this.Status = $"Enter {( this.newLine == "\n" ? "LF" : this.newLine == "\r\n" ? "CRLF" : "CR" )} | Indent {( this.indentation == "\t" ? "Tab" : $"{this.indentation.Length} spaces" )}";
 		private void ReplaceDocument( string text, string path ) {
 			this.Host.Detach( this.editor ); this.view.Dispose();
 			this.document = new WidgetTextDocument( [ text.AsMemory() ] ); this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
+			this.editor.NewLine = this.newLine; this.editor.Indentation = this.indentation;
 			this.Host.Attach( this.editor ); this.Arrange(); this.Host.Focus( this.editor ); this.Status = path + " — unmodified, memory only";
 		}
 		public override void Dispose() { this.view.Dispose(); base.Dispose(); }

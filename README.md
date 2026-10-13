@@ -12,15 +12,10 @@ ownership of the application's event loop or business logic.
 
 ## Status
 
-Stable release: **1.3.1**. It fixes editor rendering after insertion at the end
-of a cached line, including the first character of an empty document. The 1.3
-series adds capability-aware color themes above the 1.2 document workspace.
-Applications continue to own document lifetime,
-file writes, and search execution.
-
-See the [changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
-for release history and the [main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md)
-for the delivered editing and document-workspace controls.
+Widgets provides reusable controls and editing behavior; applications own
+terminal sessions, document lifetime, file writes, and search. See the
+[changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md)
+for versions and release history.
 
 ## Support the Project
 
@@ -49,14 +44,13 @@ Widgets has one direct runtime package dependency: `Icod.DCurses`.
 
 ## Quick Start
 
-Install the current stable package:
+Install the latest published package:
 
 ```text
-dotnet add package Icod.Widgets --version 1.3.1
+dotnet add package Icod.Widgets
 ```
 
-The 1.3.1 package declares `Icod.DCurses 2.5.0` as its sole direct runtime
-dependency.
+For reproducible restores, add `--version` with a published package version.
 
 For a runnable first step, clone the repository and launch the gallery from its
 root in an interactive terminal with the .NET 10 SDK:
@@ -73,16 +67,16 @@ palettes and terminal-default styling. Try the forms, selected lists, framed
 popups, dialog captions, and game status under each palette. On the workspace
 page, F6 and Shift+F6 move among the tabs, editor, and actionable status.
 
-To exercise the 1.1 multiline editing foundation, run the editor sample:
+To exercise multiline editing, run the editor sample:
 
 ```text
 dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0
 ```
 
-Use Ctrl+O to load an existing text file into memory, F6 to move focus between
-the editor and Open button, and Ctrl+Q to exit. The sample never writes files.
+Use Ctrl+O to load a file into memory, F7/F8 to change future newline and
+indentation edits, F6 to move focus, and Ctrl+Q to exit. The sample never writes files.
 
-To try the 1.2 multi-document controls, run the in-memory workspace sample:
+To try multi-document controls, run the in-memory workspace sample:
 
 ```text
 dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0
@@ -143,7 +137,7 @@ for complete session setup, input, resizing, rendering, and cleanup.
 
 ## Themes and terminal colors
 
-Version 1.3 adds full `CursesStyle` roles for widget parts:
+Widgets provides full `CursesStyle` roles for widget parts:
 each style carries foreground, background and attributes. Use
 `WidgetPalette.Create(session.PresentationCapabilities)` after opening a DCurses
 session, or supply your own `WidgetTheme` with immutable `Parts` overrides.
@@ -182,11 +176,7 @@ foreground and background axes revert independently to terminal defaults;
 RGB and indexed colors are requested only when advertised. A terminal that
 advertises neither color nor attributes may display identical cell styles;
 text markers, borders, labels and focus navigation still work. The terminal
-controls its physical palette, so exact colors vary by profile. The
-[1.3 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.3.0-Development-Roadmap.md)
-records the implementation and qualification gates.
-
-Tab/Shift+Tab traverses controls unless a control consumes Tab; the multiline
+controls its physical palette, so exact colors vary by profile. Tab/Shift+Tab traverses controls unless a control consumes Tab; the multiline
 editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.
 Arrows navigate; Enter activates or commits; Space toggles. Menu mnemonics
 navigate structure (`Alt+V`, then plain `F`), while
@@ -239,9 +229,8 @@ covers the gallery, editor, roguelike UI, and document workspace. All four suppo
 Recommended entry points:
 
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
-- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) and [1.3.0 release notes](https://github.com/uniblab/Icod.Widgets/blob/main/docs/releases/1.3.0.md) — shipped history.
+- [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) — versions and release history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
-- [1.3.0 development roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/Icod.Widgets-1.3.0-Development-Roadmap.md) — tranches, dependencies, and release gates.
 - [1.3 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.3.md), [1.2 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.2.0/docs/Public-API-Baseline-1.2.md), [1.1 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/Public-API-Baseline-1.1.md), and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
@@ -250,9 +239,9 @@ remain in the repository. They are intentionally not repeated in this README.
 
 ## Compatibility and Versioning
 
-The stable 1.0 public API is the compatibility floor for the 1.x line. Version
-1.1, 1.2, and 1.3 evolve it additively, preserve existing control contracts, and retain
-assembly identity `1.0.0.0`; package versions advance separately.
+The stable 1.0 public API is the compatibility floor for the 1.x line. Additive
+updates preserve existing control contracts and retain assembly identity
+`1.0.0.0`; package versions advance separately.
 
 The README is a product and contributor entry point. Release chronology belongs
 in the changelog; implementation and qualification status belongs in versioned

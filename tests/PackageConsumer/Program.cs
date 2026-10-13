@@ -39,6 +39,9 @@ host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.
 probe.IsVisible = false;
 WidgetTextDocument document = new( [ "one\r\ntwo\n".AsMemory() ] ); using WidgetTextViewState view = new( document ); WidgetTextEditor editor = new( "editor", view );
 host.Attach( editor ); editor.Arrange( new CursesRectangle( 0, 0, 4, 24 ) ); host.Focus( editor ); view.SetSelection( 0, 3 );
+bool initialPolicies = editor.NewLine == "\n" && editor.Indentation == "\t";
+editor.NewLine = "\r\n"; editor.Indentation = "  ";
+bool mutablePolicies = editor.NewLine == "\r\n" && editor.Indentation == "  ";
 host.Process( WidgetInput.TextInput( new System.Text.Rune( 'X' ) ), TimeSpan.FromMilliseconds( 6 ) );
 bool edited = document.Read( 0, checked( (int)document.Length ) ) == "X\r\ntwo\n" && document.IsModified;
 bool undone = host.ExecuteEditCommand( WidgetEditCommand.Undo, TimeSpan.FromMilliseconds( 7 ) ) == WidgetCommandResult.Executed &&
@@ -62,7 +65,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	themeApi && edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	themeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();

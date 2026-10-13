@@ -40,6 +40,23 @@ a single-line field or the document editor without application type checks.
 The editor consumes Tab for indentation. Applications that need to leave it can
 provide an explicit command such as F6 and call `WidgetHost.MoveFocus` or `Focus`.
 
+## Editor insertion policies (1.4.0 candidate)
+
+`WidgetTextEditor.NewLine` controls the terminator inserted by subsequent Enter
+keys. Set it to `"\n"`, `"\r\n"`, or `"\r"`. `WidgetTextEditor.Indentation`
+controls subsequent Tab and Shift+Tab edits and accepts only spaces and tabs.
+Both properties start with their `WidgetEditorOptions` values; changing either
+property leaves existing text, view state, and undo history intact. For example:
+
+```csharp
+editor.NewLine = "\r\n";
+editor.Indentation = "  ";
+```
+
+Applications still own whole-document line-ending conversion and file-format
+policy. Changing `NewLine` does not normalize the document or mark it modified;
+a later Enter edit does so through the ordinary undoable edit path.
+
 ## Clipboard completion
 
 Clipboard commands emit `WidgetClipboardRequestedAction`; they do not perform
