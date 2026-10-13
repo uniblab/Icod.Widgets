@@ -42,7 +42,7 @@ internal sealed class WidgetSampleClipboardAdapter( CursesSession session, bool 
 			string pasted = StrictUtf8.GetString( bytes.ToArray() );
 			bool linewise = this.localLinewise && string.Equals( pasted, this.localText, StringComparison.Ordinal );
 			this.localText = pasted; this.localLinewise = linewise;
-			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, pasted, linewise );
+			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, pasted ) { IsLinewise = linewise };
 		} catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) {
 			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Canceled );
 		} catch ( TimeoutException ) {
@@ -66,6 +66,6 @@ internal sealed class WidgetSampleClipboardAdapter( CursesSession session, bool 
 			this.localText = request.Text; this.localLinewise = request.IsLinewise; return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success );
 		}
 		return this.localText is null ? new WidgetClipboardResult( request.RequestId, failure ) :
-			new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, this.localText, this.localLinewise );
+			new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, this.localText ) { IsLinewise = this.localLinewise };
 	}
 }
