@@ -15,6 +15,8 @@ ownership of the application's event loop or business logic.
 Stable release: **1.3.1**. It fixes editor rendering after insertion at the end
 of a cached line, including the first character of an empty document. The 1.3
 series adds capability-aware color themes above the 1.2 document workspace.
+The development branch prepares 1.4.0 with mutable per-editor newline and
+indentation policies; 1.3.1 remains the latest published package.
 Applications continue to own document lifetime,
 file writes, and search execution.
 
