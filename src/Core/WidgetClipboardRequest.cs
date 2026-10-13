@@ -35,8 +35,10 @@ public sealed record WidgetClipboardRequest(
 	long SelectionStart,
 	long SelectionEnd,
 	WidgetClipboardOperation Operation,
-	string? Text,
-	bool IsLinewise = false );
+	string? Text ) {
+	/// <summary>True when a multiline editor exported the current logical line without a selection.</summary>
+	public bool IsLinewise { get; init; }
+}
 
 internal interface IWidgetClipboardTarget {
 	bool IsClipboardRequestCurrent( WidgetClipboardRequest request );
