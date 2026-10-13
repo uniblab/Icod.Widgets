@@ -83,7 +83,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	public WidgetScrollRange VerticalScrollRange { get; private set; }
 
 	public bool CanExecuteEditCommand( WidgetEditCommand command ) => command switch {
-		WidgetEditCommand.Copy => this.TryGetClipboardText( out _ ),
+		WidgetEditCommand.Copy => this.TryGetClipboardText( out _, out _ ),
 		WidgetEditCommand.Cut => !this.IsReadOnly && this.TryGetClipboardText( out _ ),
 		WidgetEditCommand.Paste => !this.IsReadOnly,
 		WidgetEditCommand.SelectAll => true,
@@ -97,11 +97,11 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		if ( !this.CanExecuteEditCommand( command ) ) return WidgetCommandResult.Disabled;
 		this.CancelPendingPaste();
 		if ( command is WidgetEditCommand.Copy or WidgetEditCommand.Cut or WidgetEditCommand.Paste ) {
-			this.EnsureActionCapacity(); string? text = null;
-			if ( ( command is WidgetEditCommand.Copy or WidgetEditCommand.Cut ) && !this.TryGetClipboardText( out text ) ) return WidgetCommandResult.Disabled;
+			this.EnsureActionCapacity(); string? text = null; bool isLinewise = false;
+			if ( ( command is WidgetEditCommand.Copy or WidgetEditCommand.Cut ) && !this.TryGetClipboardText( out text, out isLinewise ) ) return WidgetCommandResult.Disabled;
 			WidgetClipboardOperation operation = command switch { WidgetEditCommand.Copy => WidgetClipboardOperation.Copy, WidgetEditCommand.Cut => WidgetClipboardOperation.Cut, _ => WidgetClipboardOperation.Paste };
 			WidgetClipboardRequest request = new( Guid.NewGuid(), this.View.Id, this.View.Document.Id, 0, 0, this.View.Document.Revision,
-				this.View.SelectionEpoch, this.View.SelectionStart, this.View.SelectionEnd, operation, text );
+				this.View.SelectionEpoch, this.View.SelectionStart, this.View.SelectionEnd, operation, text, isLinewise );
 			request = this.RegisterClipboardRequest( request ); this.EmitAction( new WidgetClipboardRequestedAction( this.Id, request ) ); return WidgetCommandResult.Executed;
 		}
 		if ( WidgetEditCommand.SelectAll == command ) {
@@ -123,10 +123,23 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	bool IWidgetClipboardTarget.ApplyClipboardResult( WidgetClipboardRequest request, WidgetClipboardResult result, TimeSpan timestamp ) {
 		if ( WidgetClipboardStatus.Success != result.Status ) return true;
 		if ( WidgetClipboardOperation.Copy == request.Operation ) return true;
-		if ( WidgetClipboardOperation.Cut == request.Operation )
-			return this.Apply( [ new WidgetTextEdit( request.SelectionStart, request.SelectionEnd - request.SelectionStart, "" ) ],
-				WidgetTextEditKind.Cut, timestamp, request.SelectionStart, request.SelectionStart, false );
+		if ( WidgetClipboardOperation.Cut == request.Operation ) {
+			long start = request.SelectionStart;
+			long length = request.SelectionEnd - start;
+			if ( request.IsLinewise ) {
+				WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( start ) );
+				start = line.Start; length = line.Length;
+			}
+			return this.Apply( [ new WidgetTextEdit( start, length, "" ) ],
+				WidgetTextEditKind.Cut, timestamp, start, start, false );
+		}
 		if ( result.Text is null || result.Text.Length > this.options.MaximumPendingPasteUnits || !TryGetUtf8ByteCount( result.Text, out int bytes ) || bytes > this.options.MaximumClipboardBytes ) return false;
+		if ( result.IsLinewise && !this.View.HasSelection ) {
+			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( request.SelectionStart ) );
+			long after = checked( line.Start + result.Text.Length );
+			return this.Apply( [ new WidgetTextEdit( line.Start, 0, result.Text ) ],
+				WidgetTextEditKind.Paste, timestamp, after, after, false );
+		}
 		return this.ReplaceSelection( result.Text, WidgetTextEditKind.Paste, timestamp, false );
 	}
 
@@ -488,10 +501,16 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		return checked( position + delta );
 	}
 
-	private bool TryGetClipboardText( out string? text ) {
-		text = null; long length = this.View.SelectionEnd - this.View.SelectionStart;
+	private bool TryGetClipboardText( out string? text, out bool isLinewise ) {
+		text = null; isLinewise = !this.View.HasSelection;
+		long start = this.View.SelectionStart;
+		long length = this.View.SelectionEnd - start;
+		if ( isLinewise ) {
+			WidgetTextLine line = this.View.Document.GetLine( this.View.Document.GetLineIndex( this.View.Caret ) );
+			start = line.Start; length = line.Length;
+		}
 		if ( 0 == length || length > this.options.MaximumClipboardBytes || length > int.MaxValue ) return false;
-		string candidate = this.View.Document.Read( this.View.SelectionStart, checked( (int)length ) );
+		string candidate = this.View.Document.Read( start, checked( (int)length ) );
 		if ( !TryGetUtf8ByteCount( candidate, out int bytes ) || bytes > this.options.MaximumClipboardBytes ) return false;
 		text = candidate; return true;
 	}
