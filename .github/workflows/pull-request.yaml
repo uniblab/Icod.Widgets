@@ -32,6 +32,9 @@ jobs:
           ./packaging/Get-RepositoryMetadata.ps1
           -Configuration '${{ env.CONFIGURATION }}'
           -GitHubOutputPath $env:GITHUB_OUTPUT
+      - name: Require curated notes for package version
+        shell: pwsh
+        run: ./packaging/Assert-ReleaseNotes.ps1 -Configuration '${{ env.CONFIGURATION }}'
 
   validate:
     needs: metadata
