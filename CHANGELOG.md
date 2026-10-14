@@ -2,7 +2,7 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
-## Unreleased — 1.5.0 linewise clipboard
+## 1.5.0 — linewise clipboard
 
 - Multiline editors copy or cut the current logical line when there is no
   selection, including its exact LF, CRLF or CR terminator when present. Cut
