@@ -7,7 +7,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Sample | Live command | Workflow |
 |---|---|---|
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Seven pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI, workspace colors |
-| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; F7/F8 change future Enter/indentation edits |
+| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; F7/F8 change future Enter/indentation edits; Copy/Cut and Paste demonstrate linewise behavior |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 | Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
@@ -33,8 +33,10 @@ In the editor, F6 or Shift+F6 escapes the text editor and toggles focus to the
 Open button. F7 cycles LF/CRLF/CR for future Enter edits; F8 cycles tab,
 two-space, and four-space indentation. Existing text stays unchanged.
 Ctrl+Z/Ctrl+Y undo and redo; Ctrl+X/C/V/A cut, copy, paste, and
-select all. Clipboard transport is attempted through DCurses, with a process-local
-fallback when the terminal does not provide it. Status text reports modified and
+select all. With no selection, Copy/Cut uses the current line; a local linewise
+Paste inserts at the target line's start. Try Ctrl+Home, Ctrl+C, Down, Ctrl+V
+after opening a file with two lines, then Ctrl+Z. Clipboard transport is attempted
+through DCurses, with a process-local fallback when the terminal does not provide it. Status text reports modified and
 clipboard outcomes. The sample preserves mixed line endings and edits only in
 memory: it deliberately provides no save command and never overwrites a file.
 
