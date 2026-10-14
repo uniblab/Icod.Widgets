@@ -24,4 +24,7 @@ namespace Icod.Widgets;
 public enum WidgetClipboardStatus { Success, Denied, Unsupported, TimedOut, Canceled, TooLarge, InvalidText, Failed }
 
 /// <summary>Returns an application-owned clipboard completion to the widget loop.</summary>
-public sealed record WidgetClipboardResult( Guid RequestId, WidgetClipboardStatus Status, string? Text = null );
+public sealed record WidgetClipboardResult( Guid RequestId, WidgetClipboardStatus Status, string? Text = null ) {
+	/// <summary>True only for an application-retained linewise clipboard value.</summary>
+	public bool IsLinewise { get; init; }
+}

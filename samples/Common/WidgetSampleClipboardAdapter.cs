@@ -29,17 +29,20 @@ internal sealed class WidgetSampleClipboardAdapter( CursesSession session, bool 
 	private static readonly UTF8Encoding StrictUtf8 = new( false, true );
 	private readonly CursesSession session = session ?? throw new ArgumentNullException( nameof( session ) );
 	private string? localText;
+	private bool localLinewise;
 
 	internal async Task<WidgetClipboardResult> ExecuteAsync( WidgetClipboardRequest request, CancellationToken cancellationToken ) {
 		try {
 			if ( request.Operation is WidgetClipboardOperation.Copy or WidgetClipboardOperation.Cut ) {
 				string text = request.Text ?? throw new FormatException( "A clipboard export did not contain text." );
-				await this.session.WriteClipboardAsync( CursesClipboardSelection.Clipboard, text, cancellationToken ); this.localText = text;
+				await this.session.WriteClipboardAsync( CursesClipboardSelection.Clipboard, text, cancellationToken ); this.localText = text; this.localLinewise = request.IsLinewise;
 				return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success );
 			}
 			ReadOnlyMemory<byte> bytes = await this.session.ReadClipboardAsync( CursesClipboardSelection.Clipboard, TimeSpan.FromSeconds( 2 ), cancellationToken );
-			string pasted = StrictUtf8.GetString( bytes.ToArray() ); this.localText = pasted;
-			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, pasted );
+			string pasted = StrictUtf8.GetString( bytes.ToArray() );
+			bool linewise = this.localLinewise && string.Equals( pasted, this.localText, StringComparison.Ordinal );
+			this.localText = pasted; this.localLinewise = linewise;
+			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, pasted ) { IsLinewise = linewise };
 		} catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) {
 			return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Canceled );
 		} catch ( TimeoutException ) {
@@ -60,9 +63,9 @@ internal sealed class WidgetSampleClipboardAdapter( CursesSession session, bool 
 	private WidgetClipboardResult Fallback( WidgetClipboardRequest request, WidgetClipboardStatus failure ) {
 		if ( !allowLocalFallback ) return new WidgetClipboardResult( request.RequestId, failure );
 		if ( request.Operation is WidgetClipboardOperation.Copy or WidgetClipboardOperation.Cut ) {
-			this.localText = request.Text; return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success );
+			this.localText = request.Text; this.localLinewise = request.IsLinewise; return new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success );
 		}
 		return this.localText is null ? new WidgetClipboardResult( request.RequestId, failure ) :
-			new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, this.localText );
+			new WidgetClipboardResult( request.RequestId, WidgetClipboardStatus.Success, this.localText ) { IsLinewise = this.localLinewise };
 	}
 }

@@ -2,7 +2,22 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
-## Unreleased — 1.4.0 editor insertion policies
+## Unreleased — 1.5.0 linewise clipboard
+
+- Multiline editors copy or cut the current logical line when there is no
+  selection, including its exact LF, CRLF or CR terminator when present. Cut
+  waits for application clipboard success and remains one undoable edit.
+- Clipboard requests and results carry optional linewise metadata. An internal
+  linewise paste with no selection inserts at the current line start; an
+  explicit selection is replaced normally. If an unterminated copied line is
+  inserted ahead of existing text, the editor adds its current newline as a
+  separator. External clipboard text remains plain text unless it matches a
+  retained local copy.
+- Updated the sample clipboard adapter and package-only consumer. Retained
+  net8.0/net9.0/net10.0, assembly version `1.0.0.0`, and Icod.DCurses
+  2.5.0 as the sole direct dependency.
+
+## 1.4.0 — editor insertion policies
 
 - Added mutable `WidgetTextEditor.NewLine` (LF, CRLF, or CR) and
   `WidgetTextEditor.Indentation` (spaces and tabs) for future edits without
@@ -13,8 +28,7 @@ All notable changes to Icod.Widgets are recorded here.
 - The in-memory editor sample lets operators cycle future newline and
   indentation policies with F7/F8; its smoke checks the resulting edits and undo.
 - Retained net8.0/net9.0/net10.0, assembly version `1.0.0.0`, and the sole
-  direct dependency on Icod.DCurses 2.5.0. This entry is a candidate, not a
-  published release.
+  direct dependency on Icod.DCurses 2.5.0.
 
 ## 1.3.1 — editor projection correction
 

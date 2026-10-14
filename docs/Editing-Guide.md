@@ -40,7 +40,7 @@ a single-line field or the document editor without application type checks.
 The editor consumes Tab for indentation. Applications that need to leave it can
 provide an explicit command such as F6 and call `WidgetHost.MoveFocus` or `Focus`.
 
-## Editor insertion policies (1.4.0 candidate)
+## Editor insertion policies
 
 `WidgetTextEditor.NewLine` controls the terminator inserted by subsequent Enter
 keys. Set it to `"\n"`, `"\r\n"`, or `"\r"`. `WidgetTextEditor.Indentation`
@@ -76,6 +76,16 @@ async Task CompleteClipboardAsync(WidgetClipboardRequest request) {
     host.ApplyClipboardResult(result);
 }
 ```
+
+For multiline editors, Copy/Cut without a selection exports the current
+logical line including its existing terminator. `request.IsLinewise` tells the
+application to retain that local metadata. When returning a local clipboard
+value for Paste, pass `IsLinewise: true` in `WidgetClipboardResult` to insert
+at the current line start if there is no selection. When an unterminated
+copied line precedes existing text, the editor adds its current `NewLine` as
+a separator. A selected range is replaced normally. Clipboard transports carry plain text; a new external
+value has no linewise flag. The sample adapter retains the flag for its own
+local fallback or a terminal read matching its most recent local copy.
 
 The host rejects completions made stale by selection, revision, focus,
 attachment, modal, read-only, or newer-request changes. Cut removes text only

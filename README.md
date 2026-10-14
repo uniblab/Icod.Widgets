@@ -74,7 +74,9 @@ dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0
 ```
 
 Use Ctrl+O to load a file into memory, F7/F8 to change future newline and
-indentation edits, F6 to move focus, and Ctrl+Q to exit. The sample never writes files.
+indentation edits, F6 to move focus, and Ctrl+Q to exit. With no selection,
+Copy/Cut use the current logical line; a locally retained linewise paste inserts
+at a line start. The sample never writes files.
 
 To try multi-document controls, run the in-memory workspace sample:
 

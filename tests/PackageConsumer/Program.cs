@@ -48,6 +48,16 @@ bool undone = host.ExecuteEditCommand( WidgetEditCommand.Undo, TimeSpan.FromMill
 	document.Read( 0, checked( (int)document.Length ) ) == "one\r\ntwo\n" && !document.IsModified;
 WidgetClipboardRequest paste = RequestClipboard( host, WidgetEditCommand.Paste, TimeSpan.FromMilliseconds( 8 ) ); view.SetSelection( document.Length, document.Length );
 bool staleClipboard = !host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, "stale" ) );
+view.SetSelection( 1, 1 );
+WidgetClipboardRequest lineCopy = RequestClipboard( host, WidgetEditCommand.Copy, TimeSpan.FromMilliseconds( 9 ) );
+bool linewiseApi = lineCopy.IsLinewise && lineCopy.Text == "one\r\n";
+host.ApplyClipboardResult( new WidgetClipboardResult( lineCopy.RequestId, WidgetClipboardStatus.Success ) );
+view.SetSelection( 6, 6 );
+WidgetClipboardRequest linePaste = RequestClipboard( host, WidgetEditCommand.Paste, TimeSpan.FromMilliseconds( 10 ) );
+bool linewisePaste = host.ApplyClipboardResult( new WidgetClipboardResult( linePaste.RequestId, WidgetClipboardStatus.Success,
+	lineCopy.Text ) { IsLinewise = true } ) && document.Read( 0, checked( (int)document.Length ) ) == "one\r\none\r\ntwo\n";
+host.DrainActions();
+host.ExecuteEditCommand( WidgetEditCommand.Undo, TimeSpan.FromMilliseconds( 11 ) );
 using WidgetTextSnapshot snapshot = document.CreateSnapshot(); document.MarkSaved( snapshot );
 WidgetTabStrip tabs = new( "tabs" ); tabs.SetTabs( [ new WidgetTab( "one", "One" ), new WidgetTab( "two", "Two", true ) ], "two" );
 WidgetContentHost content = new( "content" ); content.SetContent( new WidgetTextEditor( "workspace-editor", new WidgetTextViewState( document ) ) );
@@ -65,7 +75,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	themeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	themeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();
