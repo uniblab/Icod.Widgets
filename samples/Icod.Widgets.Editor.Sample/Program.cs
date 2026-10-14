@@ -58,15 +58,15 @@ internal static class Program {
 			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) );
 			if ( app.Host.ExecuteEditCommand( WidgetEditCommand.Copy, TimeSpan.Zero ) != WidgetCommandResult.Executed ) return 14;
 			WidgetClipboardRequest copied = app.Host.DrainActions().OfType<WidgetClipboardRequestedAction>().Single().Request;
-			if ( !copied.IsLinewise || copied.Text != "hello\\r\\n" ||
+			if ( !copied.IsLinewise || copied.Text != "hello\r\n" ||
 				!app.Host.ApplyClipboardResult( new WidgetClipboardResult( copied.RequestId, WidgetClipboardStatus.Success ) ) ) return 15;
 			app.Input( WidgetInput.Key( WidgetKey.Down ) );
 			if ( app.Host.ExecuteEditCommand( WidgetEditCommand.Paste, TimeSpan.Zero ) != WidgetCommandResult.Executed ) return 16;
 			WidgetClipboardRequest paste = app.Host.DrainActions().OfType<WidgetClipboardRequestedAction>().Single().Request;
 			if ( !app.Host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, copied.Text ) { IsLinewise = copied.IsLinewise } ) ||
-				app.Text != "hello\\r\\nhello\\r\\nwidgets\\n" ) return 17;
+				app.Text != "hello\r\nhello\r\nwidgets\n" ) return 17;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
-			if ( app.Text != "hello\\r\\nwidgets\\n" || app.IsModified ) return 18;
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 18;
 			app.Open(); await app.PollAsync( true ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
