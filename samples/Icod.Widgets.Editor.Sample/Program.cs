@@ -56,12 +56,12 @@ internal static class Program {
 			// Complete the public clipboard requests locally so the smoke stays terminal-free.
 			app.Host.DrainActions();
 			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) );
-			if ( app.Host.ExecuteEditCommand( WidgetEditCommand.Copy, TimeSpan.Zero ) != WidgetCommandResult.Executed ) return 14;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'c' ) ) );
 			WidgetClipboardRequest copied = app.Host.DrainActions().OfType<WidgetClipboardRequestedAction>().Single().Request;
 			if ( !copied.IsLinewise || copied.Text != "hello\r\n" ||
 				!app.Host.ApplyClipboardResult( new WidgetClipboardResult( copied.RequestId, WidgetClipboardStatus.Success ) ) ) return 15;
 			app.Input( WidgetInput.Key( WidgetKey.Down ) );
-			if ( app.Host.ExecuteEditCommand( WidgetEditCommand.Paste, TimeSpan.Zero ) != WidgetCommandResult.Executed ) return 16;
+			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'v' ) ) );
 			WidgetClipboardRequest paste = app.Host.DrainActions().OfType<WidgetClipboardRequestedAction>().Single().Request;
 			if ( !app.Host.ApplyClipboardResult( new WidgetClipboardResult( paste.RequestId, WidgetClipboardStatus.Success, copied.Text ) { IsLinewise = copied.IsLinewise } ) ||
 				app.Text != "hello\r\nhello\r\nwidgets\n" ) return 17;
