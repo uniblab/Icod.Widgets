@@ -52,7 +52,7 @@ internal static class Program {
 			app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 			if ( app.Text != "qhello\r\nwidgets\n" || !app.Running ) return 5;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
-			if ( app.Text != "hello\\r\\nwidgets\\n" || app.IsModified ) return 6;
+			if ( app.Text != "hello\r\nwidgets\n" || app.IsModified ) return 6;
 			// Complete the public clipboard requests locally so the smoke stays terminal-free.
 			app.Host.DrainActions();
 			app.Input( WidgetInput.Key( WidgetKey.Home, WidgetInputModifiers.Control ) );
