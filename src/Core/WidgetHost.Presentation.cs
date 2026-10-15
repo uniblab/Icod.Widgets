@@ -26,6 +26,37 @@ public sealed partial class WidgetHost {
 	private readonly Dictionary<WidgetDialog, CursesPanel> dialogPanels = [];
 	private CursesPanel? attachmentPanel;
 	private CursesScreen? overlayStaging;
+	private CursesPanel? modalBackdrop;
+	private CursesCell[] backdropRow = [];
+	private void RenderModalBackdrop() {
+		WidgetDialog? active = this.ActiveModal;
+		if ( active is null || !active.HasBackdropStyle( this.Theme ) || !this.dialogPanels.TryGetValue( active, out CursesPanel? front ) || !front.IsVisible || front.Bounds == this.Screen.Bounds ) { this.modalBackdrop?.Hide(); return; }
+		this.modalBackdrop ??= this.Screen.CreatePanel( 0, 0, this.Screen.Rows, this.Screen.Columns );
+		CursesPanel backdrop = this.modalBackdrop; backdrop.SetBounds( this.Screen.Bounds );
+		CursesWindow window = backdrop.ContentWindow;
+		this.Screen.StandardWindow.CopyRectangleTo( window, 0, 0, this.Screen.Rows, this.Screen.Columns, 0, 0 );
+		// Include lower host dialogs so nested modals dim their parent as well.
+		foreach ( var entry in this.dialogPanels ) {
+			if ( entry.Key == active ) break;
+			CursesRectangle bounds = entry.Value.Bounds.Intersect( this.Screen.Bounds );
+			if ( entry.Value.IsVisible && !bounds.IsEmpty ) entry.Value.ContentWindow.CopyRectangleTo( window, 0, 0, bounds.Rows, bounds.Columns, bounds.Row, bounds.Column );
+		}
+		CursesStyle style = active.ResolveStyle( this.Theme, WidgetStyleRole.ModalBackdrop );
+		if ( this.backdropRow.Length != this.Screen.Columns ) this.backdropRow = new CursesCell[ this.Screen.Columns ];
+		window.WrapMode = CursesWrapMode.Clip;
+		for ( int row = 0; row < this.Screen.Rows; row++ ) {
+			for ( int column = 0; column < this.Screen.Columns; column++ ) this.backdropRow[ column ] = window.GetCell( row, column );
+			window.FillRectangle( row, 0, 1, this.Screen.Columns, CursesCell.Blank( style ) );
+			for ( int column = 0; column < this.Screen.Columns; column++ ) {
+				CursesCell cell = this.backdropRow[ column ]; if ( cell.IsContinuation || cell.IsBlank ) continue;
+				window.Move( row, column );
+				if ( cell.LineGlyph is { } glyph ) window.WriteCell( CursesCell.Line( glyph, style ) );
+				else window.Write( cell.Content, style );
+			}
+		}
+		backdrop.MoveBelow( front ); backdrop.Show();
+	}
+
 	public WidgetCaretIntent? GetCaretIntent() {
 		this.ThrowIfDisposed(); if ( this.popup is not null ) return null; Widget? focused = this.FocusedWidget;
 		if ( focused is null || !focused.IsEffectivelyEnabled || !focused.IsEffectivelyVisible ) return null;
@@ -34,8 +65,29 @@ public sealed partial class WidgetHost {
 		return intent with { FocusGeneration = this.focusGeneration };
 	}
 	internal CursesWindow GetPresentationWindow( Widget widget ) => widget is WidgetDialog dialog && this.dialogPanels.TryGetValue( dialog, out CursesPanel? panel ) ? panel.ContentWindow : this.popup?.Owner == widget ? this.popup.Panel.ContentWindow : this.Screen.StandardWindow;
+	private void RenderMenuPanels( WidgetPopupMenu menu, PopupFrame frame ) {
+		var layers = menu.GetPopupLayers( this.Screen );
+		while ( frame.SubmenuPanels.Count > Math.Max( 0, layers.Count - 1 ) ) {
+			frame.SubmenuPanels[ ^1 ].Dispose(); frame.SubmenuPanels.RemoveAt( frame.SubmenuPanels.Count - 1 );
+		}
+		if ( layers.Count == 0 ) { frame.Panel.Hide(); return; }
+		if ( this.overlayStaging is null || this.overlayStaging.Columns != this.Screen.Columns || this.overlayStaging.Rows != this.Screen.Rows )
+			this.overlayStaging = new CursesScreen( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
+		CursesScreen staging = this.overlayStaging; staging.StandardWindow.WrapMode = CursesWrapMode.Clip;
+		for ( int index = 0; index < layers.Count; index++ ) {
+			var layer = layers[ index ];
+			if ( index > frame.SubmenuPanels.Count ) frame.SubmenuPanels.Add( this.Screen.CreatePanel( 0, 0, 1, 1 ) );
+			CursesPanel panel = index == 0 ? frame.Panel : frame.SubmenuPanels[ index - 1 ];
+			if ( layer.Bounds.IsEmpty ) { panel.Hide(); continue; }
+			panel.SetBounds( layer.Bounds ); panel.Show();
+			if ( menu is WidgetMenuBar && layer.Level == 0 ) menu.RenderBar( staging, this.Theme, true );
+			else menu.RenderPopupLevel( staging, this.Theme, ReferenceEquals( menu, this.FocusedWidget ), layer.Level, layer.Bounds );
+			staging.StandardWindow.CopyRectangleTo( panel.ContentWindow, layer.Bounds.Row, layer.Bounds.Column, layer.Bounds.Rows, layer.Bounds.Columns, 0, 0 );
+		}
+	}
+
 	private void RenderPanel( Widget widget, CursesPanel panel ) {
-		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget.Bounds ).Intersect( this.Screen.Bounds );
+		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget is WidgetPopupMenu menu ? menu.GetPopupBounds( this.Screen ) : widget.Bounds ).Intersect( this.Screen.Bounds );
 		if ( bounds.IsEmpty || !widget.IsEffectivelyVisible ) { panel.Hide(); return; }
 		panel.SetBounds( bounds ); panel.Show();
 		// Render through the existing public control seam, then copy only the overlay rectangle.

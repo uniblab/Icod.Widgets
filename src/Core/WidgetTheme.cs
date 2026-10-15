@@ -43,14 +43,18 @@ public sealed record WidgetTheme(
 	/// <summary>Gets optional immutable part styles. Unspecified parts fall back to the six established roles.</summary>
 	public WidgetStyles Parts { get; init; } = WidgetStyles.Empty;
 
+	/// <summary>Gets whether pointer movement highlights menu headings and rows. It never changes keyboard selection or activates a command.</summary>
+	public bool HighlightMenuHover { get; init; }
+
 	/// <summary>Resolves a complete foreground, background and attribute style for a widget part.</summary>
 	public CursesStyle Resolve( WidgetStyleRole role ) {
 		if ( this.Parts.TryGetValue( role, out CursesStyle style ) ) return style;
 		return role switch {
 			WidgetStyleRole.Focused or WidgetStyleRole.PopupFocused or WidgetStyleRole.ListFocused
+				or WidgetStyleRole.MenuBarActive or WidgetStyleRole.MenuBarHover or WidgetStyleRole.PopupHover
 				or WidgetStyleRole.DialogFocusedAction or WidgetStyleRole.ButtonFocused or WidgetStyleRole.StatusFocusedAction => this.Focused,
 			WidgetStyleRole.Disabled or WidgetStyleRole.PopupDisabled or WidgetStyleRole.ListDisabled
-				or WidgetStyleRole.DialogDisabledAction or WidgetStyleRole.ButtonDisabled => this.Disabled,
+				or WidgetStyleRole.MenuBarDisabled or WidgetStyleRole.DialogDisabledAction or WidgetStyleRole.ButtonDisabled => this.Disabled,
 			WidgetStyleRole.Selected or WidgetStyleRole.TextSelection or WidgetStyleRole.TextSelectionInactive
 				or WidgetStyleRole.FieldSelection or WidgetStyleRole.ListSelected => this.Selected,
 			WidgetStyleRole.Error or WidgetStyleRole.PickerError => this.Error,

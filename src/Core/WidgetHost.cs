@@ -138,6 +138,8 @@ public sealed partial class WidgetHost : IDisposable {
 		if ( WidgetInputKind.Focus == input.Kind && CursesFocusState.Unfocused == input.FocusState ) this.CancelPointerCapture();
 		if ( WidgetInputKind.Key == input.Kind && CursesKeyEventPhase.Release == input.KeyPhase )
 			return new WidgetDispatchResult( false, this.DrainActions() );
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } hover )
+			foreach ( WidgetPopupMenu menu in this.roots.SelectMany( root => root.DescendantsAndSelf() ).OfType<WidgetPopupMenu>() ) menu.UpdateHover( hover, this.Screen );
 		bool handled = false;
 
 		if ( WidgetInputKind.Key == input.Kind && this.popup is null && this.ActiveModal is null && this.TryMenuBarInput( input ) ) handled = true;
@@ -157,6 +159,8 @@ public sealed partial class WidgetHost : IDisposable {
 			if ( !handled && this.ActiveModal is { } modal && !ReferenceEquals( target, modal ) ) handled = modal.OnInput( input, this );
 		}
 
+		if ( handled && input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press, Button: CursesMouseButton.Primary } && this.popup?.Owner is WidgetPopupMenu menuCapture )
+			this.pointerCapture = menuCapture;
 		return new WidgetDispatchResult( handled || this.ActiveModal is not null, this.DrainActions() );
 	}
 
@@ -188,12 +192,13 @@ public sealed partial class WidgetHost : IDisposable {
 		foreach ( Widget root in this.roots ) {
 			foreach ( Widget widget in root.DescendantsAndSelf() ) {
 				if ( !widget.IsEffectivelyVisible || widget is WidgetDialog || this.DialogAncestor( widget ) is not null ) continue;
-				if ( this.popup?.Owner == widget ) { if ( widget is WidgetDropDown drop ) drop.RenderSelection( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); continue; }
+				if ( this.popup?.Owner == widget ) { if ( widget is WidgetDropDown drop ) drop.RenderSelection( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); else if ( widget is WidgetMenuBar bar ) bar.RenderBar( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); continue; }
 				widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
 			}
 		}
 		foreach ( ( WidgetDialog dialog, CursesPanel panel ) in this.dialogPanels ) this.RenderPanel( dialog, panel );
-		if ( this.popup is { } popupFrame ) this.RenderPanel( popupFrame.Owner, popupFrame.Panel );
+		this.RenderModalBackdrop();
+		if ( this.popup is { } popupFrame ) { if ( popupFrame.Owner is WidgetPopupMenu menu ) this.RenderMenuPanels( menu, popupFrame ); else this.RenderPanel( popupFrame.Owner, popupFrame.Panel ); }
 	}
 
 	internal void EnsureActionCapacity( int count = 1 ) { this.ThrowIfDisposed(); if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." ); }
@@ -277,7 +282,7 @@ public sealed partial class WidgetHost : IDisposable {
 				if ( CursesMouseAction.Release == modalPointer.Action ) return modal;
 				CursesInteractionHit? hit = this.router.HitTest( modalPointer.Row, modalPointer.Column );
 				if ( hit is not null && this.widgetsByRegion.TryGetValue( hit.Region, out Widget? child ) && this.DialogAncestor( child ) == modal ) {
-					if ( child.IsFocusable ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
+					if ( child.IsFocusable && modalPointer.Action == CursesMouseAction.Press ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
 					if ( CursesMouseAction.Press == modalPointer.Action ) this.pointerCapture = child;
 					return child;
 				}
@@ -287,14 +292,15 @@ public sealed partial class WidgetHost : IDisposable {
 			return focused is not null && this.DialogAncestor( focused ) == modal ? focused : modal;
 		}
 		if ( this.popup is { } frame ) {
-			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.DismissPopup(); return null; }
-			if ( input.Kind != WidgetInputKind.Pointer ) return frame.Owner;
+			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !( frame.Owner is WidgetPopupMenu popupMenu ? popupMenu.ContainsPopupPoint( pointer.Row, pointer.Column, this.Screen ) : frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) && !( frame.Owner is WidgetMenuBar bar && bar.BarBounds( this.Screen ).Contains( pointer.Row, pointer.Column ) ) ) { this.DismissPopup(); return null; }
+			if ( input.Kind != WidgetInputKind.Pointer || frame.Owner is WidgetPopupMenu ) return frame.Owner;
 		}
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null ) {
 			if ( CursesMouseAction.Release == input.Pointer.Action ) return null;
 			CursesInteractionHit? hit = this.router.HitTest( input.Pointer.Row, input.Pointer.Column );
 			if ( hit is not null && this.widgetsByRegion.TryGetValue( hit.Region, out Widget? pointerWidget ) ) {
-				if ( pointerWidget.IsFocusable ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
+				if ( pointerWidget is WidgetMenuBar && input.Pointer.Action == CursesMouseAction.Press ) return pointerWidget;
+				if ( pointerWidget.IsFocusable && input.Pointer.Action == CursesMouseAction.Press ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
 				if ( CursesMouseAction.Press == input.Pointer.Action ) this.pointerCapture = pointerWidget;
 				return pointerWidget;
 			}
@@ -369,6 +375,7 @@ public sealed partial class WidgetHost : IDisposable {
 		this.CancelPointerCapture();
 		this.DismissPopup();
 		this.ClearModalsSilently();
+		this.modalBackdrop?.Dispose(); this.modalBackdrop = null; this.backdropRow = [];
 		foreach ( CursesInteractionRegion region in this.regions.Values.ToArray() ) region.Dispose();
 		this.regions.Clear();
 		this.widgetsByRegion.Clear();

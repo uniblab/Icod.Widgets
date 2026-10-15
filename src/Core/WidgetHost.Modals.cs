@@ -72,6 +72,7 @@ public sealed partial class WidgetHost {
 		int index = this.modalFrames.FindIndex( frame => ReferenceEquals( frame.Dialog, dialog ) ); if ( 0 > index ) return;
 		this.EnsureActionCapacity( this.modalFrames.Skip( index ).Count( frame => !frame.Dialog.HasCompleted ) );
 		Widget? restore = this.modalFrames[ index ].PreviousFocus;
+		this.modalBackdrop?.Hide();
 		for ( int current = this.modalFrames.Count - 1; current >= index; current-- ) {
 			ModalFrame frame = this.modalFrames[ current ]; WidgetDialogResult completion = current == index ? result : new WidgetDialogResult( WidgetDialogOutcome.Cancel );
 			if ( !frame.Dialog.HasCompleted ) { frame.Dialog.HasCompleted = true; frame.Dialog.IsOpen = false; this.Enqueue( new WidgetDialogCompletedAction( frame.Dialog.Id, completion ) ); }

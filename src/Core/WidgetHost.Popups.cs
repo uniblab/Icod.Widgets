@@ -23,7 +23,7 @@ namespace Icod.Widgets;
 using Icod.DCurses;
 
 public sealed partial class WidgetHost {
-	private sealed record PopupFrame( Widget Owner, Widget? Previous, CursesInteractionScope Scope, CursesInteractionScopeLease Lease, CursesInteractionRegion Region, CursesPanel Panel );
+	private sealed record PopupFrame( Widget Owner, Widget? Previous, CursesInteractionScope Scope, CursesInteractionScopeLease Lease, CursesInteractionRegion Region, CursesPanel Panel ) { public List<CursesPanel> SubmenuPanels { get; } = []; }
 	private PopupFrame? popup;
 	internal void OpenPopup( Widget owner, CursesRectangle bounds ) {
 		this.ThrowIfDisposed();
@@ -42,7 +42,7 @@ public sealed partial class WidgetHost {
 	internal void UpdatePopup( Widget owner, CursesRectangle bounds ) { if ( this.popup?.Owner == owner ) { CursesRectangle clipped = bounds.Intersect( this.Screen.Bounds ); if ( clipped.IsEmpty ) this.popup.Panel.Hide(); else { this.popup.Panel.SetBounds( clipped ); this.popup.Panel.Show(); } this.popup.Region.SetBounds( new CursesRectangle( 0, 0, clipped.Rows, clipped.Columns ) ); this.popup.Region.IsEnabled = !clipped.IsEmpty; } }
 	internal void ClosePopup( Widget owner ) {
 		if ( this.popup is not { } frame || frame.Owner != owner ) return;
-		this.popup = null; this.CancelPointerCapture(); frame.Lease.Dispose(); this.widgetsByRegion.Remove( frame.Region ); frame.Region.Dispose(); frame.Panel.Dispose(); frame.Scope.Dispose();
+		this.popup = null; this.CancelPointerCapture(); frame.Lease.Dispose(); this.widgetsByRegion.Remove( frame.Region ); frame.Region.Dispose(); foreach ( CursesPanel panel in frame.SubmenuPanels ) panel.Dispose(); frame.Panel.Dispose(); frame.Scope.Dispose();
 		if ( frame.Previous is { } previous && ReferenceEquals( previous.Host, this ) ) this.Focus( previous );
 	}
 	private void DismissPopup() { if ( this.popup?.Owner is WidgetDropDown drop ) drop.Dismiss(); else if ( this.popup?.Owner is WidgetPopupMenu menu ) menu.Close(); }

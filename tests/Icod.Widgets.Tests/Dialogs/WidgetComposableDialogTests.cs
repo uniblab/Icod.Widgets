@@ -43,6 +43,16 @@ public sealed class WidgetComposableDialogTests {
 	}
 
 	[Fact]
+	public void PointerMotionOverModalChildDoesNotChangeKeyboardFocus() {
+		using WidgetHost host = new( new CursesScreen( 30, 8 ), WidgetTheme.Default );
+		CustomDialog dialog = new( "dialog" ); WidgetButton first = new( "first", "First", "first" ); WidgetButton second = new( "second", "Second", "second" );
+		dialog.Add( first ); dialog.Add( second ); using WidgetModalLease lease = host.ShowModal( dialog );
+		first.Arrange( new( 1, 1, 1, 20 ) ); second.Arrange( new( 2, 1, 1, 20 ) ); host.Focus( first );
+		host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Move, CursesMouseButton.None, 3, 2 ) ), TimeSpan.Zero );
+		Assert.Same( first, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void DuplicateChildIdRejectsBeforeFocusChange() {
 		using WidgetHost host = new( new CursesScreen( 20, 5 ), WidgetTheme.Default ); WidgetButton background = new( "same", "B", "b" ); host.Attach( background ); background.Arrange( host.Screen.Bounds ); host.Focus( background );
 		CustomDialog dialog = new( "dialog" ); dialog.Add( new WidgetTextInput( "same" ) );

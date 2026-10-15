@@ -128,9 +128,10 @@ for complete session setup, input, resizing, rendering, and cleanup.
   menu presentation, focused edit commands, and actionable status fields.
 - Single- and multi-select lists, keyboard search, and framed drop-down popups.
 - Menu bars, framed popup menus, submenus, separators, disabled/checkable items,
-  scoped mnemonics, and independent command shortcuts.
+  scoped mnemonics, independent command shortcuts, and cascading overlays.
 - Captioned, framed OK, Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs with
-  explicit results and modal focus restoration.
+  explicit results and modal focus restoration; message choices support keyboard
+  and pointer activation.
 - Composable forms with Save/Don't Save/Cancel decisions, separate save-target
   inspection, and typed Find/Replace/Go To Line requests.
 - Provider-backed folder selection and single/multiple existing-file selection.
@@ -182,7 +183,13 @@ controls its physical palette, so exact colors vary by profile. Tab/Shift+Tab tr
 editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.
 Arrows navigate; Enter activates or commits; Space toggles. Menu mnemonics
 navigate structure (`Alt+V`, then plain `F`), while
-shortcuts invoke commands directly. Escape cancels the top dialog/menu;
+shortcuts invoke commands directly. Arrange a `WidgetMenuBar` in one row;
+its dropdowns overlay the content. Up/Down wrap, Left/Right switch headings,
+and `WidgetTheme.HighlightMenuHover` opts into hover styling without changing
+keyboard selection. Nested submenus remain visible beside their parent when
+space permits and overlay it in narrow layouts. Message-dialog choices activate
+after a primary-button press and release on the same visible label. Escape
+cancels the top dialog/menu;
 **even an OK-only dialog returns Cancel on Escape**, not acknowledgement.
 
 The [controls and interaction guide](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md)

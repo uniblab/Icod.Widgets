@@ -26,12 +26,71 @@ WidgetMenuBar menu = new("menu", [
 ]);
 ```
 
-Mnemonics are case-insensitive and unique within each menu level. While a menu
-is open, an unmodified mnemonic invokes a command, toggles a checkable command,
-or opens a submenu. Command shortcuts remain distinct, render right-aligned, and
-work from the visible menu bar's active host scope without changing menu
-navigation. Expanded menus use `WidgetTheme.Border`; viewports too small for a
-complete frame retain borderless keyboard operation.
+Attach the bar to the host and arrange it in one row, for example
+`menu.Arrange(new CursesRectangle(0, 0, 1, host.Screen.Columns))`. Arrange the
+editor beneath it. Opening a menu does not rearrange either control: its
+content-sized dropdown is a retained overlay anchored under the active heading,
+clamped to the screen. Shortcuts have a separate right-aligned column. Long
+menus scroll the selected item into view; very small screens omit the frame.
+Standalone `WidgetPopupMenu` controls retain their caller-supplied width/bounds.
+
+| Input | Behavior |
+|---|---|
+| Alt + heading mnemonic | Open that root menu and select its first enabled command, including while another root is open |
+| Up / Down | Move through enabled commands, skipping separators and wrapping at either end |
+| Right | Open the selected submenu; otherwise switch to the next root heading |
+| Left | Return from a nested submenu; at the root dropdown, switch to the previous heading |
+| Escape | Return from a nested submenu; close the root dropdown and restore previous focus |
+| Enter / Space / plain mnemonic | Invoke the selected command or open its submenu |
+| Click heading | Open or switch roots; click the active heading again to close |
+| Press/release on the same enabled row | Invoke that row |
+| Click outside | Dismiss without invoking an underlying control |
+| Pointer movement | Optional theme highlight; never moves keyboard selection or invokes a command |
+
+Mnemonics are case-insensitive and unique within each level. The mnemonic text
+element is underlined by default. Root shortcuts invoke directly from a visible,
+enabled menu bar and cannot bypass an active modal. A nested submenu keeps its parent visible and opens to the right when it fits.
+Otherwise it overlays the parent. Left/Escape removes the child overlay and
+restores the parent selection. Exposed parent rows remain clickable.
+Direct commands on the bar also remain supported.
+
+### Menu themes
+
+Use `WidgetTheme.Parts` for a shared theme or inherited `Widget.Styles` for a
+specific menu. Colors are application-defined; the widget contains no required
+palette. `WidgetPalette.Create` supplies capability-aware dark/light examples.
+
+```csharp
+WidgetTheme theme = WidgetPalette.Create(session.PresentationCapabilities);
+host.SetTheme(theme with {
+    HighlightMenuHover = true, // false by default
+    Parts = theme.Parts
+        .With(WidgetStyleRole.MenuBarActive, theme.Focused)
+        .With(WidgetStyleRole.PopupHover, theme.Selected)
+});
+host.Render();
+```
+
+| Role | Part |
+|---|---|
+| `MenuBarSurface`, `MenuBarItem`, `MenuBarActive`, `MenuBarDisabled` | Bar padding, normal heading, active heading, disabled heading |
+| `MenuBarHover`, `PopupHover` | Hovered heading/command when `HighlightMenuHover` is enabled |
+| `MenuBarMnemonic`, `MenuBarActiveMnemonic` | Normal/active heading mnemonic overrides |
+| `PopupSurface`, `PopupBorder`, `PopupItem`, `PopupFocused`, `PopupDisabled` | Popup background, frame/separators and command states |
+| `PopupShortcut`, `PopupCheck`, `PopupMnemonic`, `PopupFocusedMnemonic` | Unselected decorations and normal/selected mnemonic overrides |
+
+Selected rows take precedence over hover and cover labels, check marks, padding
+and shortcuts. Mnemonics inherit their row's colors and add underline unless an
+explicit mnemonic part style is supplied. Defining such a style also lets you
+change or remove the underline. Hovered rows use their hover style across all
+parts, with the mnemonic underlined. A theme change repaints the current state;
+it does not change what Enter will activate. Pointer presses and releases must
+match; disabled rows and separators are inert.
+
+The application must request DCurses `CursesMouseTrackingMode.AnyMotion` to
+receive hover events when supported. Keyboard operation does not depend on
+mouse support. The gallery's Menus page demonstrates theme switching and F8
+hover toggling while a menu is open.
 
 ## Dialogs
 
@@ -47,9 +106,24 @@ WidgetMessageDialog question = WidgetMessageDialog.YesNo(
     "overwrite", "Overwrite?", "Replace the existing file?");
 ```
 
-Enter completes the selected action. Escape always reports
+Enter completes the selected action. A primary-button press and release on the
+same visible message-dialog choice completes that choice. Gaps and the Escape
+hint are not buttons; a release outside the choice cancels the click. Escape always reports
 `WidgetDialogOutcome.Cancel`, including from an OK-only dialog; cancellation is
 therefore distinct from acknowledging the message.
+
+For a centered dialog, call `host.ShowModal(dialog)` and then arrange the dialog
+inside the screen; repeat that layout after resizing. The gallery's About
+command is a complete example. A menu command closes its popup before dispatch,
+so the host can open a modal and later restore the original editor focus.
+
+Define `WidgetStyleRole.ModalBackdrop` in the theme (or dialog's styles) to
+repaint the underlying host content in a dim style while a modal is open.
+The built-in dark/light palettes provide it. Omitting this role, as the
+terminal-default theme does, preserves the normal background appearance.
+The backdrop is a separate retained panel: it does not alter borrowed base
+cells, and nested modals dim the parent dialog too. Its style can change while
+the modal is open.
 
 ## File pickers
 

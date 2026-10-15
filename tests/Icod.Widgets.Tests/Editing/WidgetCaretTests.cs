@@ -78,6 +78,8 @@ public sealed class WidgetCaretTests {
 
 		await coordinator.ApplyAsync( Intent( CursesCursorStyle.SteadyBar, 1 ), CancellationToken.None );
 
+		await coordinator.ApplyAsync( Intent( CursesCursorStyle.SteadyBar, 2 ), CancellationToken.None );
+
 		Assert.Equal( 1, session.AcquireCount );
 		Assert.Equal( 0, session.DisposedLeaseCount );
 	}
