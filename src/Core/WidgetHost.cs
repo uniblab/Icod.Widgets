@@ -138,6 +138,8 @@ public sealed partial class WidgetHost : IDisposable {
 		if ( WidgetInputKind.Focus == input.Kind && CursesFocusState.Unfocused == input.FocusState ) this.CancelPointerCapture();
 		if ( WidgetInputKind.Key == input.Kind && CursesKeyEventPhase.Release == input.KeyPhase )
 			return new WidgetDispatchResult( false, this.DrainActions() );
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } hover )
+			foreach ( WidgetPopupMenu menu in this.roots.SelectMany( root => root.DescendantsAndSelf() ).OfType<WidgetPopupMenu>() ) menu.UpdateHover( hover, this.Screen );
 		bool handled = false;
 
 		if ( WidgetInputKind.Key == input.Kind && this.popup is null && this.ActiveModal is null && this.TryMenuBarInput( input ) ) handled = true;
@@ -188,7 +190,7 @@ public sealed partial class WidgetHost : IDisposable {
 		foreach ( Widget root in this.roots ) {
 			foreach ( Widget widget in root.DescendantsAndSelf() ) {
 				if ( !widget.IsEffectivelyVisible || widget is WidgetDialog || this.DialogAncestor( widget ) is not null ) continue;
-				if ( this.popup?.Owner == widget ) { if ( widget is WidgetDropDown drop ) drop.RenderSelection( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); continue; }
+				if ( this.popup?.Owner == widget ) { if ( widget is WidgetDropDown drop ) drop.RenderSelection( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); else if ( widget is WidgetMenuBar bar ) bar.RenderBar( this.Screen, this.Theme, ReferenceEquals( widget, focused ) ); continue; }
 				widget.OnRender( this.Screen, this.Theme, ReferenceEquals( widget, focused ) );
 			}
 		}
@@ -287,14 +289,15 @@ public sealed partial class WidgetHost : IDisposable {
 			return focused is not null && this.DialogAncestor( focused ) == modal ? focused : modal;
 		}
 		if ( this.popup is { } frame ) {
-			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.DismissPopup(); return null; }
-			if ( input.Kind != WidgetInputKind.Pointer ) return frame.Owner;
+			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) && !( frame.Owner is WidgetMenuBar bar && bar.BarBounds( this.Screen ).Contains( pointer.Row, pointer.Column ) ) ) { this.DismissPopup(); return null; }
+			if ( input.Kind != WidgetInputKind.Pointer || frame.Owner is WidgetPopupMenu ) return frame.Owner;
 		}
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null ) {
 			if ( CursesMouseAction.Release == input.Pointer.Action ) return null;
 			CursesInteractionHit? hit = this.router.HitTest( input.Pointer.Row, input.Pointer.Column );
 			if ( hit is not null && this.widgetsByRegion.TryGetValue( hit.Region, out Widget? pointerWidget ) ) {
-				if ( pointerWidget.IsFocusable ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
+				if ( pointerWidget is WidgetMenuBar && input.Pointer.Action == CursesMouseAction.Press ) return pointerWidget;
+				if ( pointerWidget.IsFocusable && input.Pointer.Action == CursesMouseAction.Press ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
 				if ( CursesMouseAction.Press == input.Pointer.Action ) this.pointerCapture = pointerWidget;
 				return pointerWidget;
 			}

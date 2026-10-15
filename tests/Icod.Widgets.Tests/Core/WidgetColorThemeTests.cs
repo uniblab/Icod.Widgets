@@ -171,18 +171,20 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
-	public void MenuShortcutAndCheckedIndicatorUseStylesApartFromFocusedRow() {
+	public void MenuSelectionCoversShortcutAndCheckWhileUnselectedPartsKeepTheirStyles() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.PopupSurface, Red ).With( WidgetStyleRole.PopupBorder, Blue )
 			.With( WidgetStyleRole.PopupFocused, Red ).With( WidgetStyleRole.PopupShortcut, Blue ).With( WidgetStyleRole.PopupCheck, Blue );
 		CursesScreen screen = new( 24, 6 ); using WidgetHost host = new( screen, WidgetTheme.Default with { Parts = parts } );
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Checkable( "show", "Show", "show", true,
-			shortcut: new WidgetMenuShortcut( WidgetKey.Character, WidgetInputModifiers.Control, 's' ) ) ] );
+			shortcut: new WidgetMenuShortcut( WidgetKey.Character, WidgetInputModifiers.Control, 's' ) ), WidgetMenuItem.Command( "other", "Other", "other" ) ] );
 		host.Attach( menu ); menu.Arrange( screen.Bounds ); host.Focus( menu ); menu.Open(); host.Render();
 		CursesWindow popup = host.GetPresentationWindow( menu );
 		Assert.Equal( Blue, popup.GetCell( 0, 0 ).Style );
-		Assert.Equal( Blue, popup.GetCell( 1, 1 ).Style );
+		Assert.Equal( Red, popup.GetCell( 1, 1 ).Style );
 		Assert.Equal( Red, popup.GetCell( 1, 7 ).Style );
-		Assert.Equal( Blue, popup.GetCell( 1, 18 ).Style );
+		Assert.Equal( Red, popup.GetCell( 1, 18 ).Style );
+		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.Zero ); host.Render();
+		Assert.Equal( Blue, popup.GetCell( 1, 1 ).Style ); Assert.Equal( Blue, popup.GetCell( 1, 18 ).Style );
 	}
 
 	[Fact]

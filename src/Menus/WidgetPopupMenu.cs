@@ -24,12 +24,16 @@ namespace Icod.Widgets;
 using Icod.DCurses;
 
 /// <summary>Provides keyboard-operated bounded popup and submenu navigation.</summary>
-public class WidgetPopupMenu : Widget {
+public partial class WidgetPopupMenu : Widget {
 	private sealed class Level( IReadOnlyList<WidgetMenuItem> items ) { public IReadOnlyList<WidgetMenuItem> Items { get; } = items; public int Cursor { get; set; } }
 	private readonly WidgetMenuItem[] rootDefinitions;
 	private WidgetMenuItem[] rootItems;
 	private readonly List<Level> levels = [];
 	private int pressedIndex = -1;
+	private int pressedHeading = -1;
+	private int hoveredIndex = -1;
+	private int hoveredHeading = -1;
+	private bool IsMenuBar => this is WidgetMenuBar;
 
 	public WidgetPopupMenu( string id, IReadOnlyList<WidgetMenuItem> items ) : base( id ) {
 		ArgumentNullException.ThrowIfNull( items ); if ( 0 == items.Count ) throw new ArgumentException( "A menu requires at least one item.", nameof( items ) );
@@ -82,6 +86,7 @@ public class WidgetPopupMenu : Widget {
 			if ( parent.Kind != WidgetMenuItemKind.Submenu || parent.Children.Count == 0 ) break;
 			current = parent.Children;
 		}
+		this.ResetPointer(); this.UpdatePopupBounds();
 	}
 
 	private static WidgetMenuItem[] Clone( IReadOnlyList<WidgetMenuItem> items, Dictionary<string, WidgetMenuItemPresentation> supplied ) =>
@@ -93,88 +98,100 @@ public class WidgetPopupMenu : Widget {
 		return -1;
 	}
 
-	public void Open() { if ( this.IsOpen ) return; this.Host?.OpenPopup( this, this.Bounds ); this.levels.Clear(); this.levels.Add( new Level( this.rootItems ) ); this.IsOpen = true; }
-	public void Close() { this.pressedIndex = -1; this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
-	protected override void OnCaptureCanceled() => this.pressedIndex = -1;
-
-	protected override void OnArrange( CursesRectangle bounds ) { if ( this.IsOpen ) this.Host?.UpdatePopup( this, bounds ); }
+	public void Open() {
+		if ( this.IsOpen ) return;
+		this.levels.Clear(); this.levels.Add( new Level( this.rootItems ) ); this.IsOpen = true;
+		if ( this.IsMenuBar ) {
+			this.levels[ 0 ].Cursor = Math.Max( 0, FindEligible( this.rootItems, 0 ) );
+			this.OpenSubmenu();
+		}
+		try { this.Host?.OpenPopup( this, this.GetPopupBounds( this.Host.Screen ) ); }
+		catch { this.levels.Clear(); this.IsOpen = false; throw; }
+	}
+	public void Close() { this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+	private void ResetPointer() { this.pressedIndex = -1; this.pressedHeading = -1; this.hoveredIndex = -1; this.hoveredHeading = -1; }
+	protected override void OnCaptureCanceled() { this.pressedIndex = -1; this.pressedHeading = -1; }
+	protected override void OnArrange( CursesRectangle bounds ) { this.ResetPointer(); this.UpdatePopupBounds(); }
+	private void UpdatePopupBounds() { if ( this.IsOpen && this.Host is { } host ) host.UpdatePopup( this, this.GetPopupBounds( host.Screen ) ); }
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } pointer ) return this.OnPointer( pointer, host );
 		if ( !this.IsOpen ) {
 			if ( WidgetInputKind.Key == input.Kind && input.KeyCode is WidgetKey.Enter or WidgetKey.Space or WidgetKey.Down ) { this.Open(); return true; }
-			if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { Button: CursesMouseButton.Primary, Action: CursesMouseAction.Press } pointer && this.Bounds.Contains( pointer.Row, pointer.Column ) ) { this.Open(); return true; }
 			return false;
 		}
-		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } mouse ) return this.OnPointer( mouse, host );
-		if ( WidgetInputKind.Key == input.Kind && this.TryShortcut( input, host ) ) return true;
-		if ( this.TryCurrentMnemonic( input, host ) ) return true;
+		// Root mnemonics remain available while a dropdown is already open.
+		if ( this.IsMenuBar && this.TryRootMnemonic( input, host ) || WidgetInputKind.Key == input.Kind && this.TryShortcut( input, host ) || this.TryCurrentMnemonic( input, host ) ) return true;
 		if ( WidgetInputKind.Key != input.Kind ) return false;
-		if ( input.KeyCode is WidgetKey.Down or WidgetKey.Up ) return this.Move( WidgetKey.Down == input.KeyCode ? 1 : -1 );
-		if ( WidgetKey.Right == input.KeyCode ) return this.OpenSubmenu();
-		if ( WidgetKey.Left == input.KeyCode || WidgetKey.Escape == input.KeyCode ) {
-			if ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 ); else this.Close(); return true;
+		this.ResetPointer();
+		bool handled;
+		if ( input.KeyCode is WidgetKey.Down or WidgetKey.Up ) handled = this.Move( WidgetKey.Down == input.KeyCode ? 1 : -1 );
+		else if ( WidgetKey.Right == input.KeyCode ) handled = this.OpenSubmenu() || this.IsMenuBar && this.SwitchRoot( 1 );
+		else if ( WidgetKey.Left == input.KeyCode || WidgetKey.Escape == input.KeyCode ) {
+			if ( this.levels.Count > ( this.IsMenuBar ? 2 : 1 ) ) this.levels.RemoveAt( this.levels.Count - 1 );
+			else if ( this.IsMenuBar && WidgetKey.Left == input.KeyCode ) this.SwitchRoot( -1 );
+			else this.Close();
+			handled = true;
+		} else handled = input.KeyCode is WidgetKey.Enter or WidgetKey.Space && this.Activate( host );
+		this.UpdatePopupBounds(); return handled;
+	}
+
+	private bool SwitchRoot( int direction ) {
+		Level root = this.levels[ 0 ];
+		for ( int count = 1; count <= root.Items.Count; count++ ) {
+			int index = ( root.Cursor + direction * count + root.Items.Count ) % root.Items.Count;
+			if ( !root.Items[ index ].IsEnabled || root.Items[ index ].Kind == WidgetMenuItemKind.Separator ) continue;
+			this.SelectRoot( index ); return true;
 		}
-		if ( input.KeyCode is WidgetKey.Enter or WidgetKey.Space ) return this.Activate( host );
 		return false;
+	}
+
+	private void SelectRoot( int index ) {
+		this.levels[ 0 ].Cursor = index;
+		while ( this.levels.Count > 1 ) this.levels.RemoveAt( this.levels.Count - 1 );
+		this.ResetPointer(); this.OpenSubmenu(); this.UpdatePopupBounds();
+	}
+
+	internal void UpdateHover( CursesMouseEvent pointer, CursesScreen screen ) {
+		this.hoveredHeading = this.IsMenuBar ? this.HitHeading( pointer.Row, pointer.Column, screen ) : -1;
+		this.hoveredIndex = this.IsOpen ? this.HitItem( pointer.Row, pointer.Column, screen ) : -1;
 	}
 
 	private bool OnPointer( CursesMouseEvent pointer, WidgetHost host ) {
-		if ( CursesMouseButton.Primary != pointer.Button || this.levels.Count == 0 ) return false;
-		CursesRectangle area = this.Bounds.Intersect( host.Screen.Bounds );
-		bool border = area.Rows >= 3 && area.Columns >= 3; int inset = border ? 1 : 0;
-		int rows = Math.Min( area.Rows, this.levels[ ^1 ].Items.Count + inset * 2 ) - inset * 2;
-		int offset = rows > 0 ? Math.Clamp( this.levels[ ^1 ].Cursor - rows + 1, 0, Math.Max( 0, this.levels[ ^1 ].Items.Count - rows ) ) : 0;
-		int row = pointer.Row - area.Row - inset;
-		int index = row >= 0 && row < rows && pointer.Column >= area.Column + inset && pointer.Column < area.Column + area.Columns - inset ? offset + row : -1;
-		if ( index >= this.levels[ ^1 ].Items.Count ) index = -1;
-		if ( CursesMouseAction.Press == pointer.Action ) {
-			this.pressedIndex = index;
-			if ( index >= 0 && this.levels[ ^1 ].Items[ index ].IsEnabled ) this.levels[ ^1 ].Cursor = index;
-			return index >= 0;
+		this.UpdateHover( pointer, host.Screen );
+		if ( pointer.Action == CursesMouseAction.Move ) return this.IsOpen || this.hoveredHeading >= 0;
+		if ( CursesMouseButton.Primary != pointer.Button ) return false;
+		int heading = this.hoveredHeading;
+		if ( this.IsMenuBar && heading >= 0 ) {
+			WidgetMenuItem item = this.rootItems[ heading ];
+			if ( !item.IsEnabled || item.Kind == WidgetMenuItemKind.Separator ) return true;
+			if ( pointer.Action == CursesMouseAction.Press ) {
+				if ( !this.IsOpen ) this.Open();
+				this.SelectRoot( heading ); this.pressedHeading = heading; return true;
+			}
+			if ( pointer.Action == CursesMouseAction.Release ) {
+				bool matching = this.pressedHeading == heading; this.pressedHeading = -1; this.pressedIndex = -1;
+				if ( matching && item.Kind != WidgetMenuItemKind.Submenu ) return this.Activate( host );
+				return true;
+			}
 		}
-		if ( CursesMouseAction.Release == pointer.Action ) {
-			bool matching = index >= 0 && index == this.pressedIndex; this.pressedIndex = -1;
-			if ( matching ) { this.levels[ ^1 ].Cursor = index; return this.Activate( host ); }
+		if ( !this.IsOpen ) {
+			if ( pointer.Action == CursesMouseAction.Press && this.Bounds.Contains( pointer.Row, pointer.Column ) && !this.IsMenuBar ) { this.Open(); return true; }
 			return false;
+		}
+		int index = this.HitItem( pointer.Row, pointer.Column, host.Screen );
+		if ( pointer.Action == CursesMouseAction.Press ) { this.pressedIndex = index; this.pressedHeading = -1; return true; }
+		if ( pointer.Action == CursesMouseAction.Release ) {
+			bool matching = index >= 0 && index == this.pressedIndex; this.pressedIndex = -1; this.pressedHeading = -1;
+			if ( matching ) {
+				WidgetMenuItem item = this.levels[ ^1 ].Items[ index ];
+				if ( !item.IsEnabled || item.Kind == WidgetMenuItemKind.Separator ) return true;
+				this.levels[ ^1 ].Cursor = index; bool activated = this.Activate( host ); this.UpdatePopupBounds(); return activated;
+			}
 		}
 		return false;
 	}
 
-	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
-		if ( !this.IsOpen || 0 == this.levels.Count ) { this.RenderBounds = default;
-			CursesRectangle closedArea = this.Bounds.Intersect( screen.Bounds ); WidgetBrowserView.WriteLine( screen, closedArea, 0, string.Join( " | ", this.rootItems.Where( item => item.Kind != WidgetMenuItemKind.Separator ).Select( item => item.Text ) ), this.Style( theme, focused ? WidgetStyleRole.PopupFocused : WidgetStyleRole.PopupItem ) ); return; }
-		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); bool border = area.Rows >= 3 && area.Columns >= 3; int inset = border ? 1 : 0;
-		this.RenderBounds = new CursesRectangle( area.Row, area.Column, Math.Min( area.Rows, this.levels[ ^1 ].Items.Count + inset * 2 ), area.Columns );
-		int contentRows = this.RenderBounds.Rows - inset * 2; int contentColumns = this.RenderBounds.Columns - inset * 2;
-		screen.StandardWindow.FillRectangle( this.RenderBounds.Row, this.RenderBounds.Column, this.RenderBounds.Rows, this.RenderBounds.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.PopupSurface ) ) );
-		if ( border ) this.RenderPopupBorder( screen, theme );
-		for ( int row = 0; row < contentRows; row++ ) {
-			int index = Math.Clamp( this.levels[ ^1 ].Cursor - contentRows + 1, 0, Math.Max( 0, this.levels[ ^1 ].Items.Count - contentRows ) ) + row;
-			WidgetMenuItem item = this.levels[ ^1 ].Items[ index ];
-			string prefix = WidgetMenuItemKind.CheckableCommand == item.Kind ? ( item.IsChecked ? "[x] " : "[ ] " ) : string.Empty;
-			string suffix = WidgetMenuItemKind.Submenu == item.Kind ? " >" : string.Empty;
-			string value = WidgetMenuItemKind.Separator == item.Kind ? new string( '─', contentColumns ) : ComposeRow( item, prefix + item.Text + suffix, contentColumns, screen );
-			CursesStyle style = this.Style( theme, !item.IsEnabled ? WidgetStyleRole.PopupDisabled : index == this.levels[ ^1 ].Cursor && focused ? WidgetStyleRole.PopupFocused : WidgetStyleRole.PopupItem );
-			screen.StandardWindow.FillRectangle( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset, 1, contentColumns, CursesCell.Blank( style ) );
-			screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset ); screen.StandardWindow.Write( value, style );
-			if ( item.Shortcut is { } shortcut && item.IsEnabled && this.HasPartStyle( theme, WidgetStyleRole.PopupShortcut ) ) {
-				string gesture = FormatShortcut( shortcut ); int width = CursesText.MeasureColumns( gesture, screen.TextWidthProvider );
-				if ( contentColumns >= width + 2 ) { screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset + contentColumns - width ); screen.StandardWindow.Write( gesture, this.Style( theme, WidgetStyleRole.PopupShortcut ) ); }
-			}
-			if ( WidgetMenuItemKind.CheckableCommand == item.Kind && item.IsEnabled && contentColumns >= 4 && this.HasPartStyle( theme, WidgetStyleRole.PopupCheck ) ) {
-				screen.StandardWindow.Move( this.RenderBounds.Row + row + inset, this.RenderBounds.Column + inset ); screen.StandardWindow.Write( prefix, this.Style( theme, WidgetStyleRole.PopupCheck ) );
-			}
-		}
-	}
-
-	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme ) {
-		int right = this.RenderBounds.Column + this.RenderBounds.Columns - 1; int bottom = this.RenderBounds.BottomExclusive - 1;
-		string horizontal = new( '─', this.RenderBounds.Columns - 2 );
-		CursesStyle style = this.Style( theme, WidgetStyleRole.PopupBorder );
-		screen.StandardWindow.Move( this.RenderBounds.Row, this.RenderBounds.Column ); screen.StandardWindow.Write( "┌" + horizontal + "┐", style );
-		for ( int row = this.RenderBounds.Row + 1; row < bottom; row++ ) { screen.StandardWindow.Move( row, this.RenderBounds.Column ); screen.StandardWindow.Write( "│", style ); screen.StandardWindow.Move( row, right ); screen.StandardWindow.Write( "│", style ); }
-		screen.StandardWindow.Move( bottom, this.RenderBounds.Column ); screen.StandardWindow.Write( "└" + horizontal + "┘", style );
-	}
 
 	private bool Move( int direction ) {
 		Level level = this.levels[ ^1 ];
@@ -187,7 +204,7 @@ public class WidgetPopupMenu : Widget {
 
 	private bool OpenSubmenu() {
 		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Submenu != item.Kind || 0 == item.Children.Count ) return false;
-		this.levels.Add( new Level( item.Children ) ); return true;
+		this.levels.Add( new Level( item.Children ) { Cursor = Math.Max( 0, FindEligible( item.Children, 0 ) ) } ); this.UpdatePopupBounds(); return true;
 	}
 
 	private bool Activate( WidgetHost host ) {
@@ -206,7 +223,7 @@ public class WidgetPopupMenu : Widget {
 		if ( !this.IsOpen ) this.Open();
 		this.levels[ 0 ].Cursor = index;
 		while ( 1 < this.levels.Count ) this.levels.RemoveAt( this.levels.Count - 1 );
-		return this.Activate( host );
+		this.ResetPointer(); bool activated = this.Activate( host ); this.UpdatePopupBounds(); return activated;
 	}
 
 	private bool TryCurrentMnemonic( WidgetInput input, WidgetHost host ) {

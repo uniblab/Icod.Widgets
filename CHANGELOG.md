@@ -2,6 +2,19 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.6.0 — menu interaction and themes
+
+- Keep menu headings in a compact horizontal bar. Dropdowns overlay the content,
+  anchor beneath the active heading and size to labels and shortcuts.
+- Wrap Up/Down through enabled commands, switch root menus with Left/Right or
+  Alt+mnemonics, and restore the previous focus when Escape closes the root menu.
+- Separate pointer hover from keyboard selection; themes opt into hover
+  highlighting with `HighlightMenuHover`. Clicking invokes the clicked item.
+- Add menu-bar and mnemonic style roles. Selected rows retain their style across
+  labels, check marks, padding and shortcuts.
+- Preserve existing menu constructors, command routing, dynamic presentation,
+  standalone popup bounds and nested submenu support.
+
 ## 1.5.0 — linewise clipboard
 
 - Multiline editors copy or cut the current logical line when there is no

@@ -35,7 +35,7 @@ public sealed partial class WidgetHost {
 	}
 	internal CursesWindow GetPresentationWindow( Widget widget ) => widget is WidgetDialog dialog && this.dialogPanels.TryGetValue( dialog, out CursesPanel? panel ) ? panel.ContentWindow : this.popup?.Owner == widget ? this.popup.Panel.ContentWindow : this.Screen.StandardWindow;
 	private void RenderPanel( Widget widget, CursesPanel panel ) {
-		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget.Bounds ).Intersect( this.Screen.Bounds );
+		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget is WidgetPopupMenu menu ? menu.GetPopupBounds( this.Screen ) : widget.Bounds ).Intersect( this.Screen.Bounds );
 		if ( bounds.IsEmpty || !widget.IsEffectivelyVisible ) { panel.Hide(); return; }
 		panel.SetBounds( bounds ); panel.Show();
 		// Render through the existing public control seam, then copy only the overlay rectangle.

@@ -35,7 +35,9 @@ public enum WidgetStyleRole {
 	ScrollTrack, ScrollThumb, ScrollFocusedThumb,
 	StatusSurface, StatusField, StatusAction, StatusFocusedAction,
 	Indicator, MessageSurface, Button, ButtonFocused, ButtonDisabled, CheckBox, Radio,
-	PickerSurface, PickerPath, PickerError
+	PickerSurface, PickerPath, PickerError,
+	MenuBarSurface, MenuBarItem, MenuBarActive, MenuBarDisabled, MenuBarMnemonic, MenuBarActiveMnemonic, MenuBarHover,
+	PopupMnemonic, PopupFocusedMnemonic, PopupHover
 }
 
 /// <summary>An immutable, value-equal set of optional styles for widget parts.</summary>
