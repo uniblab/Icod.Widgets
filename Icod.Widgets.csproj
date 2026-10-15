@@ -37,7 +37,7 @@
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Add anchored menu-bar dropdowns, wrapping keyboard navigation, independent themed hover, mnemonic styling and full-row selection. Requires Icod.DCurses 2.5.0.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add anchored menu-bar dropdowns, parent-preserving cascading submenus, wrapping keyboard navigation, themed mnemonic and optional hover styles, modal backdrops, clickable message-dialog choices, and gallery caret/flicker corrections. Existing menu and dialog constructors remain compatible. Requires Icod.DCurses 2.5.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
