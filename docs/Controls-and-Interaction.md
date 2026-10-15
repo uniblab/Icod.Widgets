@@ -106,7 +106,9 @@ WidgetMessageDialog question = WidgetMessageDialog.YesNo(
     "overwrite", "Overwrite?", "Replace the existing file?");
 ```
 
-Enter completes the selected action. Escape always reports
+Enter completes the selected action. A primary-button press and release on the
+same visible message-dialog choice completes that choice. Gaps and the Escape
+hint are not buttons; a release outside the choice cancels the click. Escape always reports
 `WidgetDialogOutcome.Cancel`, including from an OK-only dialog; cancellation is
 therefore distinct from acknowledging the message.
 

@@ -11,6 +11,9 @@ All notable changes to Icod.Widgets are recorded here.
 - Finish sample refreshes at the editor caret and use synchronized output to avoid
   drawing-position cursor flicker. Cache unavailable cursor-style observations.
 - Add Ctrl+Z/Ctrl+Y/Ctrl+A to the gallery Edit menu.
+- Activate OK, Yes/No and OK/Cancel message-dialog choices with a matching
+  primary-button press and release. Ignore gaps, other buttons and stale presses;
+  restore the previous focus after completion.
 - Wrap Up/Down through enabled commands, switch root menus with Left/Right or
   Alt+mnemonics, and restore the previous focus when Escape closes the root menu.
 - Separate pointer hover from keyboard selection; themes opt into hover

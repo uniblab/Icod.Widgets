@@ -153,8 +153,8 @@ internal static class Program {
 			string id = "dialog." + ++this.dialogId;
 			switch ( invoked.CommandId ) {
 				case "menu.about":
-					this.Show( WidgetMessageDialog.Ok( "menu-about." + ++this.dialogId, "About this sample", "Reusable menus and user-defined themes.\nEscape returns to the document." ) ); this.ArrangeDialog(); break;
-				case "dialog.ok": this.Show( WidgetMessageDialog.Ok( id, "Notice", "Enter acknowledges; Escape consistently reports Cancel." ) ); break;
+					this.Show( WidgetMessageDialog.Ok( "menu-about." + ++this.dialogId, "About this sample", "Reusable menus and user-defined themes.\nClick OK, press Enter, or Escape to return." ) ); this.ArrangeDialog(); break;
+				case "dialog.ok": this.Show( WidgetMessageDialog.Ok( id, "Notice", "Click OK or press Enter to acknowledge; Escape reports Cancel." ) ); break;
 				case "dialog.yesno": this.Show( WidgetMessageDialog.YesNo( id, "Continue?", "This is a wrapped message. No is the safe default; Escape reports Cancel, independently of No." ) ); break;
 				case "dialog.okcancel": this.Show( WidgetMessageDialog.OkCancel( id, "Apply?", "Cancel is the safe default. Left selects OK; Enter completes." ) ); break;
 				case "dialog.wizard": this.OpenWizard(); break;
@@ -191,6 +191,13 @@ internal static class Program {
 			this.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'h' ) ) ); this.Input( WidgetInput.Key( WidgetKey.Enter ) ); this.Draw();
 			if ( this.Menu.IsOpen || this.Host.ModalDepth != 1 || this.Dialog is not { IsOpen: true } about || about.Bounds.Rows != 7 ) return false;
 			this.Input( WidgetInput.Key( WidgetKey.Escape ) ); this.Draw();
+			if ( this.Host.ModalDepth != 0 || !ReferenceEquals( this.Host.FocusedWidget, this.MenuEditor ) ) return false;
+			this.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'h' ) ) ); this.Input( WidgetInput.Key( WidgetKey.Enter ) ); this.Draw();
+			if ( this.Dialog is not { IsOpen: true } clickableAbout ) return false;
+			int okColumn = clickableAbout.Bounds.Column + 2, okRow = clickableAbout.Bounds.BottomExclusive - 2;
+			this.Input( WidgetInput.PointerInput( new( CursesMouseAction.Press, CursesMouseButton.Primary, okColumn, okRow ) ) ); this.Draw();
+			if ( !clickableAbout.IsOpen ) return false;
+			this.Input( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, okColumn, okRow ) ) ); this.Draw();
 			if ( this.Host.ModalDepth != 0 || !ReferenceEquals( this.Host.FocusedWidget, this.MenuEditor ) ) return false;
 			this.Input( WidgetInput.FunctionKey( 8 ) ); return true;
 		}

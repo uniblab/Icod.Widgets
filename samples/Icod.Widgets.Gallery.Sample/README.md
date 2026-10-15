@@ -29,11 +29,13 @@ captions, status fields, and the editor's focused/unfocused selection. Seven pag
    **F8 toggles hover highlighting**, initially off; it survives Ctrl+T theme
    changes. Hover a different command, then press Enter: the keyboard-selected
    command still executes. Clicking invokes the clicked item. Help > About
-   opens a centered modal; dark/light themes dim the background. Escape closes
-   it and restores the document. Editor text and layout stay in place.
+   opens a centered modal; dark/light themes dim the background. Click OK, press
+   Enter, or press Escape to close it and restore the document. Editor text and
+   layout stay in place.
 4. Dialogs: all titles are captions in themed frames. The OK-only alert
    acknowledges with Enter; Yes/No defaults to No; OK/Cancel to Cancel.
-   Arrows/Tab choose; Enter completes; Escape always reports Cancel. Wizard first rejects Next to show
+   Click a message-dialog choice to complete it, or use Arrows/Tab to choose and
+   Enter to complete. Escape always reports Cancel. Wizard first rejects Next to show
    application validation; Enter again advances; Left returns; Escape closes.
    Text and culture/range-validated number prompts are also available.
 5. Pickers: arrows/Page keys browse; Enter opens directory or toggles file;
@@ -59,7 +61,7 @@ dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -
 Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, provider-backed picker cancellation, wizard validation, rendering`.
 The smoke cycles all three themes, verifies focus retention, and exercises
 F6/Shift+F6 navigation on the workspace page, root menu switching, Escape focus
-restoration, independent hover, and the About modal transition. It does not verify physical
+restoration, independent hover, and closing About with both Escape and an OK click. It does not verify physical
 terminal color output.
 
 Nested submenus keep the parent menu: they open to the right when space permits,
