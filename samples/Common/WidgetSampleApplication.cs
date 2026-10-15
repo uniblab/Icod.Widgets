@@ -41,7 +41,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 	internal void Draw() {
 		this.Host.Screen.StandardWindow.Clear();
 		Write( 0, this.Heading ); Write( 1, this.Keys );
-		if ( this.Host.ModalDepth == 0 ) { Write( this.Host.Screen.Rows - 2, this.Status ); Write( this.Host.Screen.Rows - 1, "Tab/Shift+Tab focus | Q or Esc exit | Ctrl+Q exit from any control" ); }
+		Write( this.Host.Screen.Rows - 2, this.Status ); Write( this.Host.Screen.Rows - 1, "Tab/Shift+Tab focus | Q or Esc exit | Ctrl+Q exit from any control" );
 		this.Host.Render();
 	}
 	protected void Write( int row, string text ) {
@@ -50,7 +50,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 	}
 	internal void Input( WidgetInput input ) {
 		bool controlQ = ( input.Modifiers & WidgetInputModifiers.Control ) != 0 && input.Character?.Value is 'q' or 'Q';
-		bool quit = this.Host.ModalDepth == 0 && this.Host.FocusedWidget is not IWidgetEditTarget && ( input.KeyCode == WidgetKey.Escape || input.Character?.Value is 'q' or 'Q' );
+		bool quit = this.Host.ModalDepth == 0 && this.Host.FocusedWidget is not IWidgetEditTarget and not WidgetPopupMenu { IsOpen: true } and not WidgetDropDown { IsOpen: true } && ( input.KeyCode == WidgetKey.Escape || input.Character?.Value is 'q' or 'Q' );
 		if ( input.Kind == WidgetInputKind.EndOfInput || controlQ || quit ) { this.Running = false; return; }
 		if ( this.Host.ModalDepth == 0 && this.OnShortcut( input ) ) return;
 		this.Actions( this.Host.Process( input, this.clock.Elapsed ).Actions );
@@ -114,7 +114,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		app.clipboard = new WidgetSampleClipboardAdapter( session );
 		List<CursesInputProtocolLease> leases = [];
 		try {
-			foreach ( CursesInputProtocolOptions options in new[] { new CursesInputProtocolOptions { MouseTrackingMode = CursesMouseTrackingMode.ButtonEvents }, new CursesInputProtocolOptions { BracketedPaste = true }, new CursesInputProtocolOptions { KeyboardReportingMode = CursesKeyboardReportingMode.Disambiguated } } ) {
+			foreach ( CursesInputProtocolOptions options in new[] { new CursesInputProtocolOptions { MouseTrackingMode = CursesMouseTrackingMode.AnyMotion }, new CursesInputProtocolOptions { BracketedPaste = true }, new CursesInputProtocolOptions { KeyboardReportingMode = CursesKeyboardReportingMode.Disambiguated } } ) {
 				var result = await session.AcquireInputProtocolsAsync( options ); if ( result.IsAvailable ) leases.Add( result.GetRequiredValue() );
 			}
 			app.Arrange();

@@ -28,6 +28,7 @@ public abstract class WidgetDialog( string id, string title ) : WidgetContainer(
 	public override bool IsFocusable => true;
 	public string Title { get; } = title ?? throw new ArgumentNullException( nameof( title ) );
 	public bool IsOpen { get; internal set; }
+	internal bool HasBackdropStyle( WidgetTheme theme ) => this.HasPartStyle( theme, WidgetStyleRole.ModalBackdrop );
 	internal bool HasCompleted { get; set; }
 	internal virtual void OnOpened() { }
 	internal virtual void OnClosed() { }

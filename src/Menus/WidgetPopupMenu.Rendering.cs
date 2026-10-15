@@ -34,7 +34,12 @@ public partial class WidgetPopupMenu {
 		int selected = this.IsOpen && this.levels.Count > 0 ? this.levels[ 0 ].Cursor : -1;
 		if ( selected >= 0 ) {
 			if ( selected < this.firstHeading ) this.firstHeading = selected;
-			while ( this.firstHeading < selected && Enumerable.Range( this.firstHeading, selected - this.firstHeading + 1 ).Where( i => this.rootItems[ i ].Kind != WidgetMenuItemKind.Separator ).Sum( Width ) > bar.Columns ) this.firstHeading++;
+			int used = 0;
+			for ( int index = selected; index >= this.firstHeading; index-- ) {
+				if ( this.rootItems[ index ].Kind == WidgetMenuItemKind.Separator ) continue;
+				used += Width( index );
+				if ( used > bar.Columns ) { this.firstHeading = index + 1; break; }
+			}
 		}
 		int column = bar.Column;
 		for ( int index = this.firstHeading; index < this.rootItems.Length && column < bar.Column + bar.Columns; index++ ) {
@@ -115,7 +120,7 @@ public partial class WidgetPopupMenu {
 			CursesStyle style = this.Style( theme, !item.IsEnabled ? WidgetStyleRole.PopupDisabled : selected ? WidgetStyleRole.PopupFocused : highlighted ? WidgetStyleRole.PopupHover : WidgetStyleRole.PopupItem );
 			int line = this.RenderBounds.Row + row + inset; int column = this.RenderBounds.Column + inset;
 			screen.StandardWindow.FillRectangle( line, column, 1, columns, CursesCell.Blank( style ) );
-			if ( item.Kind == WidgetMenuItemKind.Separator ) { Write( screen, line, column, new string( '─', columns ), this.Style( theme, WidgetStyleRole.PopupBorder ) ); continue; }
+			if ( item.Kind == WidgetMenuItemKind.Separator ) { Write( screen, line, column, new string( CursesText.MeasureColumns( "─", screen.TextWidthProvider ) == 1 ? '─' : '-', columns ), this.Style( theme, WidgetStyleRole.PopupBorder ) ); continue; }
 			string prefix = Prefix( item );
 			string value = ComposeRow( item, prefix + Label( item ) + Suffix( item ), columns - padding * 2, screen );
 			Write( screen, line, column + padding, value, style );

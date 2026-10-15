@@ -108,7 +108,7 @@ public partial class WidgetPopupMenu : Widget {
 		try { this.Host?.OpenPopup( this, this.GetPopupBounds( this.Host.Screen ) ); }
 		catch { this.levels.Clear(); this.IsOpen = false; throw; }
 	}
-	public void Close() { this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+	public void Close() { this.firstHeading = 0; this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
 	private void ResetPointer() { this.pressedIndex = -1; this.pressedHeading = -1; this.hoveredIndex = -1; this.hoveredHeading = -1; }
 	protected override void OnCaptureCanceled() { this.pressedIndex = -1; this.pressedHeading = -1; }
 	protected override void OnArrange( CursesRectangle bounds ) { this.ResetPointer(); this.UpdatePopupBounds(); }
@@ -166,6 +166,7 @@ public partial class WidgetPopupMenu : Widget {
 			WidgetMenuItem item = this.rootItems[ heading ];
 			if ( !item.IsEnabled || item.Kind == WidgetMenuItemKind.Separator ) return true;
 			if ( pointer.Action == CursesMouseAction.Press ) {
+				if ( this.IsOpen && this.levels[ 0 ].Cursor == heading ) { this.Close(); return true; }
 				if ( !this.IsOpen ) this.Open();
 				this.SelectRoot( heading ); this.pressedHeading = heading; return true;
 			}
@@ -204,7 +205,7 @@ public partial class WidgetPopupMenu : Widget {
 
 	private bool OpenSubmenu() {
 		WidgetMenuItem? item = this.CurrentItem; if ( item is null || !item.IsEnabled || WidgetMenuItemKind.Submenu != item.Kind || 0 == item.Children.Count ) return false;
-		this.levels.Add( new Level( item.Children ) { Cursor = Math.Max( 0, FindEligible( item.Children, 0 ) ) } ); this.UpdatePopupBounds(); return true;
+		this.ResetPointer(); this.levels.Add( new Level( item.Children ) { Cursor = Math.Max( 0, FindEligible( item.Children, 0 ) ) } ); this.UpdatePopupBounds(); return true;
 	}
 
 	private bool Activate( WidgetHost host ) {

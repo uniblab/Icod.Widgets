@@ -119,6 +119,80 @@ public sealed class WidgetMenuBarInteractionTests {
 		Assert.NotEqual( active, app.Host.GetPresentationWindow( app.Menu ).GetCell( 0, 0 ).Style );
 	}
 
+	[Theory]
+	[InlineData( 1, 1 )]
+	[InlineData( 2, 2 )]
+	[InlineData( 8, 3 )]
+	[InlineData( 20, 4 )]
+	public void SmallScreensClipDropdownsAndKeepEscapeUsable( int columns, int rows ) {
+		using Fixture app = new(); app.Host.Screen.Resize( columns, rows );
+		app.Menu.Arrange( new( 0, 0, 1, columns ) ); app.Alt( 'h' ); app.Host.Render();
+		Assert.Equal( app.Menu.RenderBounds, app.Menu.RenderBounds.Intersect( app.Host.Screen.Bounds ) );
+		app.Key( WidgetKey.Escape ); Assert.False( app.Menu.IsOpen );
+	}
+
+	[Fact]
+	public void DynamicTextResizesPopupAndDisablingActiveHeadingSelectsAnother() {
+		using Fixture app = new(); app.Alt( 'f' ); app.Host.Render(); int width = app.Menu.RenderBounds.Columns;
+		app.Menu.SetPresentation( [ new( "new", "Create a longer document", true ) ] ); app.Host.Render();
+		Assert.Equal( "new", app.Menu.CurrentItem?.Id ); Assert.True( app.Menu.RenderBounds.Columns > width );
+		app.Menu.SetPresentation( [ new( "file", "File", false ) ] ); app.Host.Render();
+		Assert.Equal( "copy", app.Menu.CurrentItem?.Id );
+		app.Key( WidgetKey.Left ); Assert.Equal( "about", app.Menu.CurrentItem?.Id );
+	}
+
+	[Fact]
+	public void DisabledAndSeparatorClicksCannotChangeSelectionOrInvoke() {
+		using Fixture app = new(); app.Alt( 'f' );
+		foreach ( int row in new[] { 2, 4 } ) {
+			app.Pointer( CursesMouseAction.Press, 3, row );
+			Assert.Empty( app.Pointer( CursesMouseAction.Release, 3, row ).Actions );
+			Assert.Equal( "new", app.Menu.CurrentItem?.Id );
+		}
+		app.Pointer( CursesMouseAction.Press, 3, 5 );
+		Assert.Empty( app.Pointer( CursesMouseAction.Release, 36, 9 ).Actions ); Assert.True( app.Menu.IsOpen );
+		app.Pointer( CursesMouseAction.Press, 36, 9 ); Assert.False( app.Menu.IsOpen ); Assert.Same( app.Editor, app.Host.FocusedWidget );
+	}
+
+	[Fact]
+	public void InvokingAboutClosesMenuBeforeModalAndRestoresEditorOnDismissal() {
+		using Fixture app = new(); app.Alt( 'h' );
+		Assert.Equal( "help.about", Assert.IsType<WidgetInvokedAction>( Assert.Single( app.Key( WidgetKey.Enter ).Actions ) ).CommandId );
+		WidgetMessageDialog about = WidgetMessageDialog.Ok( "about-dialog", "About", "Sample application" ); app.Host.ShowModal( about );
+		about.Arrange( new( 3, 6, 5, 28 ) ); app.Host.Render(); Assert.False( app.Menu.IsOpen ); Assert.Same( about, app.Host.FocusedWidget );
+		app.Alt( 'f' ); Assert.False( app.Menu.IsOpen );
+		app.Key( WidgetKey.Escape ); Assert.Same( app.Editor, app.Host.FocusedWidget );
+	}
+
+	[Fact]
+	public void ClickingActiveHeadingClosesMenuAndRestoresFocus() {
+		using Fixture app = new(); app.Alt( 'f' );
+		app.Pointer( CursesMouseAction.Press, 2, 0 );
+		Assert.False( app.Menu.IsOpen ); Assert.Same( app.Editor, app.Host.FocusedWidget );
+		Assert.Empty( app.Pointer( CursesMouseAction.Release, 2, 0 ).Actions );
+	}
+
+	[Fact]
+	public void WideAmbiguousSeparatorDoesNotOverwritePopupFrame() {
+		CursesScreen screen = new( 30, 8, UnicodeCursesTextWidthProvider.WideAmbiguousInstance );
+		using WidgetHost host = new( screen, WidgetTheme.Default );
+		WidgetMenuBar menu = new( "bar", [ WidgetMenuItem.Submenu( "file", "File", [
+			WidgetMenuItem.Command( "open", "Open 界", "open", 'o' ), WidgetMenuItem.Separator( "sep" ), WidgetMenuItem.Command( "quit", "Quit", "quit" ) ], 'f' ) ] );
+		host.Attach( menu ); menu.Arrange( new( 0, 0, 1, 30 ) ); host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ), TimeSpan.Zero ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( menu );
+		Assert.Equal( "+", window.GetCell( 0, menu.RenderBounds.Columns - 1 ).Content );
+		Assert.Equal( "|", window.GetCell( 2, menu.RenderBounds.Columns - 1 ).Content );
+	}
+
+	[Fact]
+	public void TerminalFocusLossCancelsPendingMenuClick() {
+		using Fixture app = new(); app.Alt( 'f' ); app.Pointer( CursesMouseAction.Press, 3, 5 );
+		app.Host.Process( WidgetInput.FocusChanged( CursesFocusState.Unfocused ), TimeSpan.Zero );
+		app.Host.Process( WidgetInput.FocusChanged( CursesFocusState.Focused ), TimeSpan.Zero );
+		Assert.Empty( app.Pointer( CursesMouseAction.Release, 3, 5 ).Actions );
+		Assert.True( app.Menu.IsOpen ); Assert.Equal( "new", app.Menu.CurrentItem?.Id );
+	}
+
 	private sealed class Fixture : IDisposable {
 		internal WidgetHost Host { get; } = new( new CursesScreen( 40, 12 ), WidgetTheme.Default );
 		internal WidgetButton Editor { get; } = new( "editor", "Document stays here", "editor" );

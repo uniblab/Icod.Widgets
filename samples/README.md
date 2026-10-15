@@ -14,7 +14,10 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 The gallery's **Ctrl+T** cycles dark, light, and
 terminal-default presentation. Dark/light use the running DCurses session's
 color/attribute observations; default demonstrates the legacy six-role theme.
-Try the same widget and overlay under each mode. The gallery smoke also cycles
+On the Menus page, Alt+F/E/V/H opens a dropdown above an editable document.
+Arrows navigate; Escape restores document focus. F8 toggles theme hover styling
+without changing keyboard selection. Help > About demonstrates a centered
+modal and theme-defined dim backdrop. Try the same widget and overlay under each mode. The gallery smoke also cycles
 all three while checking that keyboard focus is retained. On its workspace
 color page, F6 and Shift+F6 cycle among tabs, editor, and actionable status;
 the smoke exercises this route too.

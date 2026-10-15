@@ -182,7 +182,10 @@ controls its physical palette, so exact colors vary by profile. Tab/Shift+Tab tr
 editor uses Tab/Shift+Tab for indent/outdent, so the samples use F6 to leave it.
 Arrows navigate; Enter activates or commits; Space toggles. Menu mnemonics
 navigate structure (`Alt+V`, then plain `F`), while
-shortcuts invoke commands directly. Escape cancels the top dialog/menu;
+shortcuts invoke commands directly. Arrange a `WidgetMenuBar` in one row;
+its dropdowns overlay the content. Up/Down wrap, Left/Right switch headings,
+and `WidgetTheme.HighlightMenuHover` opts into hover styling without changing
+keyboard selection. Escape cancels the top dialog/menu;
 **even an OK-only dialog returns Cancel on Escape**, not acknowledgement.
 
 The [controls and interaction guide](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md)

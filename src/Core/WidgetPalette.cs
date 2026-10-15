@@ -74,6 +74,7 @@ public static class WidgetPalette {
 			.With( WidgetStyleRole.MenuBarHover, selected ).With( WidgetStyleRole.PopupHover, selected )
 			.With( WidgetStyleRole.ListSurface, normal ).With( WidgetStyleRole.ListItem, normal )
 			.With( WidgetStyleRole.ListSelected, selected ).With( WidgetStyleRole.ListFocused, focused ).With( WidgetStyleRole.ListDisabled, disabled )
+			.With( WidgetStyleRole.ModalBackdrop, disabled )
 			.With( WidgetStyleRole.DialogSurface, normal ).With( WidgetStyleRole.DialogTitle, Style( accent, background, emphasis ) )
 			.With( WidgetStyleRole.DialogBorder, border ).With( WidgetStyleRole.DialogAction, normal )
 			.With( WidgetStyleRole.DialogDefaultAction, selected ).With( WidgetStyleRole.DialogFocusedAction, focused )

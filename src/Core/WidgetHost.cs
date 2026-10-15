@@ -159,6 +159,8 @@ public sealed partial class WidgetHost : IDisposable {
 			if ( !handled && this.ActiveModal is { } modal && !ReferenceEquals( target, modal ) ) handled = modal.OnInput( input, this );
 		}
 
+		if ( handled && input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press, Button: CursesMouseButton.Primary } && this.popup?.Owner is WidgetPopupMenu menuCapture )
+			this.pointerCapture = menuCapture;
 		return new WidgetDispatchResult( handled || this.ActiveModal is not null, this.DrainActions() );
 	}
 
@@ -195,6 +197,7 @@ public sealed partial class WidgetHost : IDisposable {
 			}
 		}
 		foreach ( ( WidgetDialog dialog, CursesPanel panel ) in this.dialogPanels ) this.RenderPanel( dialog, panel );
+		this.RenderModalBackdrop();
 		if ( this.popup is { } popupFrame ) this.RenderPanel( popupFrame.Owner, popupFrame.Panel );
 	}
 
@@ -279,7 +282,7 @@ public sealed partial class WidgetHost : IDisposable {
 				if ( CursesMouseAction.Release == modalPointer.Action ) return modal;
 				CursesInteractionHit? hit = this.router.HitTest( modalPointer.Row, modalPointer.Column );
 				if ( hit is not null && this.widgetsByRegion.TryGetValue( hit.Region, out Widget? child ) && this.DialogAncestor( child ) == modal ) {
-					if ( child.IsFocusable ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
+					if ( child.IsFocusable && modalPointer.Action == CursesMouseAction.Press ) { Widget? previous = this.FocusedWidget; _ = this.router.Focus( hit.Region ); if ( !ReferenceEquals( previous, this.FocusedWidget ) ) this.ClipboardFocusChanged( previous ); }
 					if ( CursesMouseAction.Press == modalPointer.Action ) this.pointerCapture = child;
 					return child;
 				}
@@ -372,6 +375,7 @@ public sealed partial class WidgetHost : IDisposable {
 		this.CancelPointerCapture();
 		this.DismissPopup();
 		this.ClearModalsSilently();
+		this.modalBackdrop?.Dispose(); this.modalBackdrop = null; this.backdropRow = [];
 		foreach ( CursesInteractionRegion region in this.regions.Values.ToArray() ) region.Dispose();
 		this.regions.Clear();
 		this.widgetsByRegion.Clear();

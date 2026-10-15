@@ -12,6 +12,8 @@ All notable changes to Icod.Widgets are recorded here.
   highlighting with `HighlightMenuHover`. Clicking invokes the clicked item.
 - Add menu-bar and mnemonic style roles. Selected rows retain their style across
   labels, check marks, padding and shortcuts.
+- Add an optional themed modal backdrop without changing underlying content,
+  plus a gallery menu/editor/About walkthrough and hover toggle.
 - Preserve existing menu constructors, command routing, dynamic presentation,
   standalone popup bounds and nested submenu support.
 

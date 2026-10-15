@@ -26,6 +26,37 @@ public sealed partial class WidgetHost {
 	private readonly Dictionary<WidgetDialog, CursesPanel> dialogPanels = [];
 	private CursesPanel? attachmentPanel;
 	private CursesScreen? overlayStaging;
+	private CursesPanel? modalBackdrop;
+	private CursesCell[] backdropRow = [];
+	private void RenderModalBackdrop() {
+		WidgetDialog? active = this.ActiveModal;
+		if ( active is null || !active.HasBackdropStyle( this.Theme ) || !this.dialogPanels.TryGetValue( active, out CursesPanel? front ) || !front.IsVisible || front.Bounds == this.Screen.Bounds ) { this.modalBackdrop?.Hide(); return; }
+		this.modalBackdrop ??= this.Screen.CreatePanel( 0, 0, this.Screen.Rows, this.Screen.Columns );
+		CursesPanel backdrop = this.modalBackdrop; backdrop.SetBounds( this.Screen.Bounds );
+		CursesWindow window = backdrop.ContentWindow;
+		this.Screen.StandardWindow.CopyRectangleTo( window, 0, 0, this.Screen.Rows, this.Screen.Columns, 0, 0 );
+		// Include lower host dialogs so nested modals dim their parent as well.
+		foreach ( var entry in this.dialogPanels ) {
+			if ( entry.Key == active ) break;
+			CursesRectangle bounds = entry.Value.Bounds.Intersect( this.Screen.Bounds );
+			if ( entry.Value.IsVisible && !bounds.IsEmpty ) entry.Value.ContentWindow.CopyRectangleTo( window, 0, 0, bounds.Rows, bounds.Columns, bounds.Row, bounds.Column );
+		}
+		CursesStyle style = active.ResolveStyle( this.Theme, WidgetStyleRole.ModalBackdrop );
+		if ( this.backdropRow.Length != this.Screen.Columns ) this.backdropRow = new CursesCell[ this.Screen.Columns ];
+		window.WrapMode = CursesWrapMode.Clip;
+		for ( int row = 0; row < this.Screen.Rows; row++ ) {
+			for ( int column = 0; column < this.Screen.Columns; column++ ) this.backdropRow[ column ] = window.GetCell( row, column );
+			window.FillRectangle( row, 0, 1, this.Screen.Columns, CursesCell.Blank( style ) );
+			for ( int column = 0; column < this.Screen.Columns; column++ ) {
+				CursesCell cell = this.backdropRow[ column ]; if ( cell.IsContinuation || cell.IsBlank ) continue;
+				window.Move( row, column );
+				if ( cell.LineGlyph is { } glyph ) window.WriteCell( CursesCell.Line( glyph, style ) );
+				else window.Write( cell.Content, style );
+			}
+		}
+		backdrop.MoveBelow( front ); backdrop.Show();
+	}
+
 	public WidgetCaretIntent? GetCaretIntent() {
 		this.ThrowIfDisposed(); if ( this.popup is not null ) return null; Widget? focused = this.FocusedWidget;
 		if ( focused is null || !focused.IsEffectivelyEnabled || !focused.IsEffectivelyVisible ) return null;

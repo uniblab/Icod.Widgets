@@ -20,11 +20,17 @@ captions, status fields, and the editor's focused/unfocused selection. Seven pag
    Ctrl+A selects enabled entries; Shift+arrows select a range. Type a search
    prefix (750 ms expiry). Enter/Down opens the drop-down; arrows preview;
    Enter commits; Escape/outside click cancels. Disabled items are inert.
-3. Menus: Alt+F/Alt+V opens the matching menu-bar entry from another control;
-   an unmodified mnemonic letter invokes within the open level; Ctrl+R invokes
-   its command directly. Shortcuts render at the right edge of framed popups.
-   Enter/Down opens; arrows navigate; Right/Enter opens a submenu; Left/Escape
-   returns.
+3. Menus: File, Edit, View and Help sit in one row above an editable document.
+   Alt+F/E/V/H opens a root dropdown and selects its first enabled command.
+   Up/Down wrap through commands; Left/Right switch headings. View's Submenu
+   opens with Right/Enter and returns with Left/Escape. Escape closes a root
+   menu and returns focus to the document. A plain mnemonic invokes within the
+   open menu; Ctrl+R invokes Run directly. F6 switches between editor and bar.
+   **F8 toggles hover highlighting**, initially off; it survives Ctrl+T theme
+   changes. Hover a different command, then press Enter: the keyboard-selected
+   command still executes. Clicking invokes the clicked item. Help > About
+   opens a centered modal; dark/light themes dim the background. Escape closes
+   it and restores the document. Editor text and layout stay in place.
 4. Dialogs: all titles are captions in themed frames. The OK-only alert
    acknowledges with Enter; Yes/No defaults to No; OK/Cancel to Cancel.
    Arrows/Tab choose; Enter completes; Escape always reports Cancel. Wizard first rejects Next to show
@@ -50,7 +56,8 @@ The sample uses retained text presentation and no raster graphics.
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS seven gallery pages, theme cycle, provider-backed picker cancellation, wizard validation, rendering`.
+Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, provider-backed picker cancellation, wizard validation, rendering`.
 The smoke cycles all three themes, verifies focus retention, and exercises
-F6/Shift+F6 navigation on the workspace page. It does not verify physical
+F6/Shift+F6 navigation on the workspace page, root menu switching, Escape focus
+restoration, independent hover, and the About modal transition. It does not verify physical
 terminal color output.
