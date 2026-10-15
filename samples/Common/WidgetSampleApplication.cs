@@ -43,6 +43,8 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		Write( 0, this.Heading ); Write( 1, this.Keys );
 		Write( this.Host.Screen.Rows - 2, this.Status ); Write( this.Host.Screen.Rows - 1, "Tab/Shift+Tab focus | Q or Esc exit | Ctrl+Q exit from any control" );
 		this.Host.Render();
+		// Refresh finishes at the editor caret, not the cursor left by drawing a row.
+		if ( this.Host.GetCaretIntent() is { IsVisible: true } caret ) this.Host.Screen.StandardWindow.Move( caret.Row, caret.Column );
 	}
 	protected void Write( int row, string text ) {
 		CursesScreen screen = this.Host.Screen; if ( row < 0 || row >= screen.Rows || screen.Columns == 0 ) return;
@@ -106,7 +108,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 		IReadOnlyList<WidgetAction> actions = this.Host.DrainActions(); this.Actions( actions ); return changed || actions.Count > 0;
 	}
 	internal static async Task<int> RunAsync( Func<CursesScreen, WidgetSampleApplication> create, Action<WidgetSampleApplication, CursesPresentationCapabilities>? configure = null ) {
-		await using CursesSession session = await CursesSession.OpenAsync( new CursesSessionOptions { InputMode = CursesInputMode.Raw } );
+		await using CursesSession session = await CursesSession.OpenAsync( new CursesSessionOptions { InputMode = CursesInputMode.Raw, UseSynchronizedOutput = true } );
 		session.StandardScreen.WrapMode = CursesWrapMode.Clip;
 		using WidgetSampleApplication app = create( session.Screen );
 		configure?.Invoke( app, session.PresentationCapabilities );
@@ -120,7 +122,7 @@ internal abstract class WidgetSampleApplication : IDisposable {
 			app.Arrange();
 			bool redraw = true;
 			while ( app.Running ) {
-				redraw |= await app.PollAsync(); if ( redraw ) { app.Draw(); await session.RefreshAsync(); await caret.ApplyAsync( app.Host.GetCaretIntent(), app.stop.Token ); redraw = false; }
+				redraw |= await app.PollAsync(); if ( redraw ) { if ( app.Host.GetCaretIntent() is null ) await caret.ApplyAsync( null, app.stop.Token ); app.Draw(); await session.RefreshAsync(); await caret.ApplyAsync( app.Host.GetCaretIntent(), app.stop.Token ); redraw = false; }
 				CursesEvent current = await session.ReadEventAsync( TimeSpan.FromMilliseconds( 50 ) );
 				if ( current.Kind == CursesEventKind.Input && current.Input is { } input ) { app.Input( WidgetInput.From( input ) ); redraw = true; }
 				else if ( current.Kind == CursesEventKind.Lifecycle && current.Lifecycle is { } lifecycle ) {

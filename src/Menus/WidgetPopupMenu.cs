@@ -30,6 +30,8 @@ public partial class WidgetPopupMenu : Widget {
 	private WidgetMenuItem[] rootItems;
 	private readonly List<Level> levels = [];
 	private int pressedIndex = -1;
+	private int pressedLevel = -1;
+	private int hoveredLevel = -1;
 	private int pressedHeading = -1;
 	private int hoveredIndex = -1;
 	private int hoveredHeading = -1;
@@ -109,8 +111,8 @@ public partial class WidgetPopupMenu : Widget {
 		catch { this.levels.Clear(); this.IsOpen = false; throw; }
 	}
 	public void Close() { this.firstHeading = 0; this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
-	private void ResetPointer() { this.pressedIndex = -1; this.pressedHeading = -1; this.hoveredIndex = -1; this.hoveredHeading = -1; }
-	protected override void OnCaptureCanceled() { this.pressedIndex = -1; this.pressedHeading = -1; }
+	private void ResetPointer() { this.pressedIndex = -1; this.pressedLevel = -1; this.pressedHeading = -1; this.hoveredIndex = -1; this.hoveredLevel = -1; this.hoveredHeading = -1; }
+	protected override void OnCaptureCanceled() { this.pressedIndex = -1; this.pressedLevel = -1; this.pressedHeading = -1; }
 	protected override void OnArrange( CursesRectangle bounds ) { this.ResetPointer(); this.UpdatePopupBounds(); }
 	private void UpdatePopupBounds() { if ( this.IsOpen && this.Host is { } host ) host.UpdatePopup( this, this.GetPopupBounds( host.Screen ) ); }
 
@@ -154,7 +156,7 @@ public partial class WidgetPopupMenu : Widget {
 
 	internal void UpdateHover( CursesMouseEvent pointer, CursesScreen screen ) {
 		this.hoveredHeading = this.IsMenuBar ? this.HitHeading( pointer.Row, pointer.Column, screen ) : -1;
-		this.hoveredIndex = this.IsOpen ? this.HitItem( pointer.Row, pointer.Column, screen ) : -1;
+		( this.hoveredLevel, this.hoveredIndex ) = this.IsOpen ? this.HitItem( pointer.Row, pointer.Column, screen ) : ( -1, -1 );
 	}
 
 	private bool OnPointer( CursesMouseEvent pointer, WidgetHost host ) {
@@ -180,14 +182,15 @@ public partial class WidgetPopupMenu : Widget {
 			if ( pointer.Action == CursesMouseAction.Press && this.Bounds.Contains( pointer.Row, pointer.Column ) && !this.IsMenuBar ) { this.Open(); return true; }
 			return false;
 		}
-		int index = this.HitItem( pointer.Row, pointer.Column, host.Screen );
-		if ( pointer.Action == CursesMouseAction.Press ) { this.pressedIndex = index; this.pressedHeading = -1; return true; }
+		( int depth, int index ) = this.HitItem( pointer.Row, pointer.Column, host.Screen );
+		if ( pointer.Action == CursesMouseAction.Press ) { this.pressedIndex = index; this.pressedLevel = depth; this.pressedHeading = -1; return true; }
 		if ( pointer.Action == CursesMouseAction.Release ) {
-			bool matching = index >= 0 && index == this.pressedIndex; this.pressedIndex = -1; this.pressedHeading = -1;
+			bool matching = index >= 0 && index == this.pressedIndex && depth == this.pressedLevel; this.pressedIndex = -1; this.pressedLevel = -1; this.pressedHeading = -1;
 			if ( matching ) {
-				WidgetMenuItem item = this.levels[ ^1 ].Items[ index ];
+				WidgetMenuItem item = this.levels[ depth ].Items[ index ];
 				if ( !item.IsEnabled || item.Kind == WidgetMenuItemKind.Separator ) return true;
-				this.levels[ ^1 ].Cursor = index; bool activated = this.Activate( host ); this.UpdatePopupBounds(); return activated;
+				while ( this.levels.Count > depth + 1 ) this.levels.RemoveAt( this.levels.Count - 1 );
+				this.levels[ depth ].Cursor = index; bool activated = this.Activate( host ); this.UpdatePopupBounds(); return activated;
 			}
 		}
 		return false;

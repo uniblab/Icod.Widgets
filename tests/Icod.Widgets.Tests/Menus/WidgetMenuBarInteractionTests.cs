@@ -193,6 +193,40 @@ public sealed class WidgetMenuBarInteractionTests {
 		Assert.True( app.Menu.IsOpen ); Assert.Equal( "new", app.Menu.CurrentItem?.Id );
 	}
 
+	[Theory]
+	[InlineData( 40, true )]
+	[InlineData( 20, false )]
+	public void NestedPanelsPreserveParentAndOverlayRightOrOnTop( int columns, bool fitsRight ) {
+		using Fixture app = new(); app.Host.Screen.Resize( columns, 12 ); app.Menu.Arrange( new( 0, 0, 1, columns ) );
+		app.Alt( 'e' ); app.Key( WidgetKey.Down ); app.Host.Render();
+		CursesRectangle parent = app.Menu.RenderBounds;
+		app.Key( WidgetKey.Right ); app.Host.Render();
+		var panels = Panels( app.Host.Screen ).Where( panel => panel.IsVisible ).ToArray();
+		Assert.Equal( 2, panels.Length );
+		Assert.Equal( parent, panels[ 0 ].Bounds );
+		Assert.Equal( fitsRight ? parent.Column + parent.Columns : parent.Column, panels[ 1 ].Bounds.Column );
+		Assert.Contains( "More", Row( panels[ 0 ].ContentWindow, 2 ) );
+		Assert.Contains( "Nested", Row( panels[ 1 ].ContentWindow, 1 ) );
+		app.Key( WidgetKey.Left ); app.Host.Render();
+		Assert.Single( Panels( app.Host.Screen ), panel => panel.IsVisible );
+		Assert.Equal( "more", app.Menu.CurrentItem?.Id );
+	}
+
+	[Fact]
+	public void ClickOnExposedParentInvokesItAndClosesAllPanels() {
+		using Fixture app = new(); app.Alt( 'e' ); app.Key( WidgetKey.Down ); app.Host.Render();
+		CursesRectangle parent = app.Menu.RenderBounds;
+		app.Key( WidgetKey.Right ); app.Host.Render();
+		app.Pointer( CursesMouseAction.Press, parent.Column + 2, parent.Row + 1 );
+		WidgetDispatchResult result = app.Pointer( CursesMouseAction.Release, parent.Column + 2, parent.Row + 1 );
+		Assert.Equal( "edit.copy", Assert.IsType<WidgetInvokedAction>( Assert.Single( result.Actions ) ).CommandId );
+		Assert.False( app.Menu.IsOpen ); Assert.Empty( Panels( app.Host.Screen ) );
+	}
+
+	private static CursesPanel[] Panels( CursesScreen screen ) => (CursesPanel[])typeof( CursesScreen ).GetMethod( "SnapshotPanelsBottomToTop", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic )!.Invoke( screen, null )!;
+
+	private static string Row( CursesWindow window, int row ) => string.Concat( Enumerable.Range( 0, window.Columns ).Select( column => window.GetCell( row, column ).Content ) );
+
 	private sealed class Fixture : IDisposable {
 		internal WidgetHost Host { get; } = new( new CursesScreen( 40, 12 ), WidgetTheme.Default );
 		internal WidgetButton Editor { get; } = new( "editor", "Document stays here", "editor" );

@@ -65,6 +65,27 @@ public sealed partial class WidgetHost {
 		return intent with { FocusGeneration = this.focusGeneration };
 	}
 	internal CursesWindow GetPresentationWindow( Widget widget ) => widget is WidgetDialog dialog && this.dialogPanels.TryGetValue( dialog, out CursesPanel? panel ) ? panel.ContentWindow : this.popup?.Owner == widget ? this.popup.Panel.ContentWindow : this.Screen.StandardWindow;
+	private void RenderMenuPanels( WidgetPopupMenu menu, PopupFrame frame ) {
+		var layers = menu.GetPopupLayers( this.Screen );
+		while ( frame.SubmenuPanels.Count > Math.Max( 0, layers.Count - 1 ) ) {
+			frame.SubmenuPanels[ ^1 ].Dispose(); frame.SubmenuPanels.RemoveAt( frame.SubmenuPanels.Count - 1 );
+		}
+		if ( layers.Count == 0 ) { frame.Panel.Hide(); return; }
+		if ( this.overlayStaging is null || this.overlayStaging.Columns != this.Screen.Columns || this.overlayStaging.Rows != this.Screen.Rows )
+			this.overlayStaging = new CursesScreen( this.Screen.Columns, this.Screen.Rows, this.Screen.TextWidthProvider );
+		CursesScreen staging = this.overlayStaging; staging.StandardWindow.WrapMode = CursesWrapMode.Clip;
+		for ( int index = 0; index < layers.Count; index++ ) {
+			var layer = layers[ index ];
+			if ( index > frame.SubmenuPanels.Count ) frame.SubmenuPanels.Add( this.Screen.CreatePanel( 0, 0, 1, 1 ) );
+			CursesPanel panel = index == 0 ? frame.Panel : frame.SubmenuPanels[ index - 1 ];
+			if ( layer.Bounds.IsEmpty ) { panel.Hide(); continue; }
+			panel.SetBounds( layer.Bounds ); panel.Show();
+			if ( menu is WidgetMenuBar && layer.Level == 0 ) menu.RenderBar( staging, this.Theme, true );
+			else menu.RenderPopupLevel( staging, this.Theme, ReferenceEquals( menu, this.FocusedWidget ), layer.Level, layer.Bounds );
+			staging.StandardWindow.CopyRectangleTo( panel.ContentWindow, layer.Bounds.Row, layer.Bounds.Column, layer.Bounds.Rows, layer.Bounds.Columns, 0, 0 );
+		}
+	}
+
 	private void RenderPanel( Widget widget, CursesPanel panel ) {
 		CursesRectangle bounds = ( widget is WidgetDropDown drop ? drop.PopupBounds : widget is WidgetPopupMenu menu ? menu.GetPopupBounds( this.Screen ) : widget.Bounds ).Intersect( this.Screen.Bounds );
 		if ( bounds.IsEmpty || !widget.IsEffectivelyVisible ) { panel.Hide(); return; }

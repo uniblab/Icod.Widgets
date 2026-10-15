@@ -79,8 +79,9 @@ internal static class Program {
 			WidgetMenuShortcut runShortcut = new( WidgetKey.Character, WidgetInputModifiers.Control, 'r' );
 			WidgetMenuItem[] menuItems = [
 				WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "run", "Run command", "menu.run", 'r', shortcut: runShortcut ), WidgetMenuItem.Command( "disabled", "Disabled", "disabled", 'd', isEnabled: false ) ], 'f' ),
-				WidgetMenuItem.Submenu( "edit", "Edit", [ WidgetMenuItem.Command( "undo", "Undo", "edit.undo", 'u', WidgetEditCommand.Undo ),
-					WidgetMenuItem.Command( "select-all", "Select All", "edit.select", 'a', WidgetEditCommand.SelectAll ) ], 'e' ),
+				WidgetMenuItem.Submenu( "edit", "Edit", [ WidgetMenuItem.Command( "undo", "Undo", "edit.undo", 'u', WidgetEditCommand.Undo, shortcut: new( WidgetKey.Character, WidgetInputModifiers.Control, 'z' ) ),
+					WidgetMenuItem.Command( "redo", "Redo", "edit.redo", 'r', WidgetEditCommand.Redo, shortcut: new( WidgetKey.Character, WidgetInputModifiers.Control, 'y' ) ),
+					WidgetMenuItem.Command( "select-all", "Select All", "edit.select", 'a', WidgetEditCommand.SelectAll, shortcut: new( WidgetKey.Character, WidgetInputModifiers.Control, 'a' ) ) ], 'e' ),
 				WidgetMenuItem.Submenu( "view", "View", [ WidgetMenuItem.Checkable( "check", "Checked option", "menu.check", 'c' ), WidgetMenuItem.Separator( "separator" ), WidgetMenuItem.Submenu( "sub", "Submenu", [ WidgetMenuItem.Command( "nested", "Nested action", "menu.nested", 'n' ) ], 's' ) ], 'v' ),
 				WidgetMenuItem.Submenu( "help-menu", "Help", [ WidgetMenuItem.Command( "about", "About", "menu.about", 'a' ) ], 'h' )
 			];
@@ -167,7 +168,16 @@ internal static class Program {
 			}
 		}
 		internal bool SmokeMenus() {
-			this.SelectPage( 2 ); CursesRectangle bounds = this.MenuEditor.Bounds;
+			this.SelectPage( 2 );
+			long originalLength = this.menuView.Document.Length;
+			this.Input( WidgetInput.TextInput( new( 'x' ) ) ); this.Draw();
+			WidgetCaretIntent? caret = this.Host.GetCaretIntent();
+			if ( caret is null || this.Host.Screen.StandardWindow.CursorRow != caret.Row || this.Host.Screen.StandardWindow.CursorColumn != caret.Column ) return false;
+			this.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
+			if ( !this.Running || this.menuView.Document.Length != originalLength ) return false;
+			this.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'y' ) ) );
+			if ( this.menuView.Document.Length != originalLength + 1 ) return false;
+			CursesRectangle bounds = this.MenuEditor.Bounds;
 			this.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ) ); this.Draw();
 			if ( !this.Menu.IsOpen || this.Menu.CurrentItem?.Id != "run" || this.Menu.RenderBounds.Row != this.Menu.Bounds.Row + 1 || this.MenuEditor.Bounds != bounds ) return false;
 			this.Input( WidgetInput.Key( WidgetKey.Right ) ); if ( this.Menu.CurrentItem?.Id != "undo" ) return false;

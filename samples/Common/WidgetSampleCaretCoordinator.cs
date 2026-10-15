@@ -45,6 +45,7 @@ internal sealed class WidgetSampleCaretCoordinator : IAsyncDisposable {
 	private readonly SemaphoreSlim gate = new( 1, 1 );
 	private IAsyncDisposable? lease;
 	private CursesCursorStyle? style;
+	private CursesCursorStyle? unsupportedStyle;
 	private long generation;
 	private bool disposed;
 
@@ -61,9 +62,10 @@ internal sealed class WidgetSampleCaretCoordinator : IAsyncDisposable {
 			}
 			await this.session.SetPositionAsync( intent.Row, intent.Column, cancellationToken ); await this.session.SetVisibilityAsync( true, cancellationToken );
 			if ( intent.PreferredStyle == this.style ) return; await this.ReleaseLeaseAsync();
+			if ( intent.PreferredStyle == this.unsupportedStyle ) return;
 			if ( intent.PreferredStyle is not { } requestedStyle ) return;
 			IAsyncDisposable? acquired = await this.session.AcquireStyleAsync( requestedStyle, cancellationToken );
-			if ( acquired is null ) return;
+			if ( acquired is null ) { this.unsupportedStyle = requestedStyle; return; }
 			if ( this.disposed || requested != Volatile.Read( ref this.generation ) ) { await acquired.DisposeAsync(); return; }
 			this.lease = acquired; this.style = requestedStyle;
 		} finally { this.gate.Release(); }

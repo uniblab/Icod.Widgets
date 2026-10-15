@@ -54,32 +54,59 @@ public partial class WidgetPopupMenu {
 		return -1;
 	}
 
-	internal CursesRectangle GetPopupBounds( CursesScreen screen ) {
-		if ( !this.IsOpen || this.levels.Count == 0 ) return default;
-		Level level = this.levels[ ^1 ];
-		if ( !this.IsMenuBar ) {
-			CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); int inset = area.Rows >= 3 && area.Columns >= 3 ? 1 : 0;
-			return new( area.Row, area.Column, Math.Min( area.Rows, level.Items.Count + inset * 2 ), area.Columns );
+	private int FirstPopupLevel => this.IsMenuBar ? 1 : 0;
+	internal CursesRectangle GetPopupBounds( CursesScreen screen ) => this.GetPopupLayers( screen ).FirstOrDefault().Bounds;
+
+	internal IReadOnlyList<( int Level, CursesRectangle Bounds )> GetPopupLayers( CursesScreen screen ) {
+		List<( int Level, CursesRectangle Bounds )> result = [];
+		if ( !this.IsOpen || this.levels.Count == 0 || screen.Bounds.IsEmpty ) return result;
+		CursesRectangle bar = this.BarBounds( screen );
+		if ( this.IsMenuBar && bar.IsEmpty ) return result;
+		if ( this.IsMenuBar && this.levels.Count == 1 ) { result.Add( ( 0, bar ) ); return result; }
+		for ( int depth = this.FirstPopupLevel; depth < this.levels.Count; depth++ ) {
+			Level level = this.levels[ depth ]; CursesRectangle bounds;
+			if ( depth == 0 && !this.IsMenuBar ) {
+				CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); int inset = Inset( area );
+				bounds = new( area.Row, area.Column, Math.Min( area.Rows, level.Items.Count + inset * 2 ), area.Columns );
+			} else {
+				int labelWidth = level.Items.Max( item => CursesText.MeasureColumns( Prefix( item ) + Label( item ) + Suffix( item ), screen.TextWidthProvider ) );
+				int shortcutWidth = level.Items.Max( item => item.Shortcut is { } shortcut ? CursesText.MeasureColumns( FormatShortcut( shortcut ), screen.TextWidthProvider ) : 0 );
+				int width = Math.Min( screen.Columns, labelWidth + ( shortcutWidth > 0 ? shortcutWidth + 2 : 0 ) + 4 );
+				int row, column;
+				if ( result.Count == 0 ) {
+					int anchor = this.HeadingAreas( screen ).FirstOrDefault( heading => heading.Index == this.levels[ 0 ].Cursor ).Area.Column;
+					column = Math.Clamp( anchor, 0, screen.Columns - width ); row = Math.Min( bar.Row + 1, screen.Rows - 1 );
+				} else {
+					CursesRectangle parent = result[ ^1 ].Bounds; Level parentLevel = this.levels[ depth - 1 ];
+					int inset = Inset( parent ); int rows = Math.Max( 0, parent.Rows - inset * 2 );
+					bool fitsRight = parent.Column + parent.Columns + width <= screen.Columns;
+					column = fitsRight ? parent.Column + parent.Columns : Math.Min( parent.Column, screen.Columns - width );
+					row = fitsRight ? parent.Row + inset + parentLevel.Cursor - FirstVisibleItem( parentLevel, rows ) : parent.Row;
+					row = Math.Clamp( row, 0, Math.Max( 0, screen.Rows - Math.Min( screen.Rows, level.Items.Count + 2 ) ) );
+				}
+				bounds = new( row, column, Math.Min( screen.Rows - row, level.Items.Count + 2 ), width );
+			}
+			result.Add( ( depth, bounds ) );
 		}
-		CursesRectangle bar = this.BarBounds( screen ); if ( bar.IsEmpty ) return default;
-		if ( this.levels.Count == 1 ) return bar;
-		int labelWidth = level.Items.Max( item => CursesText.MeasureColumns( Prefix( item ) + Label( item ) + Suffix( item ), screen.TextWidthProvider ) );
-		int shortcutWidth = level.Items.Max( item => item.Shortcut is { } shortcut ? CursesText.MeasureColumns( FormatShortcut( shortcut ), screen.TextWidthProvider ) : 0 );
-		int width = Math.Min( screen.Columns, labelWidth + ( shortcutWidth > 0 ? shortcutWidth + 2 : 0 ) + 4 );
-		int anchor = this.HeadingAreas( screen ).FirstOrDefault( heading => heading.Index == this.levels[ 0 ].Cursor ).Area.Column;
-		int column = Math.Clamp( anchor, 0, Math.Max( 0, screen.Columns - width ) );
-		int row = Math.Min( bar.Row + 1, screen.Rows - 1 );
-		int height = Math.Min( screen.Rows - row, level.Items.Count + 2 );
-		return new( row, column, height, width );
+		return result;
 	}
 
+	internal bool ContainsPopupPoint( int row, int column, CursesScreen screen ) =>
+		this.GetPopupLayers( screen ).Any( layer => layer.Bounds.Contains( row, column ) );
 	private static int Inset( CursesRectangle bounds ) => bounds.Rows >= 3 && bounds.Columns >= 3 ? 1 : 0;
-	private int FirstVisibleItem( int rows ) => rows > 0 ? Math.Clamp( this.levels[ ^1 ].Cursor - rows + 1, 0, Math.Max( 0, this.levels[ ^1 ].Items.Count - rows ) ) : 0;
-	private int HitItem( int row, int column, CursesScreen screen ) {
-		if ( this.levels.Count == 0 || this.IsMenuBar && this.levels.Count == 1 ) return -1;
-		CursesRectangle area = this.GetPopupBounds( screen ); int inset = Inset( area ); int rows = Math.Min( this.levels[ ^1 ].Items.Count, area.Rows - 2 * inset );
-		int relative = row - area.Row - inset;
-		return relative >= 0 && relative < rows && column >= area.Column + inset && column < area.Column + area.Columns - inset ? this.FirstVisibleItem( rows ) + relative : -1;
+	private static int FirstVisibleItem( Level level, int rows ) => rows > 0 ? Math.Clamp( level.Cursor - rows + 1, 0, Math.Max( 0, level.Items.Count - rows ) ) : 0;
+	private ( int Level, int Index ) HitItem( int row, int column, CursesScreen screen ) {
+		if ( this.IsMenuBar && this.levels.Count == 1 ) return ( -1, -1 );
+		foreach ( var layer in this.GetPopupLayers( screen ).Reverse() ) {
+			CursesRectangle area = layer.Bounds;
+			if ( !area.Contains( row, column ) ) continue;
+			int inset = Inset( area ); Level level = this.levels[ layer.Level ]; int rows = Math.Min( level.Items.Count, area.Rows - 2 * inset );
+			int relative = row - area.Row - inset;
+			// A child border occludes parent rows too.
+			return relative >= 0 && relative < rows && column >= area.Column + inset && column < area.Column + area.Columns - inset
+				? ( layer.Level, FirstVisibleItem( level, rows ) + relative ) : ( -1, -1 );
+		}
+		return ( -1, -1 );
 	}
 
 	internal void RenderBar( CursesScreen screen, WidgetTheme theme, bool focused ) {
@@ -108,17 +135,24 @@ public partial class WidgetPopupMenu {
 		}
 		this.RenderBounds = this.GetPopupBounds( screen );
 		if ( this.RenderBounds.IsEmpty || this.IsMenuBar && this.levels.Count == 1 ) return;
-		int inset = Inset( this.RenderBounds ); int columns = this.RenderBounds.Columns - inset * 2;
-		int rows = Math.Min( this.levels[ ^1 ].Items.Count, this.RenderBounds.Rows - inset * 2 );
+		foreach ( var layer in this.GetPopupLayers( screen ) ) this.RenderPopupLevel( screen, theme, focused, layer.Level, layer.Bounds );
+	}
+
+	internal void RenderPopupLevel( CursesScreen screen, WidgetTheme theme, bool focused, int depth, CursesRectangle bounds ) {
+		this.RenderBounds = this.GetPopupBounds( screen );
+		if ( bounds.IsEmpty || this.IsMenuBar && depth == 0 ) return;
+		Level level = this.levels[ depth ];
+		int inset = Inset( bounds ); int columns = bounds.Columns - inset * 2;
+		int rows = Math.Min( level.Items.Count, bounds.Rows - inset * 2 );
 		int padding = this.IsMenuBar && columns >= 3 ? 1 : 0;
-		screen.StandardWindow.FillRectangle( this.RenderBounds.Row, this.RenderBounds.Column, this.RenderBounds.Rows, this.RenderBounds.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.PopupSurface ) ) );
-		if ( inset > 0 ) this.RenderPopupBorder( screen, theme );
+		screen.StandardWindow.FillRectangle( bounds.Row, bounds.Column, bounds.Rows, bounds.Columns, CursesCell.Blank( this.Style( theme, WidgetStyleRole.PopupSurface ) ) );
+		if ( inset > 0 ) this.RenderPopupBorder( screen, theme, bounds );
 		for ( int row = 0; row < rows; row++ ) {
-			int index = this.FirstVisibleItem( rows ) + row; WidgetMenuItem item = this.levels[ ^1 ].Items[ index ];
-			bool selected = index == this.levels[ ^1 ].Cursor && focused;
-			bool highlighted = theme.HighlightMenuHover && index == this.hoveredIndex;
+			int index = FirstVisibleItem( level, rows ) + row; WidgetMenuItem item = level.Items[ index ];
+			bool selected = index == level.Cursor && focused;
+			bool highlighted = theme.HighlightMenuHover && depth == this.hoveredLevel && index == this.hoveredIndex;
 			CursesStyle style = this.Style( theme, !item.IsEnabled ? WidgetStyleRole.PopupDisabled : selected ? WidgetStyleRole.PopupFocused : highlighted ? WidgetStyleRole.PopupHover : WidgetStyleRole.PopupItem );
-			int line = this.RenderBounds.Row + row + inset; int column = this.RenderBounds.Column + inset;
+			int line = bounds.Row + row + inset; int column = bounds.Column + inset;
 			screen.StandardWindow.FillRectangle( line, column, 1, columns, CursesCell.Blank( style ) );
 			if ( item.Kind == WidgetMenuItemKind.Separator ) { Write( screen, line, column, new string( CursesText.MeasureColumns( "─", screen.TextWidthProvider ) == 1 ? '─' : '-', columns ), this.Style( theme, WidgetStyleRole.PopupBorder ) ); continue; }
 			string prefix = Prefix( item );
@@ -157,12 +191,12 @@ public partial class WidgetPopupMenu {
 			offset += CursesText.MeasureColumns( element, screen.TextWidthProvider );
 		}
 	}
-	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme ) {
-		int right = this.RenderBounds.Column + this.RenderBounds.Columns - 1; int bottom = this.RenderBounds.BottomExclusive - 1;
+	private void RenderPopupBorder( CursesScreen screen, WidgetTheme theme, CursesRectangle bounds ) {
+		int right = bounds.Column + bounds.Columns - 1; int bottom = bounds.BottomExclusive - 1;
 		bool box = CursesText.MeasureColumns( "┌─┐│└┘", screen.TextWidthProvider ) == 6;
-		string horizontal = new( box ? '─' : '-', this.RenderBounds.Columns - 2 ); CursesStyle style = this.Style( theme, WidgetStyleRole.PopupBorder );
-		Write( screen, this.RenderBounds.Row, this.RenderBounds.Column, ( box ? "┌" : "+" ) + horizontal + ( box ? "┐" : "+" ), style );
-		for ( int row = this.RenderBounds.Row + 1; row < bottom; row++ ) { Write( screen, row, this.RenderBounds.Column, box ? "│" : "|", style ); Write( screen, row, right, box ? "│" : "|", style ); }
-		Write( screen, bottom, this.RenderBounds.Column, ( box ? "└" : "+" ) + horizontal + ( box ? "┘" : "+" ), style );
+		string horizontal = new( box ? '─' : '-', bounds.Columns - 2 ); CursesStyle style = this.Style( theme, WidgetStyleRole.PopupBorder );
+		Write( screen, bounds.Row, bounds.Column, ( box ? "┌" : "+" ) + horizontal + ( box ? "┐" : "+" ), style );
+		for ( int row = bounds.Row + 1; row < bottom; row++ ) { Write( screen, row, bounds.Column, box ? "│" : "|", style ); Write( screen, row, right, box ? "│" : "|", style ); }
+		Write( screen, bottom, bounds.Column, ( box ? "└" : "+" ) + horizontal + ( box ? "┘" : "+" ), style );
 	}
 }

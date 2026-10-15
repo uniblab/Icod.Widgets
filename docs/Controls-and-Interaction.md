@@ -49,8 +49,9 @@ Standalone `WidgetPopupMenu` controls retain their caller-supplied width/bounds.
 
 Mnemonics are case-insensitive and unique within each level. The mnemonic text
 element is underlined by default. Root shortcuts invoke directly from a visible,
-enabled menu bar and cannot bypass an active modal. A nested submenu replaces
-the current dropdown contents; Left/Escape restores its parent selection.
+enabled menu bar and cannot bypass an active modal. A nested submenu keeps its parent visible and opens to the right when it fits.
+Otherwise it overlays the parent. Left/Escape removes the child overlay and
+restores the parent selection. Exposed parent rows remain clickable.
 Direct commands on the bar also remain supported.
 
 ### Menu themes

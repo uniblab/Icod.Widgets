@@ -6,6 +6,11 @@ All notable changes to Icod.Widgets are recorded here.
 
 - Keep menu headings in a compact horizontal bar. Dropdowns overlay the content,
   anchor beneath the active heading and size to labels and shortcuts.
+- Preserve parent menus when opening nested submenus: overlay to the right when
+  space allows, or over the parent otherwise. Exposed parent rows remain clickable.
+- Finish sample refreshes at the editor caret and use synchronized output to avoid
+  drawing-position cursor flicker. Cache unavailable cursor-style observations.
+- Add Ctrl+Z/Ctrl+Y/Ctrl+A to the gallery Edit menu.
 - Wrap Up/Down through enabled commands, switch root menus with Left/Right or
   Alt+mnemonics, and restore the previous focus when Escape closes the root menu.
 - Separate pointer hover from keyboard selection; themes opt into hover

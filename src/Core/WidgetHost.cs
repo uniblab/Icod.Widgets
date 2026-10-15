@@ -198,7 +198,7 @@ public sealed partial class WidgetHost : IDisposable {
 		}
 		foreach ( ( WidgetDialog dialog, CursesPanel panel ) in this.dialogPanels ) this.RenderPanel( dialog, panel );
 		this.RenderModalBackdrop();
-		if ( this.popup is { } popupFrame ) this.RenderPanel( popupFrame.Owner, popupFrame.Panel );
+		if ( this.popup is { } popupFrame ) { if ( popupFrame.Owner is WidgetPopupMenu menu ) this.RenderMenuPanels( menu, popupFrame ); else this.RenderPanel( popupFrame.Owner, popupFrame.Panel ); }
 	}
 
 	internal void EnsureActionCapacity( int count = 1 ) { this.ThrowIfDisposed(); if ( count < 0 || count > WidgetLimits.MaximumPendingActions - this.actions.Count ) throw new InvalidOperationException( "The widget action queue is full." ); }
@@ -292,7 +292,7 @@ public sealed partial class WidgetHost : IDisposable {
 			return focused is not null && this.DialogAncestor( focused ) == modal ? focused : modal;
 		}
 		if ( this.popup is { } frame ) {
-			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) && !( frame.Owner is WidgetMenuBar bar && bar.BarBounds( this.Screen ).Contains( pointer.Row, pointer.Column ) ) ) { this.DismissPopup(); return null; }
+			if ( input.Kind == WidgetInputKind.Pointer && input.Pointer is { Action: CursesMouseAction.Press } pointer && !( frame.Owner is WidgetPopupMenu popupMenu ? popupMenu.ContainsPopupPoint( pointer.Row, pointer.Column, this.Screen ) : frame.Panel.Bounds.Contains( pointer.Row, pointer.Column ) ) && !( frame.Owner is WidgetMenuBar bar && bar.BarBounds( this.Screen ).Contains( pointer.Row, pointer.Column ) ) ) { this.DismissPopup(); return null; }
 			if ( input.Kind != WidgetInputKind.Pointer || frame.Owner is WidgetPopupMenu ) return frame.Owner;
 		}
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is not null ) {

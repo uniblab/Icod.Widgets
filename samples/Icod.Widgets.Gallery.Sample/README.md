@@ -61,3 +61,11 @@ The smoke cycles all three themes, verifies focus retention, and exercises
 F6/Shift+F6 navigation on the workspace page, root menu switching, Escape focus
 restoration, independent hover, and the About modal transition. It does not verify physical
 terminal color output.
+
+Nested submenus keep the parent menu: they open to the right when space permits,
+or overlay the parent on narrow screens. Left/Escape returns to the parent;
+exposed parent rows can still be clicked. Ctrl+Z undoes, Ctrl+Y redoes, and Ctrl+A
+selects the document through the Edit menu bindings.
+
+Legacy Alt-key and Windows Ctrl+Z input require the Terminal dependency patch
+tracked in the [1.6.0 release gate](../../docs/releases/1.6.0.md).
