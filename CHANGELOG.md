@@ -2,6 +2,17 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.6.2 — Windows console interoperability dependency
+
+- Updated the sole direct runtime dependency from Icod.DCurses 2.5.1 to 2.5.2,
+  inheriting Terminal 1.29.2's reversible UTF-8 Windows console-output handling
+  and Raw/CBreak mouse-input ownership with Quick Edit suppression.
+- Kept the Widgets runtime and public API unchanged. Assembly version `1.0.0.0`
+  and the net8.0/net9.0/net10.0 targets remain unchanged.
+- Added a focused Windows live-verification checklist for box-drawing borders,
+  keyboard and pointer menu operation, submenu placement, dialog clicks, and
+  editor undo.
+
 ## 1.6.1 — DCurses input-dependency correction
 
 - Updated the sole direct runtime dependency from Icod.DCurses 2.5.0 to 2.5.1,
