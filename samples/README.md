@@ -34,6 +34,28 @@ closes the active dialog/menu. Q/Escape exits outside an overlay and text field.
 input through DCurses so terminal flow control does not swallow Ctrl+Q. Mouse
 and paste protocols are acquired when available; keyboard operation is always usable.
 
+## Windows live verification
+
+Icod.DCurses 2.5.2 supplies the Terminal 1.29.2 Windows console corrections
+used by these samples. In Windows Terminal, Contour, or another Windows console
+host, run the gallery and editor commands above and check:
+
+1. Gallery frames and popup borders remain cell-aligned, with intact corners
+   and no replacement characters or doubled box-drawing cells.
+2. On the Menus page, `Alt+F` opens File. Mouse presses and releases select menu
+   headings and commands; moving the pointer highlights rows only when F8 has
+   enabled the theme's hover treatment.
+3. A nested submenu appears to the right when space permits. After narrowing
+   the terminal, it overlays its parent without replacing or closing that parent.
+4. Help > About opens the modal; click OK to close it and restore editor focus.
+5. In the editor sample, type text and press `Ctrl+Z`; the edit is undone rather
+   than suspending or exiting the application.
+
+The shared live loop explicitly requests `AnyMotion` mouse reporting because
+the gallery demonstrates pointer hover as well as clicks and captured drags.
+Protocol acquisition remains best-effort; keyboard behavior does not depend on
+mouse availability.
+
 In the editor, F6 or Shift+F6 escapes the text editor and toggles focus to the
 Open button. F7 cycles LF/CRLF/CR for future Enter edits; F8 cycles tab,
 two-space, and four-space indentation. Existing text stays unchanged.
