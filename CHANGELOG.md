@@ -2,6 +2,14 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.6.1 — DCurses input-dependency correction
+
+- Updated the sole direct runtime dependency from Icod.DCurses 2.5.0 to 2.5.1,
+  bringing Terminal 1.29.1's legacy Alt-prefix and raw Ctrl+C/Ctrl+Z input fixes
+  into the Widgets dependency chain.
+- Preserved all 1.6 widget behavior and public APIs, assembly version `1.0.0.0`,
+  and the net8.0/net9.0/net10.0 targets. No runtime implementation changed.
+
 ## 1.6.0 — menu interaction and themes
 
 - Keep menu headings in a compact horizontal bar. Dropdowns overlay the content,
