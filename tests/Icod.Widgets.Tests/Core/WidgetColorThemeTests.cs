@@ -210,7 +210,9 @@ public sealed class WidgetColorThemeTests {
 		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowLineNumbers = true } ) { IsEnabled = false };
 		editor.Arrange( screen.Bounds ); editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, false );
 
+		Assert.Equal( "1", screen.StandardWindow.GetCell( 0, 0 ).Content );
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.True( screen.StandardWindow.GetCell( 0, 1 ).IsBlank );
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 1 ).Style );
 	}
 
