@@ -16,7 +16,8 @@ any view and may be shared by more than one view.
 WidgetTextDocument document = new([initialText.AsMemory()]);
 using WidgetTextViewState view = new(document);
 WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
-    HighlightCurrentLine = true
+    HighlightCurrentLine = true,
+    ShowLineNumbers = true
 });
 
 using WidgetHost host = new(session, WidgetTheme.Default);
@@ -40,6 +41,26 @@ indexed terminals. Applications may override it in `WidgetTheme.Parts` or the
 editor's scoped `Styles`. Text selection is painted after the band and
 therefore remains visually dominant. The option is off by default for source
 compatibility and for applications that prefer caret-only presentation.
+
+## Line-number gutter
+
+`WidgetEditorOptions.ShowLineNumbers` adds a fixed left gutter with one-based,
+right-aligned ASCII logical-line numbers and one spacer column. Its width follows
+the document's line-count digit width and does not move during horizontal
+scrolling. Wrapped continuation rows leave the number blank. If reserving the
+natural gutter would consume the final text column, the gutter is suppressed and
+returns automatically after a wider arrange.
+
+`WidgetStyleRole.EditorGutter` controls ordinary rows, while
+`WidgetStyleRole.EditorGutterCurrentLine` follows every visible wrapped row of
+the caret's logical line even when `HighlightCurrentLine` is false. Both roles
+may be overridden through `WidgetTheme.Parts` or scoped editor `Styles`.
+
+The gutter is decorative: a primary-button sequence that begins there is
+consumed without moving or extending the selection. Wheel input still scrolls,
+and a selection drag that begins in text may cross the gutter and autoscroll.
+The option is off by default. It does not introduce a general-purpose editor
+decoration, marker, breakpoint, or click-callback API.
 
 ## Input, commands, and actions
 

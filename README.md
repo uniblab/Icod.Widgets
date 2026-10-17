@@ -179,7 +179,8 @@ Multiline editors opt into a full-width current-line band with
 `new WidgetEditorOptions { HighlightCurrentLine = true }`. The
 `EditorCurrentLine` style controls that band; selection is painted afterward
 and remains visually dominant. Wrapped visual rows of the same logical line
-share the band.
+share the band. `ShowLineNumbers = true` adds a fixed, decorative left gutter
+styled by `EditorGutter` and `EditorGutterCurrentLine`.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;
