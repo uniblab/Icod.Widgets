@@ -62,6 +62,12 @@ public sealed class ReleaseIdentityTests {
 		string notes = File.ReadAllText( notesPath );
 		Assert.Contains( "HighlightCurrentLine", notes, StringComparison.Ordinal );
 		Assert.Contains( "EditorCurrentLine", notes, StringComparison.Ordinal );
+		Assert.Contains( "ShowLineNumbers", notes, StringComparison.Ordinal );
+		Assert.Contains( "EditorGutter", notes, StringComparison.Ordinal );
+		Assert.Contains( "EditorGutterCurrentLine", notes, StringComparison.Ordinal );
+		Assert.Contains( "decorative", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "continuation", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "general-purpose", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "selection", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "AssemblyVersion", notes, StringComparison.Ordinal );
 	}
