@@ -122,9 +122,9 @@ for complete session setup, input, resizing, rendering, and cleanup.
 - Exact mixed-EOL text documents, immutable snapshots, checkpoint identity,
   bounded undo/redo, independent view state, and Unicode-aware multiline editing.
 - Selection, optional theme-controlled full-width current-line highlighting,
-  indentation, insert/overwrite mode, read-only operation, captured
-  pointer drag/autoscroll, both-axis scrollbars, explicit bounded clipboard
-  requests, and focused terminal-caret intent.
+  a fixed line-number gutter, indentation, insert/overwrite mode, read-only
+  operation, captured pointer drag/autoscroll, both-axis scrollbars, explicit
+  bounded clipboard requests, and focused terminal-caret intent.
 - Stable-key document tabs, replaceable caller-owned active content, dynamic
   menu presentation, focused edit commands, and actionable status fields.
 - Single- and multi-select lists, keyboard search, and framed drop-down popups.
