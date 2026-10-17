@@ -127,13 +127,14 @@ public sealed class WidgetColorThemeTests {
 		defaultView.SetSelection( 4, 4 );
 		WidgetTextEditor defaultEditor = new( "default", defaultView );
 		defaultEditor.Arrange( screen.Bounds ); defaultEditor.OnRender( screen, theme, true );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 7 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( CursesStyle.Default, screen.StandardWindow.GetCell( 1, 7 ).Style );
 
 		using WidgetTextViewState view = new( new WidgetTextDocument( [ "top\nmiddle\nlast".AsMemory() ] ) );
 		view.SetSelection( 4, 4 );
 		WidgetTextEditor editor = new( "highlighted", view, new WidgetEditorOptions { HighlightCurrentLine = true } );
 		editor.Arrange( screen.Bounds ); editor.OnRender( screen, theme, true );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 7 ).Style );
+		Assert.Equal( CursesStyle.Default, screen.StandardWindow.GetCell( 0, 7 ).Style );
 		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 0 ).Style );
 		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 7 ).Style );
 		view.SetSelection( 4, 6 ); editor.OnRender( screen, theme, true );
@@ -157,11 +158,11 @@ public sealed class WidgetColorThemeTests {
 		editor.Arrange( screen.Bounds ); editor.OnRender( screen, theme, true );
 		Assert.Equal( Gray, screen.StandardWindow.GetCell( 0, 3 ).Style );
 		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 3 ).Style );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 3 ).Style );
+		Assert.Equal( CursesStyle.Default, screen.StandardWindow.GetCell( 2, 3 ).Style );
 
 		view.SetSelection( 9, 9 ); editor.OnRender( screen, theme, true );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 3 ).Style );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 3 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 3 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 3 ).Style );
 		Assert.Equal( Gray, screen.StandardWindow.GetCell( 2, 3 ).Style );
 	}
 
