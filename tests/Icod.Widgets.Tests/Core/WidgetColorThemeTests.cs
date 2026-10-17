@@ -311,8 +311,8 @@ public sealed class WidgetColorThemeTests {
 			CursesStyle style = indexed.Resolve( role );
 			Assert.Equal( CursesColorKind.Indexed, style.Foreground.Kind );
 			Assert.Equal( CursesColorKind.Indexed, style.Background.Kind );
-			Assert.InRange( style.Foreground.Index, 0, 7 );
-			Assert.InRange( style.Background.Index, 0, 7 );
+			Assert.InRange( style.Foreground.Index.GetValueOrDefault(), 0, 7 );
+			Assert.InRange( style.Background.Index.GetValueOrDefault(), 0, 7 );
 		}
 
 		WidgetTheme backgroundOnly = WidgetPalette.Create( Capabilities( 16, false, false, true, CursesTextAttributes.None ) );
