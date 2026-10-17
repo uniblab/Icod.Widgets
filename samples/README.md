@@ -7,7 +7,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Sample | Live command | Workflow |
 |---|---|---|
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Seven pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI, workspace colors |
-| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; F7/F8 change future Enter/indentation edits; Copy/Cut and Paste demonstrate linewise behavior |
+| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; a themed gutter and full-width band follow the current line; F7/F8 change future Enter/indentation edits; Copy/Cut and Paste demonstrate linewise behavior |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 | Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
@@ -48,8 +48,13 @@ host, run the gallery and editor commands above and check:
 3. A nested submenu appears to the right when space permits. After narrowing
    the terminal, it overlays its parent without replacing or closing that parent.
 4. Help > About opens the modal; click OK to close it and restore editor focus.
-5. In the editor sample, type text and press `Ctrl+Z`; the edit is undone rather
-   than suspending or exiting the application.
+5. In the editor sample, move through normal and wrapped lines. A muted band
+   spans the full width of every visual row belonging to the current logical
+   line, while selected text keeps its own stronger style. The fixed gutter
+   labels only the first visual row; gutter-origin clicks preserve selection,
+   and a very narrow resize suppresses the gutter before it consumes all text
+   space. Type text and press
+   `Ctrl+Z`; the edit is undone rather than suspending or exiting the application.
 
 The shared live loop explicitly requests `AnyMotion` mouse reporting because
 the gallery demonstrates pointer hover as well as clicks and captured drags.

@@ -21,6 +21,11 @@ After opening a file:
   insert/overwrite mode.
 - Arrows, Home/End, and Page Up/Down move the caret. Ctrl+Left/Right moves by
   word; Ctrl+Home/End moves to the document boundaries. Add Shift to select.
+  A muted full-width band follows the current logical line, including all of
+  its wrapped visual rows; selected text remains distinct above that band.
+  A fixed themed gutter shows one-based logical line numbers. Wrapped
+  continuation rows remain blank; the gutter disappears when a narrow resize
+  would leave no text column and returns when space is restored.
 - F7 cycles the terminator inserted by future Enter keys through LF, CRLF,
   and CR. F8 cycles future indentation through a tab, two spaces, and four
   spaces. The status row shows the current choices. Existing text is unchanged;
@@ -34,6 +39,8 @@ After opening a file:
   final line without an ending gains the editor's current newline when pasted
   before existing text. A different external clipboard value pastes as plain text.
 - Drag to select and use the wheel to scroll when mouse reporting is available.
+  A press that begins in the decorative line-number gutter leaves the caret and
+  selection unchanged; a drag that begins in text may cross the gutter.
 - F6 or Shift+F6 moves focus between the editor and Open button. Plain Q is text
   while the editor has focus, and Escape does not exit from the editor. Ctrl+Q
   always exits the sample.
@@ -52,4 +59,4 @@ and intentionally provides no Save command.
 dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS exact file load, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document`.
+Expected: `PASS exact file load, gutter geometry and input, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document`.

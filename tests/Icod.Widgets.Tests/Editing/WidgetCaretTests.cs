@@ -59,6 +59,17 @@ public sealed class WidgetCaretTests {
 	}
 
 	[Fact]
+	public void LineNumberGutterOffsetsCaretAndTextHitTesting() {
+		using Fixture fixture = new( "abcd", new WidgetEditorOptions { ShowLineNumbers = true } ); fixture.View.SetSelection( 2, 2 );
+
+		WidgetCaretIntent intent = Assert.IsType<WidgetCaretIntent>( fixture.Host.GetCaretIntent() );
+		fixture.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 5, 1 ) ), TimeSpan.Zero );
+
+		Assert.Equal( 6, intent.Column );
+		Assert.Equal( 1, fixture.View.Caret );
+	}
+
+	[Fact]
 	public async Task StaleStyleCompletionIsDisposed() {
 		FakeCaretSession session = new(); await using WidgetSampleCaretCoordinator coordinator = new( session );
 		FakeLease stale = new(); FakeLease current = new();
@@ -98,8 +109,8 @@ public sealed class WidgetCaretTests {
 	private static WidgetCaretIntent Intent( CursesCursorStyle style, long generation ) => new( true, 1, 2, style, generation );
 
 	private sealed class Fixture : IDisposable {
-		internal Fixture( string text ) {
-			this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View );
+		internal Fixture( string text, WidgetEditorOptions? options = null ) {
+			this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View, options );
 			this.Host = new WidgetHost( new CursesScreen( 20, 5 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 1, 2, 2, 10 ) ); Assert.True( this.Host.Focus( this.Editor ) );
 		}
 		internal WidgetTextDocument Document { get; }

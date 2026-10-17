@@ -2,6 +2,24 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.7.0 — editor current-line presentation
+
+- Added opt-in `WidgetEditorOptions.HighlightCurrentLine` presentation for
+  `WidgetTextEditor` and the theme role `WidgetStyleRole.EditorCurrentLine`.
+- Added opt-in `WidgetEditorOptions.ShowLineNumbers` with fixed one-based logical
+  line numbers and `EditorGutter`/`EditorGutterCurrentLine` theme roles.
+- Paint the complete width of every visible wrapped row belonging to the caret's
+  logical line. Selection is painted afterward and remains visually dominant.
+- Keep wrapped continuation labels blank, keep the gutter fixed during
+  horizontal scrolling, and suppress it when it would consume the final text
+  column. Gutter-origin pointer sequences are decorative; wheel scrolling and
+  text-originated selection drags remain active.
+- Added muted current-line treatments to the capability-aware dark and light
+  palettes, while retaining application and scoped theme overrides.
+- Enabled the behavior in the editor sample and documented live verification.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency.
+
 ## 1.6.2 — Windows console interoperability dependency
 
 - Updated the sole direct runtime dependency from Icod.DCurses 2.5.1 to 2.5.2,

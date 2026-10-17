@@ -40,6 +40,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private bool pasteExceeded;
 	private bool isReadOnly;
 	private bool pointerSelecting;
+	private bool gutterPointerSequence;
 	private int pointerColumn;
 	private int pointerRow;
 	private int horizontalAutoScroll;
@@ -152,7 +153,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		if ( this.pendingPaste is not null && WidgetInputKind.Paste != input.Kind ) this.CancelPendingPaste();
 		if ( WidgetInputKind.Paste == input.Kind ) return this.HandlePaste( input, host.CurrentTime );
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } pointer ) return this.HandlePointer( pointer, host );
-		if ( WidgetInputKind.Focus == input.Kind && CursesFocusState.Unfocused == input.FocusState ) { this.CancelPendingPaste(); return false; }
+		if ( WidgetInputKind.Focus == input.Kind && CursesFocusState.Unfocused == input.FocusState ) { this.CancelPointerSelection(); this.CancelPendingPaste(); return false; }
 		if ( WidgetInputKind.Key == input.Kind && CursesKeyEventPhase.Release == input.KeyPhase ) return false;
 
 		if ( WidgetInputKind.Key == input.Kind ) {
@@ -162,8 +163,8 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 				case WidgetKey.Right: return this.MoveHorizontal( true, control, shift );
 				case WidgetKey.Up: return this.MoveVertical( -1, shift, host.Screen.TextWidthProvider );
 				case WidgetKey.Down: return this.MoveVertical( 1, shift, host.Screen.TextWidthProvider );
-				case WidgetKey.PageUp: return this.MoveVertical( -Math.Max( 1, this.Bounds.Rows - 1 ), shift, host.Screen.TextWidthProvider );
-				case WidgetKey.PageDown: return this.MoveVertical( Math.Max( 1, this.Bounds.Rows - 1 ), shift, host.Screen.TextWidthProvider );
+				case WidgetKey.PageUp: return this.MoveVertical( -Math.Max( 1, this.GetViewport().Text.Rows - 1 ), shift, host.Screen.TextWidthProvider );
+				case WidgetKey.PageDown: return this.MoveVertical( Math.Max( 1, this.GetViewport().Text.Rows - 1 ), shift, host.Screen.TextWidthProvider );
 				case WidgetKey.Home: return this.MoveHomeEnd( false, control, shift );
 				case WidgetKey.End: return this.MoveHomeEnd( true, control, shift );
 				case WidgetKey.Insert: this.IsOverwriteMode = !this.IsOverwriteMode; return true;
@@ -195,7 +196,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		int steps = Math.Min( this.options.MaximumWorkPerUpdate, checked( (int)Math.Min( int.MaxValue, elapsedTicks / TimeSpan.FromMilliseconds( 50 ).Ticks ) ) );
 		if ( 0 == steps ) return; this.EnsureActionCapacity(); this.lastAutoScroll = previous + TimeSpan.FromTicks( checked( steps * TimeSpan.FromMilliseconds( 50 ).Ticks ) );
 		long vertical = this.View.VerticalOffset; long horizontal = this.View.HorizontalOffset;
-		long maximumVertical = Math.Max( 0, this.View.Document.LineCount - Math.Max( 1, this.Bounds.Rows ) );
+		long maximumVertical = Math.Max( 0, this.View.Document.LineCount - Math.Max( 1, this.GetViewport().Text.Rows ) );
 		vertical = Math.Clamp( SaturatingAdd( vertical, (long)this.verticalAutoScroll * steps ), 0, maximumVertical );
 		horizontal = Math.Max( 0, SaturatingAdd( horizontal, (long)this.horizontalAutoScroll * steps ) );
 		this.View.SetScroll( horizontal, vertical ); long offset = this.HitTestPointer( this.pointerColumn, this.pointerRow, this.pointerWidthProvider );
@@ -204,33 +205,54 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return;
+		WidgetEditorViewport viewport = WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers );
 		CursesStyle surface = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.EditorSurface );
 		CursesStyle baseStyle = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused && !this.HasPartStyle( theme, WidgetStyleRole.EditorText ) ? WidgetStyleRole.Focused : WidgetStyleRole.EditorText );
 		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( surface ) );
-		WidgetTextProjectionResult result = this.projection.Project( this.View, screen.TextWidthProvider, new CursesRectangle( 0, 0, area.Rows, area.Columns ) );
-		this.UpdateScrollRanges( result, area.Rows, area.Columns );
+		WidgetTextProjectionResult result = this.projection.Project( this.View, screen.TextWidthProvider, new CursesRectangle( 0, 0, viewport.Text.Rows, viewport.Text.Columns ) );
+		this.UpdateScrollRanges( result, viewport.Text.Rows, viewport.Text.Columns );
+		long currentLine = this.options.HighlightCurrentLine && this.IsEffectivelyEnabled ? this.View.Document.GetLineIndex( this.View.Caret ) : -1;
+		long gutterCurrentLine = this.IsEffectivelyEnabled ? this.View.Document.GetLineIndex( this.View.Caret ) : -1;
+		CursesStyle currentLineStyle = this.Style( theme, WidgetStyleRole.EditorCurrentLine );
+		CursesStyle gutterStyle = this.Style( theme, this.IsEffectivelyEnabled ? WidgetStyleRole.EditorGutter : WidgetStyleRole.Disabled );
+		CursesStyle gutterCurrentLineStyle = this.Style( theme, this.IsEffectivelyEnabled ? WidgetStyleRole.EditorGutterCurrentLine : WidgetStyleRole.Disabled );
+		for ( int rowIndex = 0; rowIndex < viewport.Gutter.Rows; rowIndex++ ) {
+			WidgetProjectedRow? projected = rowIndex < result.Rows.Count ? result.Rows[ rowIndex ] : null;
+			CursesStyle rowStyle = projected is not null && projected.LogicalLineIndex == gutterCurrentLine ? gutterCurrentLineStyle : gutterStyle;
+			screen.StandardWindow.FillRectangle( viewport.Gutter.Row + rowIndex, viewport.Gutter.Column, 1, viewport.Gutter.Columns, CursesCell.Blank( rowStyle ) );
+			if ( projected is null || 0 != projected.VisualLineIndex ) continue;
+			string label = checked( projected.LogicalLineIndex + 1 ).ToString( CultureInfo.InvariantCulture );
+			int labelColumn = viewport.Gutter.RightExclusive - 1 - label.Length;
+			screen.StandardWindow.Move( viewport.Gutter.Row + rowIndex, labelColumn ); screen.StandardWindow.Write( label, rowStyle );
+		}
+		CursesWindow textWindow = screen.CreateWindow( viewport.Text.Row, viewport.Text.Column, viewport.Text.Rows, viewport.Text.Columns );
 		for ( int index = 0; index < result.Rows.Count; index++ ) {
-			WidgetProjectedRow row = result.Rows[ index ]; long destination = (long)area.Column + row.BaseColumn - this.View.HorizontalOffset;
-			if ( destination < 0 || destination > int.MaxValue ) continue;
-			screen.StandardWindow.PresentTextLayout( row.Layout, row.VisualLineIndex, 1, area.Row + index, (int)destination );
+			WidgetProjectedRow row = result.Rows[ index ]; long destination = row.BaseColumn - this.View.HorizontalOffset;
+			if ( destination < int.MinValue || destination > int.MaxValue ) continue;
+			textWindow.PresentTextLayout( row.Layout, row.VisualLineIndex, 1, index, (int)destination );
 		}
-		for ( int row = 0; row < area.Rows; row++ ) for ( int column = 0; column < area.Columns; column++ ) {
-			CursesCell cell = screen.StandardWindow.GetCell( area.Row + row, area.Column + column );
-			if ( !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, baseStyle );
+		for ( int row = 0; row < viewport.Text.Rows; row++ ) {
+			bool isCurrentLine = row < result.Rows.Count && result.Rows[ row ].LogicalLineIndex == currentLine;
+			CursesStyle textStyle = isCurrentLine ? currentLineStyle : baseStyle;
+			for ( int column = 0; column < viewport.Text.Columns; column++ ) {
+				CursesCell cell = screen.StandardWindow.GetCell( viewport.Text.Row + row, viewport.Text.Column + column );
+				if ( isCurrentLine || !cell.IsBlank ) RestyleCell( screen.StandardWindow, viewport.Text.Row + row, viewport.Text.Column + column, cell, textStyle );
+			}
 		}
-		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < area.Columns; column++ ) {
-			CursesCell cell = screen.StandardWindow.GetCell( area.Row + span.Row, area.Column + column );
-			RestyleCell( screen.StandardWindow, area.Row + span.Row, area.Column + column, cell, this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.TextSelection : WidgetStyleRole.TextSelectionInactive ) );
+		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < viewport.Text.Columns; column++ ) {
+			CursesCell cell = screen.StandardWindow.GetCell( viewport.Text.Row + span.Row, viewport.Text.Column + column );
+			RestyleCell( screen.StandardWindow, viewport.Text.Row + span.Row, viewport.Text.Column + column, cell, this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.TextSelection : WidgetStyleRole.TextSelectionInactive ) );
 		}
 	}
 
-	protected override void OnArrange( CursesRectangle bounds ) => this.RefreshScrollRanges();
+	protected override void OnArrange( CursesRectangle bounds ) { this.CancelPointerSelection(); this.RefreshScrollRanges(); }
 
 	protected override WidgetCaretIntent? GetCaretIntent() {
 		WidgetHost? host = this.Host; if ( host is null ) return null; CursesRectangle area = this.Bounds.Intersect( host.Screen.Bounds ); if ( area.IsEmpty ) return null;
-		WidgetTextProjectionResult result = this.projection.Project( this.View, host.Screen.TextWidthProvider, new CursesRectangle( 0, 0, area.Rows, area.Columns ) );
-		if ( result.Caret is not { } caret ) return null; int row = area.Row + caret.Row; int column = area.Column + caret.Column;
-		if ( !area.Contains( row, column ) ) return null;
+		WidgetEditorViewport viewport = WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers );
+		WidgetTextProjectionResult result = this.projection.Project( this.View, host.Screen.TextWidthProvider, new CursesRectangle( 0, 0, viewport.Text.Rows, viewport.Text.Columns ) );
+		if ( result.Caret is not { } caret ) return null; int row = viewport.Text.Row + caret.Row; int column = viewport.Text.Column + caret.Column;
+		if ( !viewport.Text.Contains( row, column ) ) return null;
 		return new WidgetCaretIntent( true, row, column, this.IsOverwriteMode ? CursesCursorStyle.SteadyBlock : CursesCursorStyle.SteadyBar, 0 );
 	}
 
@@ -266,7 +288,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private bool HandlePointer( CursesMouseEvent pointer, WidgetHost host ) {
 		this.pointerWidthProvider = host.Screen.TextWidthProvider;
 		if ( pointer.Action is CursesMouseAction.WheelUp or CursesMouseAction.WheelDown ) {
-			long maximum = Math.Max( 0, this.View.Document.LineCount - Math.Max( 1, this.Bounds.Rows ) );
+			long maximum = Math.Max( 0, this.View.Document.LineCount - Math.Max( 1, this.GetViewport().Text.Rows ) );
 			long target = Math.Clamp( SaturatingAdd( this.View.VerticalOffset, CursesMouseAction.WheelUp == pointer.Action ? -3 : 3 ), 0, maximum );
 			if ( target != this.View.VerticalOffset ) this.View.SetScroll( this.View.HorizontalOffset, target ); this.RefreshScrollRanges(); return true;
 		}
@@ -274,12 +296,10 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			long target = Math.Max( 0, SaturatingAdd( this.View.HorizontalOffset, CursesMouseAction.WheelLeft == pointer.Action ? -4 : 4 ) );
 			if ( target != this.View.HorizontalOffset ) this.View.SetScroll( target, this.View.VerticalOffset ); this.RefreshScrollRanges(); return true;
 		}
-		if ( CursesMouseButton.Primary != pointer.Button ) return false;
 		this.pointerColumn = pointer.Column; this.pointerRow = pointer.Row;
-		if ( CursesMouseAction.Press == pointer.Action ) {
-			long offset = this.HitTestPointer( pointer.Column, pointer.Row, host.Screen.TextWidthProvider ); bool extend = 0 != ( pointer.Modifiers & CursesKeyModifiers.Shift );
-			this.pointerSelecting = true; this.UpdateAutoScroll( pointer, host.CurrentTime );
-			return this.SetPointerSelection( extend ? this.View.Anchor : offset, offset );
+		if ( this.gutterPointerSequence ) {
+			if ( CursesMouseAction.Release == pointer.Action ) this.CancelPointerSelection();
+			return true;
 		}
 		if ( CursesMouseAction.Move == pointer.Action && this.pointerSelecting ) {
 			this.UpdateAutoScroll( pointer, host.CurrentTime ); long offset = this.HitTestPointer( pointer.Column, pointer.Row, host.Screen.TextWidthProvider );
@@ -289,14 +309,23 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			long offset = this.HitTestPointer( pointer.Column, pointer.Row, host.Screen.TextWidthProvider ); bool changed = this.SetPointerSelection( this.View.Anchor, offset );
 			this.CancelPointerSelection(); return changed;
 		}
+		if ( CursesMouseButton.Primary != pointer.Button ) return false;
+		if ( CursesMouseAction.Press == pointer.Action ) {
+			WidgetEditorViewport viewport = this.GetViewport();
+			if ( viewport.Gutter.Contains( pointer.Row, pointer.Column ) ) { this.CancelPointerSelection(); this.gutterPointerSequence = true; return true; }
+			long offset = this.HitTestPointer( pointer.Column, pointer.Row, host.Screen.TextWidthProvider ); bool extend = 0 != ( pointer.Modifiers & CursesKeyModifiers.Shift );
+			this.pointerSelecting = true; this.UpdateAutoScroll( pointer, host.CurrentTime );
+			return this.SetPointerSelection( extend ? this.View.Anchor : offset, offset );
+		}
 		return false;
 	}
 
 	private long HitTestPointer( int screenColumn, int screenRow, ICursesTextWidthProvider widthProvider ) {
-		int rows = Math.Max( 1, this.Bounds.Rows ); int columns = Math.Max( 1, this.Bounds.Columns );
+		CursesRectangle text = this.GetViewport().Text;
+		int rows = Math.Max( 1, text.Rows ); int columns = Math.Max( 1, text.Columns );
 		WidgetTextProjectionResult result = this.projection.Project( this.View, widthProvider, new CursesRectangle( 0, 0, rows, columns ) );
-		if ( 0 == result.Rows.Count ) return 0; int row = Math.Clamp( screenRow - this.Bounds.Row, 0, result.Rows.Count - 1 );
-		long localColumn = Math.Clamp( (long)screenColumn - this.Bounds.Column, 0, columns ); long trueColumn = SaturatingAdd( this.View.HorizontalOffset, localColumn );
+		if ( 0 == result.Rows.Count ) return 0; int row = Math.Clamp( screenRow - text.Row, 0, result.Rows.Count - 1 );
+		long localColumn = Math.Clamp( (long)screenColumn - text.Column, 0, columns ); long trueColumn = SaturatingAdd( this.View.HorizontalOffset, localColumn );
 		return result.Rows[ row ].HitTest( trueColumn );
 	}
 
@@ -306,13 +335,14 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	}
 
 	private void UpdateAutoScroll( CursesMouseEvent pointer, TimeSpan timestamp ) {
-		this.horizontalAutoScroll = pointer.Column < this.Bounds.Column ? -1 : pointer.Column >= this.Bounds.RightExclusive ? 1 : 0;
-		this.verticalAutoScroll = pointer.Row < this.Bounds.Row ? -1 : pointer.Row >= this.Bounds.BottomExclusive ? 1 : 0;
+		CursesRectangle text = this.GetViewport().Text;
+		this.horizontalAutoScroll = pointer.Column < text.Column ? -1 : pointer.Column >= text.RightExclusive ? 1 : 0;
+		this.verticalAutoScroll = pointer.Row < text.Row ? -1 : pointer.Row >= text.BottomExclusive ? 1 : 0;
 		if ( 0 != this.horizontalAutoScroll || 0 != this.verticalAutoScroll ) this.lastAutoScroll ??= timestamp; else this.lastAutoScroll = null;
 	}
 
 	private void CancelPointerSelection() {
-		this.pointerSelecting = false; this.horizontalAutoScroll = 0; this.verticalAutoScroll = 0; this.lastAutoScroll = null; this.pointerWidthProvider = null;
+		this.pointerSelecting = false; this.gutterPointerSequence = false; this.horizontalAutoScroll = 0; this.verticalAutoScroll = 0; this.lastAutoScroll = null; this.pointerWidthProvider = null;
 	}
 
 	private bool MoveHorizontal( bool forward, bool word, bool extend ) {
@@ -327,8 +357,9 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		long currentLine = this.View.Document.GetLineIndex( this.View.Caret ); long targetLine = Math.Clamp( currentLine + delta, 0, this.View.Document.LineCount - 1 );
 		if ( targetLine == currentLine ) return true;
 		this.EnsureActionCapacity(); long anchor = this.View.Anchor;
+		CursesRectangle text = this.GetViewport().Text;
 		if ( !this.projection.MoveVertically( this.View, checked( (int)( targetLine - currentLine ) ), widthProvider,
-			new CursesRectangle( 0, 0, Math.Max( 1, this.Bounds.Rows ), Math.Max( 1, this.Bounds.Columns ) ) ) ) return true;
+			new CursesRectangle( 0, 0, Math.Max( 1, text.Rows ), Math.Max( 1, text.Columns ) ) ) ) return true;
 		if ( extend ) this.View.SetSelectionFromProjection( anchor, this.View.Caret, true );
 		this.EmitSelection(); this.RevealCaret(); return true;
 	}
@@ -465,16 +496,22 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	}
 
 	private void RevealCaret() {
-		if ( 0 == this.Bounds.Rows ) return; long line = this.View.Document.GetLineIndex( this.View.Caret ); long vertical = this.View.VerticalOffset;
-		if ( line < vertical ) vertical = line; else if ( line >= vertical + this.Bounds.Rows ) vertical = line - this.Bounds.Rows + 1;
+		int rows = this.GetViewport().Text.Rows; if ( 0 == rows ) return; long line = this.View.Document.GetLineIndex( this.View.Caret ); long vertical = this.View.VerticalOffset;
+		if ( line < vertical ) vertical = line; else if ( line >= vertical + rows ) vertical = line - rows + 1;
 		if ( vertical != this.View.VerticalOffset ) this.View.SetScroll( this.View.HorizontalOffset, vertical ); this.RefreshScrollRanges();
 	}
 
 	private void RefreshScrollRanges() {
-		long verticalExtent = Math.Max( this.View.Document.LineCount, SaturatingAdd( this.View.VerticalOffset, this.Bounds.Rows ) );
-		this.VerticalScrollRange = new WidgetScrollRange( verticalExtent, this.Bounds.Rows, this.View.VerticalOffset, CursesTextWrapMode.NoWrap == this.View.WrapMode );
-		long horizontalExtent = Math.Max( this.Bounds.Columns, SaturatingAdd( this.View.HorizontalOffset, this.Bounds.Columns ) );
-		this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, this.Bounds.Columns, this.View.HorizontalOffset, CursesTextWrapMode.NoWrap != this.View.WrapMode );
+		CursesRectangle text = this.GetViewport().Text; int textColumns = text.Columns;
+		long verticalExtent = Math.Max( this.View.Document.LineCount, SaturatingAdd( this.View.VerticalOffset, text.Rows ) );
+		this.VerticalScrollRange = new WidgetScrollRange( verticalExtent, text.Rows, this.View.VerticalOffset, CursesTextWrapMode.NoWrap == this.View.WrapMode );
+		long horizontalExtent = Math.Max( textColumns, SaturatingAdd( this.View.HorizontalOffset, textColumns ) );
+		this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, textColumns, this.View.HorizontalOffset, CursesTextWrapMode.NoWrap != this.View.WrapMode );
+	}
+
+	private WidgetEditorViewport GetViewport() {
+		CursesRectangle area = this.Host is { } host ? this.Bounds.Intersect( host.Screen.Bounds ) : this.Bounds;
+		return WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers );
 	}
 
 	private void UpdateScrollRanges( WidgetTextProjectionResult result, int rows, int columns ) {

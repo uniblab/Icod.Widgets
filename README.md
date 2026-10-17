@@ -121,9 +121,10 @@ for complete session setup, input, resizing, rendering, and cleanup.
   scroll indicators, and stack/grid layout.
 - Exact mixed-EOL text documents, immutable snapshots, checkpoint identity,
   bounded undo/redo, independent view state, and Unicode-aware multiline editing.
-- Selection, indentation, insert/overwrite mode, read-only operation, captured
-  pointer drag/autoscroll, both-axis scrollbars, explicit bounded clipboard
-  requests, and focused terminal-caret intent.
+- Selection, optional theme-controlled full-width current-line highlighting,
+  a fixed line-number gutter, indentation, insert/overwrite mode, read-only
+  operation, captured pointer drag/autoscroll, both-axis scrollbars, explicit
+  bounded clipboard requests, and focused terminal-caret intent.
 - Stable-key document tabs, replaceable caller-owned active content, dynamic
   menu presentation, focused edit commands, and actionable status fields.
 - Single- and multi-select lists, keyboard search, and framed drop-down popups.
@@ -173,6 +174,13 @@ with `host.SetTheme` to override a role across the theme. Scoped styles resolve
 before theme parts; switching themes does not clear a widget's scoped overrides.
 Reapply palette-derived overrides when changing palettes if they should follow
 the new palette.
+
+Multiline editors opt into a full-width current-line band with
+`new WidgetEditorOptions { HighlightCurrentLine = true }`. The
+`EditorCurrentLine` style controls that band; selection is painted afterward
+and remains visually dominant. Wrapped visual rows of the same logical line
+share the band. `ShowLineNumbers = true` adds a fixed, decorative left gutter
+styled by `EditorGutter` and `EditorGutterCurrentLine`.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;
