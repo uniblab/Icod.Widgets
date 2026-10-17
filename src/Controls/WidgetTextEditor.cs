@@ -213,16 +213,15 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		CursesStyle currentLineStyle = this.Style( theme, WidgetStyleRole.EditorCurrentLine );
 		for ( int index = 0; index < result.Rows.Count; index++ ) {
 			WidgetProjectedRow row = result.Rows[ index ]; long destination = (long)area.Column + row.BaseColumn - this.View.HorizontalOffset;
-			if ( row.LogicalLineIndex == currentLine )
-				screen.StandardWindow.FillRectangle( area.Row + index, area.Column, 1, area.Columns, CursesCell.Blank( currentLineStyle ) );
 			if ( destination < 0 || destination > int.MaxValue ) continue;
 			screen.StandardWindow.PresentTextLayout( row.Layout, row.VisualLineIndex, 1, area.Row + index, (int)destination );
 		}
 		for ( int row = 0; row < area.Rows; row++ ) {
-			CursesStyle textStyle = row < result.Rows.Count && result.Rows[ row ].LogicalLineIndex == currentLine ? currentLineStyle : baseStyle;
+			bool isCurrentLine = row < result.Rows.Count && result.Rows[ row ].LogicalLineIndex == currentLine;
+			CursesStyle textStyle = isCurrentLine ? currentLineStyle : baseStyle;
 			for ( int column = 0; column < area.Columns; column++ ) {
 				CursesCell cell = screen.StandardWindow.GetCell( area.Row + row, area.Column + column );
-				if ( !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, textStyle );
+				if ( isCurrentLine || !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, textStyle );
 			}
 		}
 		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < area.Columns; column++ ) {
