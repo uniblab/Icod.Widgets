@@ -26,6 +26,7 @@ using Icod.DCurses;
 
 internal readonly record struct WidgetProjectedCaret( int Row, int Column, long Offset );
 internal readonly record struct WidgetProjectedSelectionSpan( int Row, int Column, int Columns, long SourceStart, long SourceEnd );
+internal readonly record struct WidgetProjectedHit( long Offset, CursesTextAffinity Affinity );
 
 internal sealed class WidgetProjectedRow {
 	private readonly long origin;
@@ -44,16 +45,28 @@ internal sealed class WidgetProjectedRow {
 	internal long SourceStart => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.VisualLineIndex ].SourceStart.Offset;
 	internal long SourceEnd => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.VisualLineIndex ].SourceEnd.Offset;
 
-	internal long GetColumn( long sourceOffset ) {
+	internal long GetColumn( long sourceOffset, CursesTextAffinity affinity = CursesTextAffinity.Leading ) {
 		if ( this.IsPlaceholder ) { if ( sourceOffset != this.origin ) throw new ArgumentOutOfRangeException( nameof( sourceOffset ) ); return 0; }
 		long local = sourceOffset - this.origin; if ( local < 0 || local > this.Layout.Text.Length ) throw new ArgumentOutOfRangeException( nameof( sourceOffset ) );
-		return this.baseColumn + this.Layout.GetVisualPosition( new CursesTextPosition( checked( (int)local ) ) ).Column - this.layoutStartingColumn;
+		return this.baseColumn + this.Layout.GetVisualPosition( new CursesTextPosition( checked( (int)local ) ), affinity ).Column - this.layoutStartingColumn;
+	}
+
+	internal bool TryGetVisualPosition( long sourceOffset, CursesTextAffinity affinity, out CursesTextVisualPosition visual ) {
+		visual = default;
+		if ( this.IsPlaceholder ) return sourceOffset == this.origin;
+		long local = sourceOffset - this.origin; if ( local < 0 || local > this.Layout.Text.Length ) return false;
+		visual = this.Layout.GetVisualPosition( new CursesTextPosition( checked( (int)local ) ), affinity ); return true;
 	}
 
 	internal long HitTest( long column ) {
-		if ( this.IsPlaceholder ) return this.origin;
+		return this.HitTestWithAffinity( column ).Offset;
+	}
+
+	internal WidgetProjectedHit HitTestWithAffinity( long column ) {
+		if ( this.IsPlaceholder ) return new WidgetProjectedHit( this.origin, CursesTextAffinity.Leading );
 		long localColumn = this.layoutStartingColumn + column - this.baseColumn;
-		return this.origin + this.Layout.HitTest( this.VisualLineIndex, (int)Math.Clamp( localColumn, 0, int.MaxValue ) ).Position.Offset;
+		CursesTextHitTestResult hit = this.Layout.HitTest( this.VisualLineIndex, (int)Math.Clamp( localColumn, 0, int.MaxValue ) );
+		return new WidgetProjectedHit( this.origin + hit.Position.Offset, hit.Affinity );
 	}
 
 	internal long TranslateLayoutColumn( int column ) => this.baseColumn + column - this.layoutStartingColumn;
@@ -138,17 +151,32 @@ internal sealed class WidgetTextProjection {
 		return new WidgetTextProjectionResult( rows.AsReadOnly(), caret, selection, extent, exactExtent, complete, sourceUnitsRead, hits, misses );
 	}
 
-	internal bool MoveVertically( WidgetTextViewState view, int lineDelta, ICursesTextWidthProvider widthProvider, CursesRectangle viewport ) {
+	internal bool MoveVertically( WidgetTextViewState view, int rowDelta, ICursesTextWidthProvider widthProvider, CursesRectangle viewport ) {
 		ArgumentNullException.ThrowIfNull( view ); ArgumentNullException.ThrowIfNull( widthProvider );
-		if ( 0 == lineDelta ) return false; WidgetTextDocument document = view.Document; long currentLine = document.GetLineIndex( view.Caret );
-		long targetLine = Math.Clamp( currentLine + lineDelta, 0, document.LineCount - 1 ); if ( targetLine == currentLine ) return false;
-		int columns = Math.Max( 1, viewport.Columns );
-		CacheEntry current = this.BuildEntry( document, currentLine, columns, 1, view, widthProvider, this.options.MaximumProjectionSourceUnits, out _, out _ );
-		WidgetProjectedRow currentRow = new( currentLine, current.Origin, current.BaseColumn, current.StartingColumn, current.Layout, Math.Max( 0, current.Layout.Lines.Count - 1 ), current.IsPlaceholder, current.HasContinuation );
-		int preferred = view.PreferredColumn ?? checked( (int)currentRow.GetColumn( view.Caret ) );
-		CacheEntry target = this.BuildEntry( document, targetLine, columns, 1, view, widthProvider, this.options.MaximumProjectionSourceUnits, out _, out _ );
-		WidgetProjectedRow targetRow = new( targetLine, target.Origin, target.BaseColumn, target.StartingColumn, target.Layout, 0, target.IsPlaceholder, target.HasContinuation );
-		long offset = targetRow.HitTest( preferred ); view.PreferredColumn = preferred; view.SetSelectionFromProjection( offset, offset, true ); return true;
+		if ( 0 == rowDelta ) return false;
+		WidgetTextDocument document = view.Document; long logicalLine = document.GetLineIndex( view.Caret ); int columns = Math.Max( 1, viewport.Columns );
+		int layoutRows = Math.Max( 1, Math.Min( this.options.MaximumWorkPerUpdate, Math.Max( viewport.Rows, Math.Abs( rowDelta ) + 1 ) ) );
+		CacheEntry entry = this.BuildEntry( document, logicalLine, columns, layoutRows, view, widthProvider, this.options.MaximumProjectionSourceUnits, out _, out _ );
+		if ( entry.IsPlaceholder || 0 == entry.Layout.Lines.Count ) return false;
+		long localCaret = view.Caret - entry.Origin; if ( localCaret < 0 || localCaret > entry.Layout.Text.Length ) return false;
+		CursesTextVisualPosition current = entry.Layout.GetVisualPosition( new CursesTextPosition( checked( (int)localCaret ) ), view.CaretAffinity );
+		WidgetProjectedRow currentRow = new( logicalLine, entry.Origin, entry.BaseColumn, entry.StartingColumn, entry.Layout, current.Line, entry.IsPlaceholder, entry.HasContinuation );
+		int preferred = view.PreferredColumn ?? checked( (int)currentRow.GetColumn( view.Caret, view.CaretAffinity ) );
+		int direction = Math.Sign( rowDelta ); int remaining = Math.Abs( rowDelta ); int visualLine = current.Line; bool moved = false;
+		while ( 0 < remaining ) {
+			int adjacent = visualLine + direction;
+			if ( adjacent >= 0 && adjacent < entry.Layout.Lines.Count ) { visualLine = adjacent; remaining--; moved = true; continue; }
+			if ( 0 < direction && entry.Layout.IsTruncated ) break;
+			long nextLogicalLine = logicalLine + direction; if ( nextLogicalLine < 0 || nextLogicalLine >= document.LineCount ) break;
+			logicalLine = nextLogicalLine;
+			entry = this.BuildEntry( document, logicalLine, columns, layoutRows, view, widthProvider, this.options.MaximumProjectionSourceUnits, out _, out _ );
+			if ( entry.IsPlaceholder || 0 == entry.Layout.Lines.Count ) break;
+			visualLine = 0 < direction ? 0 : entry.Layout.Lines.Count - 1; remaining--; moved = true;
+		}
+		if ( !moved ) return false;
+		WidgetProjectedRow targetRow = new( logicalLine, entry.Origin, entry.BaseColumn, entry.StartingColumn, entry.Layout, visualLine, entry.IsPlaceholder, entry.HasContinuation );
+		WidgetProjectedHit hit = targetRow.HitTestWithAffinity( preferred );
+		view.PreferredColumn = preferred; view.SetSelectionFromProjection( hit.Offset, hit.Offset, true, hit.Affinity ); return true;
 	}
 
 	private CacheEntry BuildEntry( WidgetTextDocument document, long lineIndex, int viewportColumns, int layoutRows, WidgetTextViewState view,
@@ -252,7 +280,12 @@ internal sealed class WidgetTextProjection {
 	private static WidgetProjectedCaret? FindCaret( WidgetTextViewState view, IReadOnlyList<WidgetProjectedRow> rows, int viewportColumns ) {
 		for ( int rowIndex = 0; rowIndex < rows.Count; rowIndex++ ) {
 			WidgetProjectedRow row = rows[ rowIndex ]; if ( view.Caret < row.SourceStart || view.Caret > row.SourceEnd ) continue;
-			try { long shifted = row.GetColumn( view.Caret ) - view.HorizontalOffset; if ( shifted >= 0 && shifted < viewportColumns ) return new WidgetProjectedCaret( rowIndex, (int)shifted, view.Caret ); }
+			try {
+				if ( !row.TryGetVisualPosition( view.Caret, view.CaretAffinity, out CursesTextVisualPosition visual ) ) continue;
+				if ( visual.Line != row.VisualLineIndex ) continue;
+				long shifted = row.GetColumn( view.Caret, view.CaretAffinity ) - view.HorizontalOffset;
+				if ( shifted >= 0 && shifted < viewportColumns ) return new WidgetProjectedCaret( rowIndex, (int)shifted, view.Caret );
+			}
 			catch ( ArgumentOutOfRangeException ) { }
 		}
 		return null;
