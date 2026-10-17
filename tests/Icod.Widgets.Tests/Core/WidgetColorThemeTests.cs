@@ -167,6 +167,17 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void EditorLineNumberGutterApiDefaultsOffAndCanOptIn() {
+		WidgetEditorOptions defaults = new();
+		WidgetEditorOptions enabled = defaults with { ShowLineNumbers = true };
+
+		Assert.False( defaults.ShowLineNumbers );
+		Assert.True( enabled.ShowLineNumbers );
+		Assert.Equal( (int)WidgetStyleRole.EditorCurrentLine + 1, (int)WidgetStyleRole.EditorGutter );
+		Assert.Equal( (int)WidgetStyleRole.EditorGutter + 1, (int)WidgetStyleRole.EditorGutterCurrentLine );
+	}
+
+	[Fact]
 	public void ActiveUnfocusedTabModifiedMarkerAndScrollbarPartsKeepIndependentStyles() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.TabStrip, Red ).With( WidgetStyleRole.TabActive, Blue )
 			.With( WidgetStyleRole.TabModified, Red ).With( WidgetStyleRole.TabClose, Red )
@@ -280,6 +291,36 @@ public sealed class WidgetColorThemeTests {
 		foreach ( WidgetPaletteVariant variant in Enum.GetValues<WidgetPaletteVariant>() ) {
 			WidgetTheme limited = WidgetPalette.Create( Capabilities( 8, false, true, true, CursesTextAttributes.Reverse ), variant );
 			Assert.NotEqual( limited.Resolve( WidgetStyleRole.EditorSurface ), limited.Resolve( WidgetStyleRole.EditorCurrentLine ) );
+		}
+	}
+
+	[Fact]
+	public void EditorLineNumberGutterPaletteIsCapabilityAware() {
+		WidgetTheme direct = WidgetPalette.Create( Capabilities( 0, true, true, true,
+			CursesTextAttributes.Bold | CursesTextAttributes.Dim | CursesTextAttributes.Reverse ) );
+		CursesStyle directGutter = direct.Resolve( WidgetStyleRole.EditorGutter );
+		CursesStyle directCurrent = direct.Resolve( WidgetStyleRole.EditorGutterCurrentLine );
+		Assert.Equal( CursesColorKind.Rgb, directGutter.Foreground.Kind );
+		Assert.NotEqual( direct.Resolve( WidgetStyleRole.EditorText ).Foreground, directGutter.Foreground );
+		Assert.Equal( direct.Resolve( WidgetStyleRole.EditorSurface ).Background, directGutter.Background );
+		Assert.Equal( direct.Resolve( WidgetStyleRole.EditorCurrentLine ).Background, directCurrent.Background );
+
+		WidgetTheme indexed = WidgetPalette.Create( Capabilities( 8, false, true, true,
+			CursesTextAttributes.Bold | CursesTextAttributes.Reverse ) );
+		foreach ( WidgetStyleRole role in new[] { WidgetStyleRole.EditorGutter, WidgetStyleRole.EditorGutterCurrentLine } ) {
+			CursesStyle style = indexed.Resolve( role );
+			Assert.Equal( CursesColorKind.Indexed, style.Foreground.Kind );
+			Assert.Equal( CursesColorKind.Indexed, style.Background.Kind );
+			Assert.InRange( style.Foreground.Index, 0, 7 );
+			Assert.InRange( style.Background.Index, 0, 7 );
+		}
+
+		WidgetTheme backgroundOnly = WidgetPalette.Create( Capabilities( 16, false, false, true, CursesTextAttributes.None ) );
+		foreach ( WidgetStyleRole role in new[] { WidgetStyleRole.EditorGutter, WidgetStyleRole.EditorGutterCurrentLine } ) {
+			CursesStyle style = backgroundOnly.Resolve( role );
+			Assert.Equal( CursesColorKind.Default, style.Foreground.Kind );
+			Assert.Equal( CursesColorKind.Indexed, style.Background.Kind );
+			Assert.Equal( CursesTextAttributes.None, style.Attributes );
 		}
 	}
 
