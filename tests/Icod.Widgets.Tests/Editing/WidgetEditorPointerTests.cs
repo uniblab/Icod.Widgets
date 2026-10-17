@@ -123,7 +123,9 @@ public sealed class WidgetEditorPointerTests {
 		internal WidgetTextEditor Editor { get; }
 		internal WidgetHost Host { get; }
 		internal void Send( CursesMouseAction action, int column, int row, CursesKeyModifiers modifiers = CursesKeyModifiers.None ) {
-			this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, CursesMouseButton.Primary, column, row, modifiers ) ), TimeSpan.FromMilliseconds( this.tick++ ) );
+			CursesMouseButton button = action is CursesMouseAction.WheelUp or CursesMouseAction.WheelDown or CursesMouseAction.WheelLeft or CursesMouseAction.WheelRight
+				? CursesMouseButton.None : CursesMouseButton.Primary;
+			this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, button, column, row, modifiers ) ), TimeSpan.FromMilliseconds( this.tick++ ) );
 		}
 		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
 	}
