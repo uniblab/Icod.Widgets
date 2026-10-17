@@ -41,14 +41,15 @@ public static class WidgetPalette {
 		CursesColor accentBackground = light ? Color( 190, 213, 248, 6 ) : Color( 34, 67, 112, 4 );
 		CursesColor error = Color( 207, 52, 61, 1 );
 		CursesColor dim = light ? Color( 86, 90, 98, 6 ) : Color( 153, 160, 177, 3 );
+		bool supportsContrastPair = capabilities.SupportsForegroundColor && capabilities.SupportsBackgroundColor;
 		CursesColor currentLineForeground = capabilities.SupportsDirectRgb ? foreground
 			: capabilities.IndexedColorCount > 8 ? foreground
-			: capabilities.IndexedColorCount > 7 ? CursesColor.Indexed( light ? 7 : 0 )
+			: capabilities.IndexedColorCount > 7 && supportsContrastPair ? CursesColor.Indexed( light ? 7 : 0 )
 			: foreground;
 		CursesColor currentLineBackground = capabilities.SupportsDirectRgb
 			? ( light ? CursesColor.Rgb( 216, 216, 216 ) : CursesColor.Rgb( 52, 52, 64 ) )
 			: capabilities.IndexedColorCount > 8 ? CursesColor.Indexed( 8 )
-			: capabilities.IndexedColorCount > 7 ? CursesColor.Indexed( light ? 0 : 7 )
+			: capabilities.IndexedColorCount > 7 ? supportsContrastPair ? CursesColor.Indexed( light ? 0 : 7 ) : accentBackground
 			: CursesColor.Default;
 		CursesColor Axis( CursesColor color, bool supported ) => supported ? color : CursesColor.Default;
 		CursesStyle Style( CursesColor ink, CursesColor paper, CursesTextAttributes attributes = CursesTextAttributes.None ) {
