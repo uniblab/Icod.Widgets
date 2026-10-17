@@ -75,6 +75,51 @@ public sealed class WidgetTextProjectionTests {
 	}
 
 	[Fact]
+	public void WrappedVerticalMovementTraversesVisualRows() {
+		WidgetTextDocument document = Create( "abcdefghij\nx\nmnopqrstuv" ); using WidgetTextViewState view = new( document );
+		view.WrapMode = CursesTextWrapMode.TextElement; view.SetSelection( 3, 3 );
+		WidgetTextProjection projection = new( new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		CursesRectangle viewport = new( 0, 0, 8, 4 );
+
+		foreach ( long expected in new long[] { 7, 10, 12, 16 } ) {
+			Assert.True( projection.MoveVertically( view, 1, UnicodeCursesTextWidthProvider.Instance, viewport ) );
+			Assert.Equal( expected, view.Caret );
+		}
+		foreach ( long expected in new long[] { 12, 10, 7, 3 } ) {
+			Assert.True( projection.MoveVertically( view, -1, UnicodeCursesTextWidthProvider.Instance, viewport ) );
+			Assert.Equal( expected, view.Caret );
+		}
+	}
+
+	[Fact]
+	public void WrappedVerticalMovementKeepsPreferredColumnAcrossShortRows() {
+		WidgetTextDocument document = Create( "abcdefghij\nx\nmnopqrstuv" ); using WidgetTextViewState view = new( document );
+		view.WrapMode = CursesTextWrapMode.TextElement; view.SetSelection( 3, 3 );
+		WidgetTextProjection projection = new( new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		CursesRectangle viewport = new( 0, 0, 8, 4 );
+
+		for ( int index = 0; index < 4; index++ ) Assert.True( projection.MoveVertically( view, 1, UnicodeCursesTextWidthProvider.Instance, viewport ) );
+
+		Assert.Equal( 16, view.Caret );
+		Assert.Equal( 3, view.PreferredColumn );
+	}
+
+	[Fact]
+	public void WrappedBoundaryCaretUsesDestinationVisualRow() {
+		WidgetTextDocument document = Create( "abcdefgh" ); using WidgetTextViewState view = new( document );
+		view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextProjection projection = new( new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		CursesRectangle viewport = new( 0, 0, 2, 4 );
+
+		Assert.True( projection.MoveVertically( view, 1, UnicodeCursesTextWidthProvider.Instance, viewport ) );
+		WidgetTextProjectionResult result = projection.Project( view, UnicodeCursesTextWidthProvider.Instance, viewport );
+
+		Assert.Equal( 4, view.Caret );
+		Assert.True( result.Caret.HasValue );
+		Assert.Equal( ( 1, 0 ), ( result.Caret.Value.Row, result.Caret.Value.Column ) );
+	}
+
+	[Fact]
 	public void CacheInvalidatesOnlyAffectedRevisionAndGeometry() {
 		WidgetTextDocument document = Create( "first\nsecond\nthird" ); using WidgetTextViewState view = new( document );
 		WidgetTextProjection projection = new( new WidgetEditorOptions() ); CursesRectangle viewport = new( 0, 0, 1, 10 );
