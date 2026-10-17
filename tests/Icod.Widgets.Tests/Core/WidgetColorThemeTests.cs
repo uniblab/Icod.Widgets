@@ -178,6 +178,43 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void CurrentLineGutterStyleCoversWrappedRows() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.EditorGutter, Red ).With( WidgetStyleRole.EditorGutterCurrentLine, Gray );
+		CursesScreen screen = new( 6, 3 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "abcdef\nz".AsMemory() ] ) );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowLineNumbers = true, WrapMode = CursesTextWrapMode.TextElement } );
+		editor.Arrange( screen.Bounds ); editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, true );
+
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 0 ).Style );
+	}
+
+	[Fact]
+	public void CurrentLineGutterStyleIsIndependentOfTextBand() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.EditorCurrentLine, Gray ).With( WidgetStyleRole.EditorGutter, Red ).With( WidgetStyleRole.EditorGutterCurrentLine, Green );
+		CursesScreen screen = new( 10, 2 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "top\nbottom".AsMemory() ] ) ); view.SetSelection( 4, 4 );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowLineNumbers = true, HighlightCurrentLine = false } );
+		editor.Arrange( screen.Bounds ); editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, true );
+
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 2 ).Style );
+	}
+
+	[Fact]
+	public void DisabledEditorUsesDisabledStyleAcrossGutter() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.EditorGutter, Green ).With( WidgetStyleRole.EditorGutterCurrentLine, Gray ).With( WidgetStyleRole.Disabled, Red );
+		CursesScreen screen = new( 10, 2 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "top\nbottom".AsMemory() ] ) );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowLineNumbers = true } ) { IsEnabled = false };
+		editor.Arrange( screen.Bounds ); editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, false );
+
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 1 ).Style );
+	}
+
+	[Fact]
 	public void ActiveUnfocusedTabModifiedMarkerAndScrollbarPartsKeepIndependentStyles() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.TabStrip, Red ).With( WidgetStyleRole.TabActive, Blue )
 			.With( WidgetStyleRole.TabModified, Red ).With( WidgetStyleRole.TabClose, Red )

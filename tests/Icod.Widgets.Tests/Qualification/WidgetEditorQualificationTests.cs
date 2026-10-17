@@ -61,6 +61,23 @@ public sealed class WidgetEditorQualificationTests {
 		}
 	}
 
+	[Fact]
+	public void LineNumberGutterWorkRemainsBoundedForLargeDocument() {
+		string text = string.Join( '\n', Enumerable.Repeat( "x", 20_000 ) );
+		WidgetEditorOptions options = new() { ShowLineNumbers = true, MaximumProjectionSourceUnits = 16, MaximumWorkPerUpdate = 2 };
+		WidgetTextDocument document = new( [ text.AsMemory() ] ); using WidgetTextViewState view = new( document );
+		WidgetTextEditor editor = new( "editor", view, options ); using WidgetHost host = new( new CursesScreen( 12, 3 ), WidgetTheme.Default );
+		host.Attach( editor ); editor.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) ); host.Render();
+		long before = GC.GetAllocatedBytesForCurrentThread();
+
+		for ( int iteration = 0; iteration < 50; iteration++ ) host.Render();
+
+		long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+		Assert.InRange( allocated, 0, 10_000_000 );
+		Assert.Equal( "1", host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "x", host.Screen.StandardWindow.GetCell( 0, 6 ).Content );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text ) { this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View ); this.Host = new WidgetHost( new CursesScreen( 30, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 30 ) ); Assert.True( this.Host.Focus( this.Editor ) ); }

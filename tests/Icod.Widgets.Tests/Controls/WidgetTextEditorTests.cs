@@ -21,6 +21,7 @@
 
 namespace Icod.Widgets.Tests.Controls;
 
+using System.Globalization;
 using System.Text;
 using Icod.DCurses;
 using Xunit;
@@ -169,6 +170,85 @@ public sealed class WidgetTextEditorTests {
 		Assert.Equal( "界", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
 		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).IsContinuation );
 		Assert.Equal( "n", fixture.Host.Screen.StandardWindow.GetCell( 1, 0 ).Content );
+	}
+
+	[Fact]
+	public void LineNumberGutterDisabledPreservesExistingTextCoordinates() {
+		using Fixture fixture = new( "alpha", new WidgetEditorOptions { ShowLineNumbers = false } );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "a", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.Equal( "l", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+	}
+
+	[Fact]
+	public void LineNumberGutterUsesDocumentDigitWidthAndStaysFixedDuringHorizontalScroll() {
+		string text = string.Join( '\n', Enumerable.Range( 1, 10 ).Select( index => 1 == index ? "abcdef" : $"line {index}" ) );
+		using Fixture fixture = new( text, new WidgetEditorOptions { ShowLineNumbers = true } );
+		fixture.View.SetScroll( 2, 0 );
+
+		fixture.Host.Render();
+
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).IsBlank );
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 2 ).IsBlank );
+		Assert.Equal( "c", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+	}
+
+	[Fact]
+	public void DigitThresholdReflowsTextWithoutStaleProjection() {
+		using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 9 ).Select( index => $"line {index}" ) ), new WidgetEditorOptions { ShowLineNumbers = true } );
+		fixture.Host.Render();
+		Assert.Equal( "l", fixture.Host.Screen.StandardWindow.GetCell( 0, 2 ).Content );
+		long end = fixture.Document.Length;
+		WidgetTextEditResult result = fixture.Document.Apply( [ new WidgetTextEdit( end, 0, "\nline 10" ) ], fixture.Document.Revision,
+			new WidgetTextEditContext( fixture.View.Id, 0, 0, end + 8, end + 8, WidgetTextEditKind.Programmatic, TimeSpan.Zero ) );
+		Assert.Equal( WidgetTextEditStatus.Applied, result.Status ); fixture.View.SetSelection( 0, 0 ); fixture.View.SetScroll( 0, 0 );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 2 ).IsBlank );
+		Assert.Equal( "l", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+	}
+
+	[Fact]
+	public void WrappedLineNumberAppearsOnlyOnFirstVisualRow() {
+		using Fixture fixture = new( "abcdef\nz", new WidgetEditorOptions { ShowLineNumbers = true, WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 6 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 1, 0 ).IsBlank );
+		Assert.Equal( "2", fixture.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+	}
+
+	[Fact]
+	public void LineNumberGutterUsesAsciiDigitsUnderNonLatinCulture() {
+		CultureInfo originalCulture = CultureInfo.CurrentCulture;
+		try {
+			CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo( "ar-SA" );
+			using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 12 ).Select( index => $"line {index}" ) ), new WidgetEditorOptions { ShowLineNumbers = true } );
+			fixture.View.SetScroll( 0, 11 ); fixture.Host.Render();
+
+			Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+			Assert.Equal( "2", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		} finally { CultureInfo.CurrentCulture = originalCulture; }
+	}
+
+	[Fact]
+	public void LineNumberGutterSuppressesAndRestoresWhenTextNeedsTheFinalColumn() {
+		using Fixture fixture = new( "abc", new WidgetEditorOptions { ShowLineNumbers = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 1 ) ); fixture.Host.Render();
+		Assert.Equal( "a", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 4 ) ); fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).IsBlank );
+		Assert.Equal( "a", fixture.Host.Screen.StandardWindow.GetCell( 0, 2 ).Content );
 	}
 
 	[Fact]
