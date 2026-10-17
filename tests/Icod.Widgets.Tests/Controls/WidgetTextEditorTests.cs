@@ -252,6 +252,15 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void HorizontalScrollRangeUsesTextViewportWidth() {
+		using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 10 ).Select( index => $"line {index}" ) ), new WidgetEditorOptions { ShowLineNumbers = true } );
+
+		fixture.Host.Render();
+
+		Assert.Equal( 17, fixture.Editor.HorizontalScrollRange.Viewport );
+	}
+
+	[Fact]
 	public void NewLinePolicyCanChangeForFutureEnterWithoutRewritingExistingText() {
 		using Fixture fixture = new( "one\ntwo", new WidgetEditorOptions { NewLine = "\n" } );
 		fixture.View.SetSelection( fixture.Document.Length, fixture.Document.Length );

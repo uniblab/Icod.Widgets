@@ -58,6 +58,37 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
+	public void DecorativeGutterPressSequenceDoesNotChangeSelection() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowLineNumbers = true } ); fixture.View.SetSelection( 5, 8 );
+
+		fixture.Send( CursesMouseAction.Press, 1, 0 );
+		fixture.Send( CursesMouseAction.Move, 10, 1 );
+		fixture.Send( CursesMouseAction.Release, 10, 1 );
+
+		Assert.Equal( ( 5L, 8L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+	}
+
+	[Fact]
+	public void TextOriginatedDragCrossingGutterStillExtendsSelectionAndAutoscrolls() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowLineNumbers = true } ); fixture.View.SetScroll( 5, 0 );
+
+		fixture.Send( CursesMouseAction.Press, 10, 0 ); long anchor = fixture.View.Anchor;
+		fixture.Send( CursesMouseAction.Move, 1, 0 ); fixture.Host.Update( TimeSpan.FromMilliseconds( 200 ) );
+
+		Assert.NotEqual( anchor, fixture.View.Caret );
+		Assert.InRange( fixture.View.HorizontalOffset, 0, 4 );
+	}
+
+	[Fact]
+	public void WheelOverGutterStillScrolls() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowLineNumbers = true } );
+
+		fixture.Send( CursesMouseAction.WheelDown, 1, 0 );
+
+		Assert.Equal( 3, fixture.View.VerticalOffset );
+	}
+
+	[Fact]
 	public void TickAutoscrollIsBoundedAndMonotonic() {
 		using Fixture fixture = new(); fixture.Send( CursesMouseAction.Press, 0, 1 ); fixture.Send( CursesMouseAction.Move, 0, 5 );
 
