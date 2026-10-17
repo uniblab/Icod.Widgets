@@ -21,6 +21,8 @@ After opening a file:
   insert/overwrite mode.
 - Arrows, Home/End, and Page Up/Down move the caret. Ctrl+Left/Right moves by
   word; Ctrl+Home/End moves to the document boundaries. Add Shift to select.
+  A muted full-width band follows the current logical line, including all of
+  its wrapped visual rows; selected text remains distinct above that band.
 - F7 cycles the terminator inserted by future Enter keys through LF, CRLF,
   and CR. F8 cycles future indentation through a tab, two spaces, and four
   spaces. The status row shows the current choices. Existing text is unchanged;

@@ -46,6 +46,8 @@ public sealed record WidgetEditorOptions {
 	public string Indentation { get; init; } = "\t";
 	public bool AutoIndent { get; init; } = true;
 	public bool AllowTypingCoalescence { get; init; } = true;
+	/// <summary>Gets whether every visible row of the caret's logical line uses the themed current-line style.</summary>
+	public bool HighlightCurrentLine { get; init; }
 
 	internal void Validate() {
 		if ( !Enum.IsDefined( this.WrapMode ) ) throw new ArgumentOutOfRangeException( nameof( this.WrapMode ) );

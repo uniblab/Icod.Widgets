@@ -23,9 +23,11 @@ using Icod.DCurses;
 using Icod.Widgets;
 using WidgetHost host = new( new CursesScreen( 24, 5 ), WidgetTheme.Default );
 WidgetTheme colored = WidgetPalette.Create( default ) with { Parts = WidgetStyles.Empty.With( WidgetStyleRole.TabActive,
-	new CursesStyle( CursesColor.Indexed( 3 ), CursesColor.Indexed( 4 ) ) ) };
+	new CursesStyle( CursesColor.Indexed( 3 ), CursesColor.Indexed( 4 ) ) ).With( WidgetStyleRole.EditorCurrentLine,
+	new CursesStyle( CursesColor.Indexed( 7 ), CursesColor.Indexed( 8 ) ) ) };
 host.SetTheme( colored );
 bool themeApi = host.Theme.Resolve( WidgetStyleRole.TabActive ).Background == CursesColor.Indexed( 4 );
+bool currentLineThemeApi = host.Theme.Resolve( WidgetStyleRole.EditorCurrentLine ).Background == CursesColor.Indexed( 8 );
 WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "file", "File", [ WidgetMenuItem.Command( "run", "Run", "run", 'r' ) ], 'f' ) ] );
 host.Attach( menu ); host.Arrange( host.Screen.Bounds ); host.Focus( menu );
 host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ), TimeSpan.Zero );
@@ -37,7 +39,8 @@ WidgetDispatchResult probeResult = host.Process( WidgetInput.Key( WidgetKey.Ente
 host.Update( TimeSpan.FromMilliseconds( 4 ) );
 host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 1, 0 ) ), TimeSpan.FromMilliseconds( 5 ) );
 probe.IsVisible = false;
-WidgetTextDocument document = new( [ "one\r\ntwo\n".AsMemory() ] ); using WidgetTextViewState view = new( document ); WidgetTextEditor editor = new( "editor", view );
+WidgetTextDocument document = new( [ "one\r\ntwo\n".AsMemory() ] ); using WidgetTextViewState view = new( document );
+WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { HighlightCurrentLine = true } );
 host.Attach( editor ); editor.Arrange( new CursesRectangle( 0, 0, 4, 24 ) ); host.Focus( editor ); view.SetSelection( 0, 3 );
 bool initialPolicies = editor.NewLine == "\n" && editor.Indentation == "\t";
 editor.NewLine = "\r\n"; editor.Indentation = "  ";
@@ -75,7 +78,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	themeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	themeApi && currentLineThemeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();

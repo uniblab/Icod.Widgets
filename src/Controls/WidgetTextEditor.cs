@@ -209,14 +209,21 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( surface ) );
 		WidgetTextProjectionResult result = this.projection.Project( this.View, screen.TextWidthProvider, new CursesRectangle( 0, 0, area.Rows, area.Columns ) );
 		this.UpdateScrollRanges( result, area.Rows, area.Columns );
+		long currentLine = this.options.HighlightCurrentLine && this.IsEffectivelyEnabled ? this.View.Document.GetLineIndex( this.View.Caret ) : -1;
+		CursesStyle currentLineStyle = this.Style( theme, WidgetStyleRole.EditorCurrentLine );
 		for ( int index = 0; index < result.Rows.Count; index++ ) {
 			WidgetProjectedRow row = result.Rows[ index ]; long destination = (long)area.Column + row.BaseColumn - this.View.HorizontalOffset;
+			if ( row.LogicalLineIndex == currentLine )
+				screen.StandardWindow.FillRectangle( area.Row + index, area.Column, 1, area.Columns, CursesCell.Blank( currentLineStyle ) );
 			if ( destination < 0 || destination > int.MaxValue ) continue;
 			screen.StandardWindow.PresentTextLayout( row.Layout, row.VisualLineIndex, 1, area.Row + index, (int)destination );
 		}
-		for ( int row = 0; row < area.Rows; row++ ) for ( int column = 0; column < area.Columns; column++ ) {
-			CursesCell cell = screen.StandardWindow.GetCell( area.Row + row, area.Column + column );
-			if ( !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, baseStyle );
+		for ( int row = 0; row < area.Rows; row++ ) {
+			CursesStyle textStyle = row < result.Rows.Count && result.Rows[ row ].LogicalLineIndex == currentLine ? currentLineStyle : baseStyle;
+			for ( int column = 0; column < area.Columns; column++ ) {
+				CursesCell cell = screen.StandardWindow.GetCell( area.Row + row, area.Column + column );
+				if ( !cell.IsBlank ) RestyleCell( screen.StandardWindow, area.Row + row, area.Column + column, cell, textStyle );
+			}
 		}
 		foreach ( WidgetProjectedSelectionSpan span in result.SelectionSpans ) for ( int column = span.Column; column < span.Column + span.Columns && column < area.Columns; column++ ) {
 			CursesCell cell = screen.StandardWindow.GetCell( area.Row + span.Row, area.Column + column );

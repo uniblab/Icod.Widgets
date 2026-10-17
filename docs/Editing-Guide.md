@@ -15,7 +15,9 @@ any view and may be shared by more than one view.
 ```csharp
 WidgetTextDocument document = new([initialText.AsMemory()]);
 using WidgetTextViewState view = new(document);
-WidgetTextEditor editor = new("document", view);
+WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
+    HighlightCurrentLine = true
+});
 
 using WidgetHost host = new(session, WidgetTheme.Default);
 host.Attach(editor);
@@ -26,6 +28,17 @@ host.Focus(editor);
 Applications own file reads and writes. Read bounded chunks or text, construct a
 document on the application loop, and replace the old view/control deliberately.
 The library never opens or overwrites a path returned by a picker.
+
+## Current-line presentation
+
+`WidgetEditorOptions.HighlightCurrentLine` opts into a full-width band behind
+the caret's current logical line. If that line wraps, every visible visual row
+belonging to it receives the band. The editor resolves the complete style from
+`WidgetStyleRole.EditorCurrentLine`; built-in dark and light palettes provide a
+muted neutral background, and applications may override it in `WidgetTheme.Parts`
+or the editor's scoped `Styles`. Text selection is painted after the band and
+therefore remains visually dominant. The option is off by default for source
+compatibility and for applications that prefer caret-only presentation.
 
 ## Input, commands, and actions
 

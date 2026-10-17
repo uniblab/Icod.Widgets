@@ -25,7 +25,9 @@ using Icod.Widgets.Samples;
 
 internal static class Program {
 	private static async Task<int> Main( string[] args ) {
-		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync( screen => new Editor( screen, Environment.CurrentDirectory ) );
+		if ( !args.Contains( "--smoke", StringComparer.Ordinal ) ) return await WidgetSampleApplication.RunAsync(
+			screen => new Editor( screen, Environment.CurrentDirectory ),
+			( app, capabilities ) => app.Host.SetTheme( WidgetPalette.Create( capabilities ) ) );
 		string directory = Path.Combine( Path.GetTempPath(), $"icod-editor-{Guid.NewGuid():N}" ); Directory.CreateDirectory( directory );
 		try {
 			await File.WriteAllTextAsync( Path.Combine( directory, "note.txt" ), "hello\r\nwidgets\n" );
@@ -88,7 +90,7 @@ internal static class Program {
 		protected override string Heading => "Icod.Widgets in-memory editor example";
 		protected override string Keys => "F7 Enter style | F8 indent | Ctrl+O open | Ctrl+Z/Y undo/redo | F6 focus | Ctrl+Q exit";
 		internal Editor( CursesScreen screen, string start ) : base( screen ) {
-			this.start = start; this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
+			this.start = start; this.view = new WidgetTextViewState( this.document ); this.editor = this.CreateEditor();
 			this.Host.Attach( this.open ); this.Host.Attach( this.editor );
 		}
 		internal override void Arrange() {
@@ -137,10 +139,11 @@ internal static class Program {
 		private void ReportPolicy() => this.Status = $"Enter {( this.newLine == "\n" ? "LF" : this.newLine == "\r\n" ? "CRLF" : "CR" )} | Indent {( this.indentation == "\t" ? "Tab" : $"{this.indentation.Length} spaces" )}";
 		private void ReplaceDocument( string text, string path ) {
 			this.Host.Detach( this.editor ); this.view.Dispose();
-			this.document = new WidgetTextDocument( [ text.AsMemory() ] ); this.view = new WidgetTextViewState( this.document ); this.editor = new WidgetTextEditor( "editor", this.view );
+			this.document = new WidgetTextDocument( [ text.AsMemory() ] ); this.view = new WidgetTextViewState( this.document ); this.editor = this.CreateEditor();
 			this.editor.NewLine = this.newLine; this.editor.Indentation = this.indentation;
 			this.Host.Attach( this.editor ); this.Arrange(); this.Host.Focus( this.editor ); this.Status = path + " — unmodified, memory only";
 		}
+		private WidgetTextEditor CreateEditor() => new( "editor", this.view, new WidgetEditorOptions { HighlightCurrentLine = true } );
 		public override void Dispose() { this.view.Dispose(); base.Dispose(); }
 	}
 }

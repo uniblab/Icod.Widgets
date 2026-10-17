@@ -271,6 +271,8 @@ public sealed class WidgetColorThemeTests {
 		WidgetTheme direct = WidgetPalette.Create( rgb, WidgetPaletteVariant.Light );
 		Assert.Equal( CursesColorKind.Default, direct.Resolve( WidgetStyleRole.Text ).Foreground.Kind );
 		Assert.Equal( CursesColorKind.Rgb, direct.Resolve( WidgetStyleRole.TabActive ).Background.Kind );
+		Assert.Equal( CursesColorKind.Rgb, direct.Resolve( WidgetStyleRole.EditorCurrentLine ).Background.Kind );
+		Assert.NotEqual( direct.Resolve( WidgetStyleRole.EditorSurface ), direct.Resolve( WidgetStyleRole.EditorCurrentLine ) );
 	}
 
 	private static CursesPresentationCapabilities Capabilities( int colors, bool rgb, bool foreground, bool background, CursesTextAttributes attributes ) {

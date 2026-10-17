@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.6.2</Version>
-		<PackageVersion>1.6.2</PackageVersion>
+		<Version>1.7.0</Version>
+		<PackageVersion>1.7.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Update the sole direct runtime dependency to Icod.DCurses 2.5.2, inheriting Terminal 1.29.2 Windows console fixes for Unicode border geometry and mouse delivery. Preserve the Widgets runtime, public API, AssemblyVersion 1.0.0.0, and .NET 8/9/10 targets.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add opt-in, theme-controlled full-width current-line highlighting to WidgetTextEditor, including wrapped logical lines and selection precedence. Update the editor sample and documentation while preserving AssemblyVersion 1.0.0.0 and the .NET 8/9/10 targets.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

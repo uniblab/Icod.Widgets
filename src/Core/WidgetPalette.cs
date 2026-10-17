@@ -41,6 +41,7 @@ public static class WidgetPalette {
 		CursesColor accentBackground = light ? Color( 190, 213, 248, 6 ) : Color( 34, 67, 112, 4 );
 		CursesColor error = Color( 207, 52, 61, 1 );
 		CursesColor dim = light ? Color( 86, 90, 98, 6 ) : Color( 153, 160, 177, 3 );
+		CursesColor currentLineBackground = light ? Color( 216, 216, 216, 7 ) : Color( 52, 52, 64, 8 );
 		CursesColor Axis( CursesColor color, bool supported ) => supported ? color : CursesColor.Default;
 		CursesStyle Style( CursesColor ink, CursesColor paper, CursesTextAttributes attributes = CursesTextAttributes.None ) {
 			CursesColor front = Axis( ink, capabilities.SupportsForegroundColor );
@@ -63,6 +64,7 @@ public static class WidgetPalette {
 			.With( WidgetStyleRole.TabInactive, normal ).With( WidgetStyleRole.TabModified, issue )
 			.With( WidgetStyleRole.TabClose, border ).With( WidgetStyleRole.TabOverflow, border )
 			.With( WidgetStyleRole.EditorSurface, normal ).With( WidgetStyleRole.EditorText, normal )
+			.With( WidgetStyleRole.EditorCurrentLine, Style( foreground, currentLineBackground ) )
 			.With( WidgetStyleRole.TextSelection, selected ).With( WidgetStyleRole.TextSelectionInactive, Style( accent, background, emphasis ) )
 			.With( WidgetStyleRole.FieldSurface, normal ).With( WidgetStyleRole.FieldText, normal ).With( WidgetStyleRole.FieldSelection, selected )
 			.With( WidgetStyleRole.PopupSurface, normal ).With( WidgetStyleRole.PopupBorder, border )

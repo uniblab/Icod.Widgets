@@ -26,7 +26,7 @@ using Xunit;
 
 public sealed class ReleaseIdentityTests {
 	[Fact]
-	public void CandidateAndPackageConsumerUseVersion162() {
+	public void CandidateAndPackageConsumerUseVersion170() {
 		string root = FindRepositoryRoot();
 		XDocument production = XDocument.Load(
 			Path.Combine( root, "Icod.Widgets.csproj" )
@@ -38,32 +38,32 @@ public sealed class ReleaseIdentityTests {
 			"PackageConsumer.csproj"
 		) );
 
-		Assert.Equal( "1.6.2", GetSingleValue( production, "Version" ) );
-		Assert.Equal( "1.6.2", GetSingleValue( production, "PackageVersion" ) );
+		Assert.Equal( "1.7.0", GetSingleValue( production, "Version" ) );
+		Assert.Equal( "1.7.0", GetSingleValue( production, "PackageVersion" ) );
 		Assert.Equal( "1.0.0.0", GetSingleValue( production, "AssemblyVersion" ) );
 		XElement reference = Assert.Single(
 			consumer.Descendants(),
 			static current => "PackageReference" == current.Name.LocalName
 		);
 		Assert.Equal( "Icod.Widgets", reference.Attribute( "Include" )?.Value );
-		Assert.Equal( "1.6.2", reference.Attribute( "Version" )?.Value );
+		Assert.Equal( "1.7.0", reference.Attribute( "Version" )?.Value );
 	}
 
 	[Fact]
-	public void CandidateHasCuratedWindowsInteropNotes() {
+	public void CandidateHasCuratedCurrentLineNotes() {
 		string notesPath = Path.Combine(
 			FindRepositoryRoot(),
 			"docs",
 			"releases",
-			"1.6.2.md"
+			"1.7.0.md"
 		);
 		Assert.True( File.Exists( notesPath ), $"Missing curated notes: {notesPath}" );
 
 		string notes = File.ReadAllText( notesPath );
-		Assert.Contains( "Icod.DCurses 2.5.2", notes, StringComparison.Ordinal );
-		Assert.Contains( "Icod.Terminal 1.29.2", notes, StringComparison.Ordinal );
+		Assert.Contains( "HighlightCurrentLine", notes, StringComparison.Ordinal );
+		Assert.Contains( "EditorCurrentLine", notes, StringComparison.Ordinal );
+		Assert.Contains( "selection", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "AssemblyVersion", notes, StringComparison.Ordinal );
-		Assert.Contains( "no public API changes", notes, StringComparison.OrdinalIgnoreCase );
 	}
 
 	[Fact]
