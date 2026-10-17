@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.7.0</Version>
-		<PackageVersion>1.7.0</PackageVersion>
+		<Version>1.7.1</Version>
+		<PackageVersion>1.7.1</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Add opt-in, theme-controlled full-width current-line highlighting to WidgetTextEditor, including wrapped logical lines and selection precedence. Update the editor sample and documentation while preserving AssemblyVersion 1.0.0.0 and the .NET 8/9/10 targets.</PackageReleaseNotes>
+		<PackageReleaseNotes>Correct WidgetTextEditor vertical navigation so Up, Down, Page Up, Page Down, and Shift-selection traverse wrapped visual rows while retaining the preferred visual column across short rows. Preserve logical document positions, AssemblyVersion 1.0.0.0, and the .NET 8/9/10 targets.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

@@ -52,6 +52,27 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void PageNavigationCountsWrappedVisualRows() {
+		using Fixture fixture = new( "abcdefghijklmnop", new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 4 ) ); fixture.View.SetSelection( 1, 1 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.PageDown ) );
+
+		Assert.Equal( 9, fixture.View.Caret );
+		Assert.Equal( 1, fixture.View.PreferredColumn );
+	}
+
+	[Fact]
+	public void ShiftDownExtendsSelectionAcrossWrappedVisualRow() {
+		using Fixture fixture = new( "abcdefgh", new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 4 ) ); fixture.View.SetSelection( 1, 1 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Shift ) );
+
+		Assert.Equal( ( 1L, 5L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+	}
+
+	[Fact]
 	public void SelectionReplacementIsOneTransaction() {
 		using Fixture fixture = new( "alpha beta" ); fixture.View.SetSelection( 0, 5 );
 

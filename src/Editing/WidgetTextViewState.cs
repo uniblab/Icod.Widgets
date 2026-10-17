@@ -29,6 +29,7 @@ public sealed class WidgetTextViewState : IDisposable {
 	private CursesTextWrapMode wrapMode;
 	private int tabWidth = 4;
 	private int? preferredColumn;
+	private CursesTextAffinity caretAffinity;
 	private bool disposed;
 
 	public WidgetTextViewState( WidgetTextDocument document ) {
@@ -71,15 +72,21 @@ public sealed class WidgetTextViewState : IDisposable {
 	public void Dispose() { if ( this.disposed ) return; this.document.Changed -= this.OnDocumentChanged; this.disposed = true; }
 
 	internal WidgetTextDocumentChangedEventArgs? LastDocumentChange { get; private set; }
-	internal void SetSelectionFromProjection( long anchor, long caret, bool preservePreferredColumn ) => this.SetSelectionCore( anchor, caret, preservePreferredColumn );
+	internal CursesTextAffinity CaretAffinity => this.caretAffinity;
+	internal void SetSelectionFromProjection( long anchor, long caret, bool preservePreferredColumn, CursesTextAffinity? affinity = null ) =>
+		this.SetSelectionCore( anchor, caret, preservePreferredColumn, affinity ?? this.caretAffinity );
 	internal void InvalidatePendingOperations() { this.ThrowIfDisposed(); this.SelectionEpoch++; this.ViewRevision++; }
 
-	private void SetSelectionCore( long anchor, long caret, bool preservePreferredColumn ) {
+	private void SetSelectionCore( long anchor, long caret, bool preservePreferredColumn, CursesTextAffinity affinity = CursesTextAffinity.Leading ) {
 		this.ThrowIfDisposed();
+		if ( !Enum.IsDefined( affinity ) ) throw new ArgumentOutOfRangeException( nameof( affinity ) );
 		if ( !this.document.IsTextElementBoundary( anchor ) ) throw new ArgumentOutOfRangeException( nameof( anchor ) );
 		if ( !this.document.IsTextElementBoundary( caret ) ) throw new ArgumentOutOfRangeException( nameof( caret ) );
-		if ( this.Anchor == anchor && this.Caret == caret ) return;
-		this.Anchor = anchor; this.Caret = caret; this.SelectionEpoch++; this.ViewRevision++;
+		bool selectionChanged = this.Anchor != anchor || this.Caret != caret; bool affinityChanged = this.caretAffinity != affinity;
+		if ( !selectionChanged && !affinityChanged ) return;
+		this.Anchor = anchor; this.Caret = caret; this.caretAffinity = affinity;
+		if ( selectionChanged ) this.SelectionEpoch++;
+		this.ViewRevision++;
 		if ( !preservePreferredColumn ) this.preferredColumn = null;
 	}
 
@@ -87,7 +94,7 @@ public sealed class WidgetTextViewState : IDisposable {
 		long anchor = Transform( this.Anchor, change.Changes, this.document.Length ); long caret = Transform( this.Caret, change.Changes, this.document.Length );
 		this.LastDocumentChange = change;
 		if ( anchor != this.Anchor || caret != this.Caret ) { this.Anchor = anchor; this.Caret = caret; this.SelectionEpoch++; }
-		this.ViewRevision++; this.preferredColumn = null;
+		this.ViewRevision++; this.preferredColumn = null; this.caretAffinity = CursesTextAffinity.Leading;
 	}
 
 	private static long Transform( long position, IReadOnlyList<WidgetTextChange> changes, long maximum ) {

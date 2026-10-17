@@ -21,6 +21,9 @@ After opening a file:
   insert/overwrite mode.
 - Arrows, Home/End, and Page Up/Down move the caret. Ctrl+Left/Right moves by
   word; Ctrl+Home/End moves to the document boundaries. Add Shift to select.
+  On wrapped text, vertical and page movement traverse visual rows while
+  retaining the preferred visual column across short rows; document positions
+  remain logical.
   A muted full-width band follows the current logical line, including all of
   its wrapped visual rows; selected text remains distinct above that band.
   A fixed themed gutter shows one-based logical line numbers. Wrapped

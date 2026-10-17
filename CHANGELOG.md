@@ -2,6 +2,20 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.7.1 — wrapped editor caret navigation
+
+- Corrected Up/Down and Page Up/Page Down navigation to count wrapped visual
+  rows rather than skipping directly between logical lines.
+- Retain the caret's preferred visual column while crossing wrapped
+  continuations, short final rows, short logical lines, and neighboring lines.
+- Preserve soft-wrap boundary affinity so a caret at one document offset is
+  rendered on the intended visual row; Shift+vertical navigation extends the
+  selection through the same positions.
+- Kept document offsets and application-facing line/character reporting
+  logical. No public API was added or changed.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency.
+
 ## 1.7.0 — editor current-line presentation
 
 - Added opt-in `WidgetEditorOptions.HighlightCurrentLine` presentation for

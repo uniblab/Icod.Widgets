@@ -354,11 +354,9 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	}
 
 	private bool MoveVertical( int delta, bool extend, ICursesTextWidthProvider widthProvider ) {
-		long currentLine = this.View.Document.GetLineIndex( this.View.Caret ); long targetLine = Math.Clamp( currentLine + delta, 0, this.View.Document.LineCount - 1 );
-		if ( targetLine == currentLine ) return true;
 		this.EnsureActionCapacity(); long anchor = this.View.Anchor;
 		CursesRectangle text = this.GetViewport().Text;
-		if ( !this.projection.MoveVertically( this.View, checked( (int)( targetLine - currentLine ) ), widthProvider,
+		if ( !this.projection.MoveVertically( this.View, delta, widthProvider,
 			new CursesRectangle( 0, 0, Math.Max( 1, text.Rows ), Math.Max( 1, text.Columns ) ) ) ) return true;
 		if ( extend ) this.View.SetSelectionFromProjection( anchor, this.View.Caret, true );
 		this.EmitSelection(); this.RevealCaret(); return true;
