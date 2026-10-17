@@ -1,6 +1,6 @@
 # Editor Line-Number Gutter Design
 
-**Date:** 2026-10-17  
+**Date:** 2026-10-17
 **Status:** Proposed written specification for review
 
 ## Context
