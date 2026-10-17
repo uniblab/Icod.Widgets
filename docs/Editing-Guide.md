@@ -35,8 +35,9 @@ The library never opens or overwrites a path returned by a picker.
 the caret's current logical line. If that line wraps, every visible visual row
 belonging to it receives the band. The editor resolves the complete style from
 `WidgetStyleRole.EditorCurrentLine`; built-in dark and light palettes provide a
-muted neutral background, and applications may override it in `WidgetTheme.Parts`
-or the editor's scoped `Styles`. Text selection is painted after the band and
+muted neutral background when available and a neutral contrast pair on limited
+indexed terminals. Applications may override it in `WidgetTheme.Parts` or the
+editor's scoped `Styles`. Text selection is painted after the band and
 therefore remains visually dominant. The option is off by default for source
 compatibility and for applications that prefer caret-only presentation.
 

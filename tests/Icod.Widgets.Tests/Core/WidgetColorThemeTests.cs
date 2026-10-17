@@ -274,6 +274,13 @@ public sealed class WidgetColorThemeTests {
 		Assert.Equal( CursesColorKind.Rgb, direct.Resolve( WidgetStyleRole.TabActive ).Background.Kind );
 		Assert.Equal( CursesColorKind.Rgb, direct.Resolve( WidgetStyleRole.EditorCurrentLine ).Background.Kind );
 		Assert.NotEqual( direct.Resolve( WidgetStyleRole.EditorSurface ), direct.Resolve( WidgetStyleRole.EditorCurrentLine ) );
+		WidgetTheme indexedLight = WidgetPalette.Create( Capabilities( 16, false, true, true, CursesTextAttributes.Reverse ), WidgetPaletteVariant.Light );
+		Assert.Equal( CursesColor.Indexed( 8 ), indexedLight.Resolve( WidgetStyleRole.EditorCurrentLine ).Background );
+		Assert.NotEqual( indexedLight.Resolve( WidgetStyleRole.EditorSurface ), indexedLight.Resolve( WidgetStyleRole.EditorCurrentLine ) );
+		foreach ( WidgetPaletteVariant variant in Enum.GetValues<WidgetPaletteVariant>() ) {
+			WidgetTheme limited = WidgetPalette.Create( Capabilities( 8, false, true, true, CursesTextAttributes.Reverse ), variant );
+			Assert.NotEqual( limited.Resolve( WidgetStyleRole.EditorSurface ), limited.Resolve( WidgetStyleRole.EditorCurrentLine ) );
+		}
 	}
 
 	private static CursesPresentationCapabilities Capabilities( int colors, bool rgb, bool foreground, bool background, CursesTextAttributes attributes ) {

@@ -41,7 +41,15 @@ public static class WidgetPalette {
 		CursesColor accentBackground = light ? Color( 190, 213, 248, 6 ) : Color( 34, 67, 112, 4 );
 		CursesColor error = Color( 207, 52, 61, 1 );
 		CursesColor dim = light ? Color( 86, 90, 98, 6 ) : Color( 153, 160, 177, 3 );
-		CursesColor currentLineBackground = light ? Color( 216, 216, 216, 7 ) : Color( 52, 52, 64, 8 );
+		CursesColor currentLineForeground = capabilities.SupportsDirectRgb ? foreground
+			: capabilities.IndexedColorCount > 8 ? foreground
+			: capabilities.IndexedColorCount > 7 ? CursesColor.Indexed( light ? 7 : 0 )
+			: foreground;
+		CursesColor currentLineBackground = capabilities.SupportsDirectRgb
+			? ( light ? CursesColor.Rgb( 216, 216, 216 ) : CursesColor.Rgb( 52, 52, 64 ) )
+			: capabilities.IndexedColorCount > 8 ? CursesColor.Indexed( 8 )
+			: capabilities.IndexedColorCount > 7 ? CursesColor.Indexed( light ? 0 : 7 )
+			: CursesColor.Default;
 		CursesColor Axis( CursesColor color, bool supported ) => supported ? color : CursesColor.Default;
 		CursesStyle Style( CursesColor ink, CursesColor paper, CursesTextAttributes attributes = CursesTextAttributes.None ) {
 			CursesColor front = Axis( ink, capabilities.SupportsForegroundColor );
@@ -64,7 +72,7 @@ public static class WidgetPalette {
 			.With( WidgetStyleRole.TabInactive, normal ).With( WidgetStyleRole.TabModified, issue )
 			.With( WidgetStyleRole.TabClose, border ).With( WidgetStyleRole.TabOverflow, border )
 			.With( WidgetStyleRole.EditorSurface, normal ).With( WidgetStyleRole.EditorText, normal )
-			.With( WidgetStyleRole.EditorCurrentLine, Style( foreground, currentLineBackground ) )
+			.With( WidgetStyleRole.EditorCurrentLine, Style( currentLineForeground, currentLineBackground ) )
 			.With( WidgetStyleRole.TextSelection, selected ).With( WidgetStyleRole.TextSelectionInactive, Style( accent, background, emphasis ) )
 			.With( WidgetStyleRole.FieldSurface, normal ).With( WidgetStyleRole.FieldText, normal ).With( WidgetStyleRole.FieldSelection, selected )
 			.With( WidgetStyleRole.PopupSurface, normal ).With( WidgetStyleRole.PopupBorder, border )
