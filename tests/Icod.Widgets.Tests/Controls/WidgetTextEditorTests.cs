@@ -197,6 +197,17 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void LineNumberGutterClipsPartiallyScrolledTabToTextViewport() {
+		using Fixture fixture = new( "\tvalue", new WidgetEditorOptions { ShowLineNumbers = true } );
+		fixture.View.SetScroll( 2, 0 );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).IsBlank );
+	}
+
+	[Fact]
 	public void DigitThresholdReflowsTextWithoutStaleProjection() {
 		using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 9 ).Select( index => $"line {index}" ) ), new WidgetEditorOptions { ShowLineNumbers = true } );
 		fixture.Host.Render();

@@ -89,6 +89,18 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
+	public void ScreenClippedEditorUsesRenderedViewportForPointerGeometry() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowLineNumbers = true } );
+		fixture.View.SetSelection( 5, 8 );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 18, 2, 20 ) );
+
+		fixture.Send( CursesMouseAction.Press, 18, 0 );
+		fixture.Send( CursesMouseAction.Release, 18, 0 );
+
+		Assert.Equal( ( 0L, 0L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+	}
+
+	[Fact]
 	public void TickAutoscrollIsBoundedAndMonotonic() {
 		using Fixture fixture = new(); fixture.Send( CursesMouseAction.Press, 0, 1 ); fixture.Send( CursesMouseAction.Move, 0, 5 );
 

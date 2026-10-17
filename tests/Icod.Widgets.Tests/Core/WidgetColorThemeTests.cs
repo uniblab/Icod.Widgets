@@ -363,6 +363,23 @@ public sealed class WidgetColorThemeTests {
 		}
 	}
 
+	[Theory]
+	[InlineData( WidgetPaletteVariant.Dark, 4 )]
+	[InlineData( WidgetPaletteVariant.Light, 6 )]
+	public void EightColorCurrentLineAvoidsUnreadableSingleAxisInversion( WidgetPaletteVariant variant, int expectedBackground ) {
+		WidgetTheme foregroundOnly = WidgetPalette.Create( Capabilities( 8, false, true, false, CursesTextAttributes.None ), variant );
+		CursesStyle foregroundCurrent = foregroundOnly.Resolve( WidgetStyleRole.EditorCurrentLine );
+		Assert.Equal( foregroundOnly.Resolve( WidgetStyleRole.EditorText ).Foreground, foregroundCurrent.Foreground );
+		Assert.Equal( CursesColorKind.Default, foregroundCurrent.Background.Kind );
+		Assert.Equal( foregroundCurrent, foregroundOnly.Resolve( WidgetStyleRole.EditorGutterCurrentLine ) );
+
+		WidgetTheme backgroundOnly = WidgetPalette.Create( Capabilities( 8, false, false, true, CursesTextAttributes.None ), variant );
+		CursesStyle backgroundCurrent = backgroundOnly.Resolve( WidgetStyleRole.EditorCurrentLine );
+		Assert.Equal( CursesColorKind.Default, backgroundCurrent.Foreground.Kind );
+		Assert.Equal( CursesColor.Indexed( expectedBackground ), backgroundCurrent.Background );
+		Assert.Equal( backgroundCurrent, backgroundOnly.Resolve( WidgetStyleRole.EditorGutterCurrentLine ) );
+	}
+
 	private static CursesPresentationCapabilities Capabilities( int colors, bool rgb, bool foreground, bool background, CursesTextAttributes attributes ) {
 		var ctor = typeof( CursesPresentationCapabilities ).GetConstructors( System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance )
 			.Single( c => c.GetParameters().Length == 11 );
