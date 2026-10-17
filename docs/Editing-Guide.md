@@ -62,6 +62,20 @@ and a selection drag that begins in text may cross the gutter and autoscroll.
 The option is off by default. It does not introduce a general-purpose editor
 decoration, marker, breakpoint, or click-callback API.
 
+## Wrapped caret navigation
+
+With `CursesTextWrapMode.Word` or `CursesTextWrapMode.TextElement`, Up and Down
+move between visual rows, including continuation rows within one logical line.
+Page Up and Page Down count the visible visual rows as well. The editor retains
+the caret's preferred visual column when a destination row is shorter and
+restores that column when a later row has room. Adding Shift extends selection
+through the same visual-row destinations.
+
+Wrapping changes presentation, not document coordinates. `WidgetTextViewState`
+continues to expose logical UTF-16 document offsets, so applications may keep
+reporting the real logical line and character position independently of the
+caret's wrapped screen row.
+
 ## Input, commands, and actions
 
 Pass normalized input and monotonic time through `WidgetHost.Process`. Call
