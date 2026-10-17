@@ -38,7 +38,7 @@ public enum WidgetStyleRole {
 	PickerSurface, PickerPath, PickerError,
 	MenuBarSurface, MenuBarItem, MenuBarActive, MenuBarDisabled, MenuBarMnemonic, MenuBarActiveMnemonic, MenuBarHover,
 	PopupMnemonic, PopupFocusedMnemonic, PopupHover, ModalBackdrop,
-	EditorCurrentLine
+	EditorCurrentLine, EditorGutter, EditorGutterCurrentLine
 }
 
 /// <summary>An immutable, value-equal set of optional styles for widget parts.</summary>

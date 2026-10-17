@@ -48,6 +48,8 @@ public sealed record WidgetEditorOptions {
 	public bool AllowTypingCoalescence { get; init; } = true;
 	/// <summary>Gets whether every visible row of the caret's logical line uses the themed current-line style.</summary>
 	public bool HighlightCurrentLine { get; init; }
+	/// <summary>Gets whether the editor reserves a fixed left gutter for one-based logical line numbers.</summary>
+	public bool ShowLineNumbers { get; init; }
 
 	internal void Validate() {
 		if ( !Enum.IsDefined( this.WrapMode ) ) throw new ArgumentOutOfRangeException( nameof( this.WrapMode ) );

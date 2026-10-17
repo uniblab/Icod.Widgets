@@ -73,6 +73,8 @@ public static class WidgetPalette {
 			.With( WidgetStyleRole.TabClose, border ).With( WidgetStyleRole.TabOverflow, border )
 			.With( WidgetStyleRole.EditorSurface, normal ).With( WidgetStyleRole.EditorText, normal )
 			.With( WidgetStyleRole.EditorCurrentLine, Style( currentLineForeground, currentLineBackground ) )
+			.With( WidgetStyleRole.EditorGutter, Style( dim, background ) )
+			.With( WidgetStyleRole.EditorGutterCurrentLine, Style( currentLineForeground, currentLineBackground, emphasis ) )
 			.With( WidgetStyleRole.TextSelection, selected ).With( WidgetStyleRole.TextSelectionInactive, Style( accent, background, emphasis ) )
 			.With( WidgetStyleRole.FieldSurface, normal ).With( WidgetStyleRole.FieldText, normal ).With( WidgetStyleRole.FieldSelection, selected )
 			.With( WidgetStyleRole.PopupSurface, normal ).With( WidgetStyleRole.PopupBorder, border )
