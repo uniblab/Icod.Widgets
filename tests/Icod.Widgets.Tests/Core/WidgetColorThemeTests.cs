@@ -27,6 +27,8 @@ using Xunit;
 public sealed class WidgetColorThemeTests {
 	private static readonly CursesStyle Blue = new( CursesColor.Indexed( 15 ), CursesColor.Indexed( 4 ) );
 	private static readonly CursesStyle Red = new( CursesColor.Indexed( 11 ), CursesColor.Indexed( 1 ) );
+	private static readonly CursesStyle Green = new( CursesColor.Indexed( 0 ), CursesColor.Indexed( 2 ) );
+	private static readonly CursesStyle Gray = new( CursesColor.Indexed( 15 ), CursesColor.Indexed( 8 ) );
 
 	[Fact]
 	public void ExistingSixRoleRecordRetainsConstructionDeconstructionWithAndEquality() {
@@ -113,6 +115,54 @@ public sealed class WidgetColorThemeTests {
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 1 ).Style );
 		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 2 ).Style );
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 9 ).Style );
+	}
+
+	[Fact]
+	public void EditorCurrentLineIsOptInFullWidthAndSelectionWins() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.EditorCurrentLine, Gray ).With( WidgetStyleRole.TextSelection, Green );
+		WidgetTheme theme = WidgetTheme.Default with { Parts = parts };
+		CursesScreen screen = new( 8, 3 );
+		using WidgetTextViewState defaultView = new( new WidgetTextDocument( [ "top\nmiddle\nlast".AsMemory() ] ) );
+		defaultView.SetSelection( 4, 4 );
+		WidgetTextEditor defaultEditor = new( "default", defaultView );
+		defaultEditor.Arrange( screen.Bounds ); defaultEditor.OnRender( screen, theme, true );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 7 ).Style );
+
+		using WidgetTextViewState view = new( new WidgetTextDocument( [ "top\nmiddle\nlast".AsMemory() ] ) );
+		view.SetSelection( 4, 4 );
+		WidgetTextEditor editor = new( "highlighted", view, new WidgetEditorOptions { HighlightCurrentLine = true } );
+		editor.Arrange( screen.Bounds ); editor.OnRender( screen, theme, true );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 7 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 7 ).Style );
+		view.SetSelection( 4, 6 ); editor.OnRender( screen, theme, true );
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 1, 1 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 2 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 7 ).Style );
+	}
+
+	[Fact]
+	public void EditorCurrentLogicalLineCoversEveryWrappedVisualRowAndFollowsCaret() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
+			.With( WidgetStyleRole.EditorCurrentLine, Gray );
+		WidgetTheme theme = WidgetTheme.Default with { Parts = parts };
+		CursesScreen screen = new( 4, 4 );
+		using WidgetTextViewState view = new( new WidgetTextDocument( [ "abcdefgh\nz".AsMemory() ] ) );
+		view.SetSelection( 1, 1 );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions {
+			HighlightCurrentLine = true, WrapMode = CursesTextWrapMode.TextElement
+		} );
+		editor.Arrange( screen.Bounds ); editor.OnRender( screen, theme, true );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 0, 3 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 3 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 2, 3 ).Style );
+
+		view.SetSelection( 9, 9 ); editor.OnRender( screen, theme, true );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 3 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 3 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 2, 3 ).Style );
 	}
 
 	[Fact]
