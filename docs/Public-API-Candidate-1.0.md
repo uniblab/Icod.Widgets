@@ -108,8 +108,14 @@ void WidgetPopupMenu.Close()
 WidgetModalLease WidgetHost.ShowModal(WidgetDialog dialog)
 int WidgetHost.ModalDepth { get; }
 WidgetMessageDialog WidgetMessageDialog.Ok(string id, string title, string message)
-WidgetMessageDialog WidgetMessageDialog.YesNo(string id, string title, string message)
 WidgetMessageDialog WidgetMessageDialog.OkCancel(string id, string title, string message)
+WidgetMessageDialog(string id, string title, string message,
+    IReadOnlyList<WidgetDialogAction> actions)
+IReadOnlyList<WidgetDialogAction> WidgetMessageDialog.Actions { get; }
+void WidgetMessageDialog.SetActionEnabled(string actionId, bool enabled)
+char? WidgetDialogAction.Mnemonic { get; init; }
+// Retained for binary compatibility and warning-level obsolete:
+WidgetMessageDialog WidgetMessageDialog.YesNo(string id, string title, string message)
 WidgetWizardDialog(string id, string title, IReadOnlyList<string> pages)
 void WidgetWizardDialog.ApplyNavigation(int pageIndex)
 void WidgetWizardDialog.RejectNavigation(string error)

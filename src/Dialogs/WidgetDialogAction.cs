@@ -22,6 +22,7 @@
 namespace Icod.Widgets;
 
 public sealed record WidgetDialogAction( string Id, string Label, WidgetDialogOutcome Outcome ) {
+	public char? Mnemonic { get; init; }
 	public bool IsDefault { get; init; }
 	public bool IsCancel { get; init; }
 	public bool RequiresValidation { get; init; }

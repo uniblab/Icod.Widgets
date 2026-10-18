@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.7.2</Version>
-		<PackageVersion>1.7.2</PackageVersion>
+		<Version>1.8.0</Version>
+		<PackageVersion>1.8.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Complete identical Paste operations by collapsing the replaced selection to the resulting caret without changing document content, revision, or undo history. Verify pointer menu activation and Ctrl+V share the focused editor command route. Preserve AssemblyVersion 1.0.0.0 and the .NET 8/9/10 targets.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add generic action-array message dialogs with independent captions, values, outcomes, mnemonics, default and cancel behavior. Route keyboard and pointer activation through the same action path, use display-column-correct bracketed buttons, and retain presentation-only scoped styles. Mark the legacy YesNo factory warning-level obsolete while preserving its signature and behavior. Give form actions matching mnemonic and cancel semantics. Preserve AssemblyVersion 1.0.0.0, Icod.DCurses 2.5.2, and the .NET 8/9/10 targets.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

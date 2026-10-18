@@ -67,6 +67,12 @@ jobs:
           -c ${{ env.CONFIGURATION }}
           --no-restore
           -p:ContinuousIntegrationBuild=true
+      - name: Verify public API fingerprint
+        shell: pwsh
+        run: >-
+          ./packaging/Get-PublicApiFingerprint.ps1
+          -Configuration '${{ env.CONFIGURATION }}'
+          -Verify
       - name: Test
         run: >-
           dotnet test '${{ needs.metadata.outputs.solution_path }}'
@@ -115,7 +121,11 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: |
-          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config
+          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config -p:PackageConsumerAllFrameworks=true
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Staging --no-restore
+          dotnet build tests/PackageConsumer/PackageConsumer.csproj -c Staging --no-restore -p:PackageConsumerAllFrameworks=true
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($target in @('net8.0', 'net9.0', 'net10.0')) {
+            dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Staging -f $target --no-build --no-restore -p:PackageConsumerAllFrameworks=true
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }

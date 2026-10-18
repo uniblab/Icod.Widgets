@@ -32,10 +32,11 @@ captions, status fields, and the editor's focused/unfocused selection. Seven pag
    opens a centered modal; dark/light themes dim the background. Click OK, press
    Enter, or press Escape to close it and restore the document. Editor text and
    layout stay in place.
-4. Dialogs: all titles are captions in themed frames. The OK-only alert
-   acknowledges with Enter; Yes/No defaults to No; OK/Cancel to Cancel.
-   Click a message-dialog choice to complete it, or use Arrows/Tab to choose and
-   Enter to complete. Escape always reports Cancel. Wizard first rejects Next to show
+4. Dialogs: all titles are captions in themed frames. The generic decision uses
+   `[Yes]`, `[Don't Save]`, and `[Cancel]`, with Y/N/C mnemonics and Cancel as
+   both the default and cancel action. Its instance-only warning style changes
+   presentation without changing behavior. Click a choice, use its mnemonic,
+   or use Arrows/Tab and Enter. Escape activates Cancel. Wizard first rejects Next to show
    application validation; Enter again advances; Left returns; Escape closes.
    Text and culture/range-validated number prompts are also available.
 5. Pickers: arrows/Page keys browse; Enter opens directory or toggles file;
@@ -58,11 +59,12 @@ The sample uses retained text presentation and no raster graphics.
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, provider-backed picker cancellation, wizard validation, rendering`.
+Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering`.
 The smoke cycles all three themes, verifies focus retention, and exercises
 F6/Shift+F6 navigation on the workspace page, root menu switching, Escape focus
-restoration, independent hover, and closing About with both Escape and an OK click. It does not verify physical
-terminal color output.
+restoration, independent hover, closing About with both Escape and an OK click,
+and the decision dialog's N mnemonic, Cancel-default Enter, pointer Yes choice,
+and scoped warning style. It does not verify physical terminal color output.
 
 Nested submenus keep the parent menu: they open to the right when space permits,
 or overlay the parent on narrow screens. Left/Escape returns to the parent;

@@ -95,6 +95,12 @@ jobs:
           -c ${{ env.CONFIGURATION }}
           --no-restore
           -p:ContinuousIntegrationBuild=true
+      - name: Verify public API fingerprint
+        shell: pwsh
+        run: >-
+          ./packaging/Get-PublicApiFingerprint.ps1
+          -Configuration '${{ env.CONFIGURATION }}'
+          -Verify
       - name: Test Release solution
         run: >-
           dotnet test '${{ needs.metadata.outputs.solution_path }}'
@@ -149,10 +155,14 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts/packages -Force | Out-Null
           Copy-Item -LiteralPath (Get-ChildItem -LiteralPath '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Filter '*.nupkg' -File | Select-Object -First 1).FullName -Destination artifacts/packages
-          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config
+          dotnet restore tests/PackageConsumer/PackageConsumer.csproj --configfile tests/PackageConsumer/NuGet.Config -p:PackageConsumerAllFrameworks=true
           if (0 -ne $LASTEXITCODE) { throw "Package-only restore failed with status $LASTEXITCODE." }
-          dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release --no-restore
-          if (0 -ne $LASTEXITCODE) { throw "Package-only consumer failed with status $LASTEXITCODE." }
+          dotnet build tests/PackageConsumer/PackageConsumer.csproj -c Release --no-restore -p:PackageConsumerAllFrameworks=true
+          if (0 -ne $LASTEXITCODE) { throw "Package-only build failed with status $LASTEXITCODE." }
+          foreach ($target in @('net8.0', 'net9.0', 'net10.0')) {
+              dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -f $target --no-build --no-restore -p:PackageConsumerAllFrameworks=true
+              if (0 -ne $LASTEXITCODE) { throw "Package-only $target consumer failed with status $LASTEXITCODE." }
+          }
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:

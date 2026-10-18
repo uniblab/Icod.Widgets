@@ -63,9 +63,10 @@ Performs authoritative source-tree validation:
 
 1. restore;
 2. build;
-3. test;
-4. pack without rebuilding; and
-5. verify the exact generated NuGet artifacts.
+3. verify the target-neutral public API fingerprint when supplied by the repository;
+4. test;
+5. pack without rebuilding; and
+6. verify the exact generated NuGet artifacts.
 
 This is the implementation used by the six-platform `main` and manual distribution-validation workflows.
 

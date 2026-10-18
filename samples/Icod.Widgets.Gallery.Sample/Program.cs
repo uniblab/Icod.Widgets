@@ -41,6 +41,7 @@ internal static class Program {
 		}
 		if ( app.PaletteIndex != 0 ) return 3;
 		if ( !app.SmokeMenus() ) return 5;
+		if ( !app.SmokeDialogs() ) return 6;
 		app.SelectPage( 6 );
 		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
 		app.Input( WidgetInput.FunctionKey( 6 ) );
@@ -54,7 +55,7 @@ internal static class Program {
 		app.SelectPage( 4 ); app.OpenFiles( true ); await app.PollAsync( true ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		app.SelectPage( 3 ); app.OpenWizard(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		if ( app.Host.ModalDepth != 0 ) return 2;
-		Console.WriteLine( "PASS seven gallery pages, theme cycle, menu navigation/hover/modal, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
+		Console.WriteLine( "PASS seven gallery pages, theme cycle, menu navigation/hover/modal, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
 	}
 	private sealed class Gallery : WidgetSampleApplication {
 		private readonly List<Widget[]> pages = [];
@@ -62,6 +63,7 @@ internal static class Program {
 		private int dialogId;
 		private WidgetWizardDialog? wizard;
 		private bool rejected;
+		private WidgetDialogOutcome? lastDialogOutcome;
 		private CursesPresentationCapabilities capabilities;
 		private int paletteIndex;
 		private bool highlightMenuHover;
@@ -94,7 +96,7 @@ internal static class Program {
 			this.pages.Add( [ new WidgetLabel( "form-hint", "Name (Unicode, selection, paste, undo), checkbox, radio, button" ), this.Name, new WidgetCheckBox( "enabled", "Enabled" ), new WidgetRadioGroup( "radio", [ "Red", "Green", "Blue" ] ), new WidgetButton( "accept", "Accept form", "form.accept" ), new WidgetScrollIndicator( "scroll" ) { Total = 100, Offset = 40, Visible = 20 } ] );
 			this.pages.Add( [ new WidgetLabel( "list-hint", "Single: Enter commits | Multi: Space toggles, Ctrl+A all, Shift+arrows range" ), single, multiple, new WidgetDropDown( "drop", Items(), "potion" ) ] );
 			this.pages.Add( [ new WidgetLabel( "menu-hint", "Hover off initially | Ctrl+R runs a command | Help > About shows a modal" ), new WidgetMenuBar( "bar", menuItems ), new WidgetTextEditor( "menu-editor", this.menuView ) ] );
-			this.pages.Add( [ Button( "ok", "OK", "dialog.ok" ), Button( "yesno", "Yes / No", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
+			this.pages.Add( [ Button( "ok", "OK", "dialog.ok" ), Button( "yesno", "Yes / Don't Save / Cancel", "dialog.yesno" ), Button( "okcancel", "OK / Cancel", "dialog.okcancel" ), Button( "wizard", "Previous / Next / Cancel", "dialog.wizard" ), Button( "prompt", "Text prompt", "dialog.text" ), Button( "number", "Number prompt (0 to 100)", "dialog.number" ) ] );
 			this.pages.Add( [ Button( "folder", "Select folder", "picker.folder" ), Button( "file", "Select one existing file", "picker.file" ), Button( "files", "Select multiple existing files", "picker.files" ) ] );
 			this.pages.Add( [ inventory, history, status, Button( "help", "Show help", "game.help" ) ] );
 			this.pages.Add( [ tabs, new WidgetTextEditor( "workspace-editor", this.workspaceView ), scrollbar, workspaceStatus ] );
@@ -147,15 +149,27 @@ internal static class Program {
 		}
 		internal void OpenFiles( bool multiple ) => this.Show( new WidgetFilePicker( "files." + ++this.dialogId, new LocalWidgetFileSystemProvider(), Environment.CurrentDirectory, multiple, [ new WidgetFileFilter( "Text / C#", [ ".txt", ".md", ".cs" ] ), WidgetFileFilter.AllFiles ] ) );
 		internal void OpenWizard() { this.rejected = false; this.wizard = new( "wizard." + ++this.dialogId, "Application-validated wizard", [ "First page: first Next is rejected to demonstrate validation.", "Second page: Left returns; Esc closes." ] ); this.Show( this.wizard ); }
+		private WidgetMessageDialog CreateDecisionDialog( string id ) => new( id, "Generic action dialog", "Choose by mnemonic, navigation, default Enter, or pointer.", [
+			new( "yes", "Yes", WidgetDialogOutcome.Yes ) { Mnemonic = 'Y' },
+			new( "no", "Don't Save", WidgetDialogOutcome.No ) { Mnemonic = 'N' },
+			new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { Mnemonic = 'C', IsDefault = true, IsCancel = true }
+		] ) { Styles = WidgetStyles.Empty
+			.With( WidgetStyleRole.DialogSurface, this.Host.Theme.Resolve( WidgetStyleRole.Error ) )
+			.With( WidgetStyleRole.Text, this.Host.Theme.Resolve( WidgetStyleRole.Error ) )
+			.With( WidgetStyleRole.DialogTitle, this.Host.Theme.Resolve( WidgetStyleRole.Error ) )
+			.With( WidgetStyleRole.DialogBorder, this.Host.Theme.Resolve( WidgetStyleRole.Error ) )
+			.With( WidgetStyleRole.DialogAction, this.Host.Theme.Resolve( WidgetStyleRole.Error ) )
+			.With( WidgetStyleRole.DialogFocusedAction, this.Host.Theme.Resolve( WidgetStyleRole.Focused ) ) };
 		protected override void OnAction( WidgetAction action ) {
 			if ( action is WidgetWizardNavigationRequestedAction request && this.wizard is not null ) { if ( !this.rejected ) { this.rejected = true; this.wizard.RejectNavigation( "Application rejected Next. Press Enter again to continue." ); } else this.wizard.ApplyNavigation( request.ToPage ); return; }
+			if ( action is WidgetDialogCompletedAction completed ) this.lastDialogOutcome = completed.Result.Outcome;
 			if ( action is not WidgetInvokedAction invoked ) { base.OnAction( action ); return; }
 			string id = "dialog." + ++this.dialogId;
 			switch ( invoked.CommandId ) {
 				case "menu.about":
 					this.Show( WidgetMessageDialog.Ok( "menu-about." + ++this.dialogId, "About this sample", "Reusable menus and user-defined themes.\nClick OK, press Enter, or Escape to return." ) ); this.ArrangeDialog(); break;
 				case "dialog.ok": this.Show( WidgetMessageDialog.Ok( id, "Notice", "Click OK or press Enter to acknowledge; Escape reports Cancel." ) ); break;
-				case "dialog.yesno": this.Show( WidgetMessageDialog.YesNo( id, "Continue?", "This is a wrapped message. No is the safe default; Escape reports Cancel, independently of No." ) ); break;
+				case "dialog.yesno": this.Show( this.CreateDecisionDialog( id ) ); break;
 				case "dialog.okcancel": this.Show( WidgetMessageDialog.OkCancel( id, "Apply?", "Cancel is the safe default. Left selects OK; Enter completes." ) ); break;
 				case "dialog.wizard": this.OpenWizard(); break;
 				case "dialog.text": this.Show( new WidgetTextPrompt( id, "Enter text / Unicode / paste" ) ); break;
@@ -200,6 +214,19 @@ internal static class Program {
 			this.Input( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, okColumn, okRow ) ) ); this.Draw();
 			if ( this.Host.ModalDepth != 0 || !ReferenceEquals( this.Host.FocusedWidget, this.MenuEditor ) ) return false;
 			this.Input( WidgetInput.FunctionKey( 8 ) ); return true;
+		}
+		internal bool SmokeDialogs() {
+			this.SelectPage( 3 ); this.lastDialogOutcome = null;
+			this.Show( this.CreateDecisionDialog( "smoke-mnemonic" ) ); this.Input( WidgetInput.TextInput( new( 'n' ) ) );
+			if ( this.lastDialogOutcome != WidgetDialogOutcome.No || this.Host.ModalDepth != 0 ) return false;
+			this.Show( this.CreateDecisionDialog( "smoke-default" ) ); this.Input( WidgetInput.Key( WidgetKey.Enter ) );
+			if ( this.lastDialogOutcome != WidgetDialogOutcome.Cancel || this.Host.ModalDepth != 0 ) return false;
+			this.Show( this.CreateDecisionDialog( "smoke-pointer" ) ); this.ArrangeDialog(); this.Draw();
+			if ( this.Dialog is not { IsOpen: true } pointer || !pointer.Styles.TryGetValue( WidgetStyleRole.DialogSurface, out _ ) ) return false;
+			int row = pointer.Bounds.BottomExclusive - 2, column = pointer.Bounds.Column + 2;
+			this.Input( WidgetInput.PointerInput( new( CursesMouseAction.Press, CursesMouseButton.Primary, column, row ) ) );
+			this.Input( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, column, row ) ) );
+			return this.lastDialogOutcome == WidgetDialogOutcome.Yes && this.Host.ModalDepth == 0;
 		}
 		public override void Dispose() { base.Dispose(); this.workspaceView.Dispose(); this.menuView.Dispose(); }
 	}

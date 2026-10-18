@@ -24,6 +24,12 @@ all three while checking that keyboard focus is retained. On its workspace
 color page, F6 and Shift+F6 cycle among tabs, editor, and actionable status;
 the smoke exercises this route too.
 
+On the Dialogs page, the generic decision demonstrates `[Yes]`,
+`[Don't Save]`, and `[Cancel]` captions, Y/N/C mnemonics, Cancel as the default
+and cancel action, matching pointer activation, and an instance-only warning
+style. The style changes presentation only; outcomes and shortcuts remain part
+of the action array.
+
 Append `-- --smoke` for deterministic checks without opening a terminal. These
 checks exercise the same application controllers as live mode. CI runs them on
 every supported operating system.

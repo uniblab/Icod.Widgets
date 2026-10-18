@@ -28,14 +28,17 @@ public sealed class WidgetMessageDialogPointerTests {
 	[Theory]
 	[InlineData( "ok", 3, WidgetDialogOutcome.Ok )]
 	[InlineData( "yesno", 3, WidgetDialogOutcome.Yes )]
-	[InlineData( "yesno", 9, WidgetDialogOutcome.No )]
+	[InlineData( "yesno", 10, WidgetDialogOutcome.No )]
 	[InlineData( "okcancel", 3, WidgetDialogOutcome.Ok )]
-	[InlineData( "okcancel", 8, WidgetDialogOutcome.Cancel )]
+	[InlineData( "okcancel", 9, WidgetDialogOutcome.Cancel )]
 	public void ClickCompletesChosenActionOnceAndRestoresFocus( string kind, int column, WidgetDialogOutcome outcome ) {
 		using WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default );
 		WidgetButton background = new( "background", "Run", "run" ); host.Attach( background ); host.Arrange( host.Screen.Bounds ); host.Focus( background );
 		WidgetMessageDialog dialog = kind switch {
-			"yesno" => WidgetMessageDialog.YesNo( "message", "Question", "Continue?" ),
+			"yesno" => new WidgetMessageDialog( "message", "Question", "Continue?", [
+				new( "yes", "Yes", WidgetDialogOutcome.Yes ) { IsDefault = true },
+				new( "no", "No", WidgetDialogOutcome.No )
+			] ),
 			"okcancel" => WidgetMessageDialog.OkCancel( "message", "Question", "Continue?" ),
 			_ => WidgetMessageDialog.Ok( "message", "Notice", "Saved." )
 		};
@@ -47,10 +50,10 @@ public sealed class WidgetMessageDialogPointerTests {
 	}
 
 	[Theory]
-	[InlineData( 1, 5, CursesMouseButton.Primary )] // Release on a different choice.
-	[InlineData( 1, 3, CursesMouseButton.Primary )] // Release in the gap.
-	[InlineData( 3, 1, CursesMouseButton.Primary )] // Press in the gap.
-	[InlineData( 15, 15, CursesMouseButton.Primary )] // Cancellation hint is not a button.
+	[InlineData( 1, 7, CursesMouseButton.Primary )] // Release on a different choice.
+	[InlineData( 1, 5, CursesMouseButton.Primary )] // Release in the gap.
+	[InlineData( 5, 1, CursesMouseButton.Primary )] // Press in the gap.
+	[InlineData( 16, 16, CursesMouseButton.Primary )] // Cancellation hint is not a button.
 	[InlineData( 1, 1, CursesMouseButton.Secondary )]
 	public void NonmatchingClicksDoNotComplete( int pressColumn, int releaseColumn, CursesMouseButton button ) {
 		using WidgetHost host = new( new CursesScreen( 40, 6 ), WidgetTheme.Default );
@@ -84,6 +87,19 @@ public sealed class WidgetMessageDialogPointerTests {
 	}
 
 	[Fact]
+	public void MovingAwayCancelsPressEvenAfterPointerReturns() {
+		using WidgetHost host = new( new CursesScreen( 40, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "message", "Notice", "Saved." );
+		host.ShowModal( dialog ); host.Render();
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 1 ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Move, 4, 20, CursesMouseButton.None ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Move, 4, 1, CursesMouseButton.None ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 1 ).Actions );
+		Assert.True( dialog.IsOpen );
+	}
+
+	[Fact]
 	public void ClickUsesClippedActionRowAndKeyboardSelectedLabelWidths() {
 		using WidgetHost host = new( new CursesScreen( 12, 6 ), WidgetTheme.Default );
 		WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "message", "Question", "Continue?" ); using WidgetModalLease lease = host.ShowModal( dialog );
@@ -93,6 +109,54 @@ public sealed class WidgetMessageDialogPointerTests {
 		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 11 ).Actions );
 		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 10 ).Actions ); // Closing bracket of [OK].
 		Assert.Equal( WidgetDialogOutcome.Ok, Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( Pointer( host, CursesMouseAction.Release, 4, 10 ).Actions ) ).Result.Outcome );
+	}
+
+	[Fact]
+	public void UnicodeCaptionUsesDisplayColumnsForRenderAndHitTest() {
+		using WidgetHost host = new( new CursesScreen( 30, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "unicode", "Unicode", "Choose.", [
+			new( "wide", "界", WidgetDialogOutcome.Yes ) { IsDefault = true },
+			new( "no", "No", WidgetDialogOutcome.No )
+		] );
+		host.ShowModal( dialog ); host.Render(); CursesWindow window = host.GetPresentationWindow( dialog );
+		Assert.Equal( "[", window.GetCell( 4, 1 ).Content ); Assert.Equal( "界", window.GetCell( 4, 2 ).Content );
+		Assert.True( window.GetCell( 4, 3 ).IsContinuation ); Assert.Equal( "]", window.GetCell( 4, 4 ).Content );
+		Assert.Equal( "[", window.GetCell( 4, 7 ).Content ); Assert.Equal( "]", window.GetCell( 4, 10 ).Content );
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 10 ).Actions );
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			Pointer( host, CursesMouseAction.Release, 4, 10 ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.No, completed.Result.Outcome );
+	}
+
+	[Fact]
+	public void ClippedWideGlyphLeavesNoInvisibleClickableColumn() {
+		using WidgetHost host = new( new CursesScreen( 12, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "unicode", "Unicode", "Choose.", [
+			new( "wide", "界", WidgetDialogOutcome.Yes ) { IsDefault = true }
+		] );
+		host.ShowModal( dialog ); dialog.Arrange( new( 0, 8, 6, 20 ) ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( dialog );
+		Assert.Equal( "[", window.GetCell( 4, 1 ).Content );
+		Assert.Equal( " ", window.GetCell( 4, 2 ).Content );
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 10 ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 10 ).Actions );
+		Assert.True( dialog.IsOpen );
+	}
+
+	[Fact]
+	public void DisabledActionDoesNotCaptureOrActivatePointer() {
+		using WidgetHost host = new( new CursesScreen( 30, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "disabled", "Disabled", "Choose.", [
+			new( "ok", "OK", WidgetDialogOutcome.Ok ) { IsDefault = true },
+			new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { IsEnabled = false }
+		] );
+		host.ShowModal( dialog ); host.Render();
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 8 ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 8 ).Actions );
+		Assert.True( dialog.IsOpen ); Assert.Equal( WidgetDialogOutcome.Ok, dialog.SelectedOutcome );
 	}
 
 	private static WidgetDispatchResult Pointer( WidgetHost host, CursesMouseAction action, int row, int column, CursesMouseButton button = CursesMouseButton.Primary ) =>

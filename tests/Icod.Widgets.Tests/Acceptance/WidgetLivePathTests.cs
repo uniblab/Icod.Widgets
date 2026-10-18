@@ -25,10 +25,24 @@ using Xunit;
 
 public sealed class WidgetLivePathTests {
 	[Fact]
+	public void GenericDialogSamplePathExercisesMnemonicDefaultAndPointer() {
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default );
+		WidgetMessageDialog mnemonic = Decision( "mnemonic" ); host.ShowModal( mnemonic );
+		Assert.Equal( WidgetDialogOutcome.No, Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.TextInput( new( 'n' ) ), TimeSpan.Zero ).Actions ) ).Result.Outcome );
+		WidgetMessageDialog byDefault = Decision( "default" ); host.ShowModal( byDefault );
+		Assert.Equal( WidgetDialogOutcome.Cancel, Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) ).Result.Outcome );
+		WidgetMessageDialog pointer = Decision( "pointer" ); host.ShowModal( pointer ); host.Render();
+		host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Press, CursesMouseButton.Primary, 2, 6 ) ), TimeSpan.Zero );
+		Assert.Equal( WidgetDialogOutcome.Yes, Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, 2, 6 ) ), TimeSpan.Zero ).Actions ) ).Result.Outcome );
+	}
+	[Fact]
 	public void ModalTabKeepsFocusAndBlocksBackground() {
 		using WidgetHost host = new( new CursesScreen( 40, 12 ), WidgetTheme.Default );
 		WidgetButton button = new( "run", "Run", "run" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button );
-		WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "dialog", "Question", "Continue?" ); host.ShowModal( dialog );
+		WidgetMessageDialog dialog = Question( "dialog", "Continue?" ); host.ShowModal( dialog );
 		host.Process( WidgetInput.Key( WidgetKey.Tab ), TimeSpan.Zero );
 		Assert.Same( dialog, host.FocusedWidget );
 		Assert.True( host.Process( WidgetInput.TextInput( new( 'q' ) ), TimeSpan.Zero ).Handled );
@@ -37,7 +51,7 @@ public sealed class WidgetLivePathTests {
 	public void DetachingModalClosesDescendantsAndRestoresFocus() {
 		using WidgetHost host = new( new CursesScreen( 40, 12 ), WidgetTheme.Default );
 		WidgetButton button = new( "run", "Run", "run" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button );
-		WidgetMessageDialog parent = WidgetMessageDialog.YesNo( "parent", "Question", "Continue?" ); host.ShowModal( parent ); host.ShowModal( WidgetMessageDialog.OkCancel( "child", "Child", "Child" ) );
+		WidgetMessageDialog parent = Question( "parent", "Continue?" ); host.ShowModal( parent ); host.ShowModal( WidgetMessageDialog.OkCancel( "child", "Child", "Child" ) );
 		host.Detach( parent ); Assert.Equal( 0, host.ModalDepth ); Assert.Same( button, host.FocusedWidget ); Assert.Equal( 2, host.DrainActions().Count );
 	}
 	[Fact]
@@ -85,7 +99,7 @@ public sealed class WidgetLivePathTests {
 	}
 	[Fact]
 	public void MessageWrapShowsTextAfterFirstLine() {
-		using WidgetHost host = new( new CursesScreen( 20, 8 ), WidgetTheme.Default ); WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "dialog", "Question", "First words then more words with a final marker" ); host.ShowModal( dialog ); host.Render(); Assert.Contains( "marker", Cells( host.GetPresentationWindow( dialog ) ) );
+		using WidgetHost host = new( new CursesScreen( 20, 8 ), WidgetTheme.Default ); WidgetMessageDialog dialog = Question( "dialog", "First words then more words with a final marker" ); host.ShowModal( dialog ); host.Render(); Assert.Contains( "marker", Cells( host.GetPresentationWindow( dialog ) ) );
 	}
 	[Fact]
 	public void ListPointerReleaseCommitsClickedRowOnce() {
@@ -107,7 +121,7 @@ public sealed class WidgetLivePathTests {
 		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default ); WidgetCheckBox check = new( "check", "Check" ); host.Attach( check ); host.Arrange( host.Screen.Bounds ); host.Focus( check );
 		for ( int i = 0; i < WidgetLimits.MaximumPendingActions; i++ ) host.Enqueue( new WidgetInvokedAction( "probe", "probe" ) );
 		Assert.Throws<InvalidOperationException>( () => host.Process( WidgetInput.Key( WidgetKey.Space ), TimeSpan.Zero ) ); Assert.False( check.IsChecked ); host.DrainActions();
-		WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( dialog );
+		WidgetMessageDialog dialog = Question( "question", "Continue?" ); host.ShowModal( dialog );
 		for ( int i = 0; i < WidgetLimits.MaximumPendingActions; i++ ) host.Enqueue( new WidgetInvokedAction( "probe", "probe" ) );
 		Assert.Throws<InvalidOperationException>( () => host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ) ); Assert.True( dialog.IsOpen ); Assert.Equal( 1, host.ModalDepth );
 	}
@@ -117,7 +131,7 @@ public sealed class WidgetLivePathTests {
 	}
 	[Fact]
 	public void ModelessDialogReportsOpenAndClosesOnce() {
-		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default ); WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.Attach( dialog ); host.Arrange( host.Screen.Bounds ); host.Focus( dialog ); Assert.True( dialog.IsOpen );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default ); WidgetMessageDialog dialog = Question( "question", "Continue?" ); host.Attach( dialog ); host.Arrange( host.Screen.Bounds ); host.Focus( dialog ); Assert.True( dialog.IsOpen );
 		Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ); Assert.False( dialog.IsOpen ); Assert.Equal( 0, host.AttachedCount );
 	}
 	[Fact]
@@ -132,10 +146,18 @@ public sealed class WidgetLivePathTests {
 	}
 	[Fact]
 	public void DialogDoesNotOverwriteBorrowedBackground() {
-		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default ); host.Screen.StandardWindow.Write( "Application background" ); WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "dialog", "Question", "Overlay" ); host.ShowModal( dialog ); host.Render(); Assert.StartsWith( "Application background", Cells( host.Screen ) );
+		using WidgetHost host = new( new CursesScreen( 40, 8 ), WidgetTheme.Default ); host.Screen.StandardWindow.Write( "Application background" ); WidgetMessageDialog dialog = Question( "dialog", "Overlay" ); host.ShowModal( dialog ); host.Render(); Assert.StartsWith( "Application background", Cells( host.Screen ) );
 		host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.Zero ); host.Render(); Assert.StartsWith( "Application background", Cells( host.Screen ) );
 	}
 	private static WidgetDirectorySnapshot Snapshot() => new( "/dir", "/", [ new( "/dir/sub", "sub", true ), new( "/dir/a.txt", "a.txt", false ) ] );
+	private static WidgetMessageDialog Decision( string id ) => new( id, "Unsaved Changes", "Do you want to save these changes?", [
+		new( "yes", "Yes", WidgetDialogOutcome.Yes ) { Mnemonic = 'Y' },
+		new( "no", "Don't Save", WidgetDialogOutcome.No ) { Mnemonic = 'N' },
+		new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { Mnemonic = 'C', IsDefault = true, IsCancel = true }
+	] ) { Styles = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, new CursesStyle( CursesColor.Indexed( 15 ), CursesColor.Indexed( 1 ) ) ) };
+	private static WidgetMessageDialog Question( string id, string message ) => new( id, "Question", message, [
+		new( "yes", "Yes", WidgetDialogOutcome.Yes ), new( "no", "No", WidgetDialogOutcome.No ) { IsDefault = true }
+	] );
 	[Fact]
 	public void ReopenedPickerRejectsLoadStartedBeforeCancellation() {
 		foreach ( bool files in new[] { false, true } ) {

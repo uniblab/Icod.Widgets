@@ -21,29 +21,22 @@
 
 namespace Icod.Widgets;
 
+using System.Globalization;
 using Icod.DCurses;
 
 /// <summary>Composes child controls with caller-validated actions and explicit cancellation.</summary>
 public sealed class WidgetFormDialog : WidgetDialog {
 	private readonly Guid dialogId = Guid.NewGuid();
 	private readonly string? initialFocusId;
-	private WidgetDialogAction[] actions;
+	private readonly WidgetDialogActionSet actions;
 	private WidgetDialogValidationRequest? pending;
 	private long generation;
-	private int selected;
 	private int pressed = -1;
 	private string? message;
 	public WidgetFormDialog( string id, string title, IReadOnlyList<WidgetDialogAction> actions, string? initialFocusId = null ) : base( id, title ) {
-		ArgumentNullException.ThrowIfNull( actions );
-		if ( actions.Count == 0 || actions.Count > WidgetLimits.MaximumItems ) throw new ArgumentOutOfRangeException( nameof( actions ) );
-		this.actions = actions.ToArray(); HashSet<string> ids = new( StringComparer.Ordinal );
-		foreach ( WidgetDialogAction action in this.actions ) if ( action is null || string.IsNullOrWhiteSpace( action.Id ) || action.Label is null || !ids.Add( action.Id ) )
-			throw new ArgumentException( "Dialog actions require unique nonempty IDs and nonnull labels.", nameof( actions ) );
-		if ( 1 != this.actions.Count( action => action.IsDefault ) || 1 < this.actions.Count( action => action.IsCancel ) )
-			throw new ArgumentException( "A form needs one default action and at most one cancel action.", nameof( actions ) );
-		this.selected = Array.FindIndex( this.actions, action => action.IsDefault ); this.initialFocusId = initialFocusId;
+		this.actions = new WidgetDialogActionSet( actions, allowValidation: true ); this.initialFocusId = initialFocusId;
 	}
-	public IReadOnlyList<WidgetDialogAction> Actions => Array.AsReadOnly( this.actions );
+	public IReadOnlyList<WidgetDialogAction> Actions => this.actions.Actions;
 	public string? Error { get; private set; }
 	public string? Message => this.message;
 	internal override string? InitialFocusId => this.initialFocusId;
@@ -54,69 +47,90 @@ public sealed class WidgetFormDialog : WidgetDialog {
 	] ) { message = message ?? throw new ArgumentNullException( nameof( message ) ) };
 
 	public void SetActionEnabled( string actionId, bool enabled ) {
-		int index = Array.FindIndex( this.actions, action => StringComparer.Ordinal.Equals( action.Id, actionId ) );
-		if ( index < 0 ) throw new ArgumentException( "Unknown action ID.", nameof( actionId ) );
-		if ( this.actions[ index ].IsEnabled == enabled ) return;
-		this.actions[ index ] = this.actions[ index ] with { IsEnabled = enabled }; this.Invalidate();
+		WidgetDialogAction? action = this.actions.Actions.FirstOrDefault( candidate => StringComparer.Ordinal.Equals( candidate.Id, actionId ) );
+		if ( action is not null && action.IsEnabled == enabled ) return;
+		this.actions.SetEnabled( actionId, enabled ); this.Invalidate();
 	}
 	public bool ApplyValidationResult( WidgetDialogValidationResult result ) {
 		ArgumentNullException.ThrowIfNull( result );
 		if ( !this.IsOpen || this.Host is null || this.pending is null || result.Request != this.pending ) return false;
-		WidgetDialogAction action = this.actions.First( action => action.Id == this.pending.ActionId ); this.pending = null;
+		WidgetDialogAction action = this.actions.Actions.First( action => action.Id == this.pending.ActionId ); this.pending = null;
 		if ( !result.IsValid ) { this.Error = result.Error ?? "Validation failed."; return true; }
 		this.Error = null; this.Finish( this.Host, new WidgetDialogResult( action.Outcome, action.Value ) ); return true;
 	}
 	internal override void OnClosed() { this.Invalidate(); this.pressed = -1; }
 	protected override void OnCaptureCanceled() => this.pressed = -1;
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
-		if ( WidgetInputKind.Key == input.Kind ) {
-			if ( WidgetKey.Escape == input.KeyCode ) { this.Finish( host, WidgetDialogOutcome.Cancel ); return true; }
-			if ( input.KeyCode is WidgetKey.Left or WidgetKey.Right ) {
-				int direction = WidgetKey.Right == input.KeyCode ? 1 : -1;
-				for ( int step = 1; step <= this.actions.Length; step++ ) {
-					int index = ( this.selected + direction * step + this.actions.Length * 2 ) % this.actions.Length;
-					if ( this.actions[ index ].IsEnabled ) { this.selected = index; return true; }
-				}
-				return true;
-			}
-			if ( WidgetKey.Enter == input.KeyCode ) { this.Activate( host, this.actions[ this.selected ] ); return true; }
-		}
-		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { Button: CursesMouseButton.Primary } pointer ) {
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } pointer ) {
 			CursesRectangle area = this.GetContentBounds( host.Screen ); int row = area.BottomExclusive - 1;
-			int index = pointer.Row == row && area.Contains( pointer.Row, pointer.Column ) ? this.HitAction( pointer.Column - area.Column ) : -1;
-			if ( CursesMouseAction.Press == pointer.Action ) { this.pressed = index; return index >= 0; }
-			if ( CursesMouseAction.Release == pointer.Action ) { bool match = index >= 0 && index == this.pressed; this.pressed = -1; if ( match ) { this.selected = index; this.Activate( host, this.actions[ index ] ); } return match; }
+			int index = pointer.Row == row && area.Contains( pointer.Row, pointer.Column ) ? this.HitAction( pointer.Column, area, host.Screen ) : -1;
+			if ( CursesMouseAction.Press == pointer.Action ) { this.pressed = CursesMouseButton.Primary == pointer.Button ? index : -1; return this.pressed >= 0; }
+			if ( CursesMouseAction.Move == pointer.Action ) { if ( this.pressed >= 0 && index != this.pressed ) this.pressed = -1; return false; }
+			if ( CursesMouseAction.Release == pointer.Action ) { bool match = CursesMouseButton.Primary == pointer.Button && index >= 0 && index == this.pressed; this.pressed = -1; if ( match ) { this.Select( index ); this.Activate( host, this.actions.Selected ); } return match; }
+			return false;
 		}
+		this.pressed = -1;
+		if ( this.actions.TryGetMnemonic( input, out WidgetDialogAction mnemonicAction ) ) { this.Activate( host, mnemonicAction ); return true; }
+		if ( WidgetInputKind.Key != input.Kind || CursesKeyEventPhase.Release == input.KeyPhase ) return false;
+		if ( WidgetKey.Escape == input.KeyCode ) {
+			if ( this.actions.CancelAction is { } cancel ) this.Activate( host, cancel );
+			else { this.EnsureActionCapacity(); this.Finish( host, WidgetDialogOutcome.Cancel ); }
+			return true;
+		}
+		if ( input.KeyCode is WidgetKey.Left or WidgetKey.Up ) { this.actions.Move( -1, false ); return true; }
+		if ( input.KeyCode == WidgetKey.Tab ) { this.actions.Move( 1, true ); return true; }
+		if ( input.KeyCode is WidgetKey.Right or WidgetKey.Down ) { this.actions.Move( 1, false ); return true; }
+		if ( WidgetKey.Enter == input.KeyCode ) { this.Activate( host, this.actions.Selected ); return true; }
 		return false;
 	}
-	private int HitAction( int column ) {
-		int at = 0; for ( int i = 0; i < this.actions.Length; i++ ) { int length = this.actions[ i ].Label.Length + 3; if ( column >= at && column < at + length ) return i; at += length + 1; }
+	private int HitAction( int column, CursesRectangle area, CursesScreen screen ) {
+		foreach ( WidgetDialogActionPresentation presentation in WidgetDialogActionLayout.Measure(
+			this.actions.Actions, area.Column, area.RightExclusive, 1, screen.TextWidthProvider ) )
+			if ( column >= presentation.Column && column < presentation.Column + presentation.RenderedWidth )
+				return presentation.Action.IsEnabled ? presentation.Index : -1;
 		return -1;
 	}
 	private void Activate( WidgetHost host, WidgetDialogAction action ) {
-		if ( !action.IsEnabled || this.pending is not null ) return;
+		if ( !action.IsEnabled || this.pending is not null && !action.IsCancel ) return;
 		if ( action.RequiresValidation ) {
 			this.EnsureActionCapacity(); this.Error = null; this.pending = new WidgetDialogValidationRequest( this.dialogId, checked( ++this.generation ), action.Id );
 			this.EmitAction( new WidgetDialogValidationRequestedAction( this.Id, this.pending ) ); return;
 		}
 		this.Finish( host, new WidgetDialogResult( action.Outcome, action.Value ) );
 	}
+	private void Select( int index ) {
+		while ( this.actions.SelectedIndex < index && this.actions.Move( 1, false ) ) { }
+		while ( this.actions.SelectedIndex > index && this.actions.Move( -1, false ) ) { }
+	}
 	private void Invalidate() { this.pending = null; this.Error = null; this.generation = checked( this.generation + 1 ); }
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
 		if ( this.message is not null ) WidgetBrowserView.WriteLine( screen, area, 0, this.message, this.Style( theme, WidgetStyleRole.Text ) );
 		if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error, this.Style( theme, WidgetStyleRole.Error ) );
-		string[] labels = this.actions.Select( ( action, i ) => i == this.selected ? $"[{action.Label}]" : $" {action.Label} " ).ToArray();
+		string[] labels = this.actions.Actions.Select( WidgetDialogActionLayout.Label ).ToArray();
 		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, string.Join( " ", labels ), this.Style( theme, WidgetStyleRole.DialogAction ) );
-		int column = area.Column;
-		for ( int index = 0; index < labels.Length && column < area.Column + area.Columns; index++ ) {
-			string label = WidgetBrowserView.Sanitize( labels[ index ] );
-			CursesStyle style = this.Style( theme, !this.actions[ index ].IsEnabled ? WidgetStyleRole.DialogDisabledAction :
-				index == this.selected && focused ? WidgetStyleRole.DialogFocusedAction :
-				this.actions[ index ].IsDefault ? WidgetStyleRole.DialogDefaultAction : WidgetStyleRole.DialogAction );
-			screen.StandardWindow.Move( area.BottomExclusive - 1, column );
-			screen.StandardWindow.Write( CursesText.TruncateToColumns( label, area.Column + area.Columns - column, screen.TextWidthProvider ), style );
-			column += CursesText.MeasureColumns( label, screen.TextWidthProvider ) + 1;
+		foreach ( WidgetDialogActionPresentation presentation in WidgetDialogActionLayout.Measure(
+			this.actions.Actions, area.Column, area.RightExclusive, 1, screen.TextWidthProvider ) ) {
+			WidgetDialogAction action = presentation.Action;
+			CursesStyle style = this.Style( theme, !action.IsEnabled ? WidgetStyleRole.DialogDisabledAction :
+				presentation.Index == this.actions.SelectedIndex && focused ? WidgetStyleRole.DialogFocusedAction :
+				action.IsDefault ? WidgetStyleRole.DialogDefaultAction : WidgetStyleRole.DialogAction );
+			screen.StandardWindow.Move( area.BottomExclusive - 1, presentation.Column );
+			screen.StandardWindow.Write( presentation.RenderedLabel, style );
+			this.RenderMnemonic( screen, area.BottomExclusive - 1, presentation.Column + 1,
+				presentation.Column + presentation.RenderedWidth, action, style );
+		}
+	}
+	private void RenderMnemonic( CursesScreen screen, int row, int captionColumn, int right, WidgetDialogAction action, CursesStyle style ) {
+		if ( !action.IsEnabled || action.Mnemonic is not char mnemonic ) return;
+		string caption = WidgetBrowserView.Sanitize( action.Label ); TextElementEnumerator elements = StringInfo.GetTextElementEnumerator( caption ); int offset = 0;
+		while ( elements.MoveNext() ) {
+			string element = elements.GetTextElement(); int width = CursesText.MeasureColumns( element, screen.TextWidthProvider );
+			if ( char.ToUpperInvariant( element[ 0 ] ) == char.ToUpperInvariant( mnemonic ) ) {
+				if ( captionColumn + offset + width <= right ) { screen.StandardWindow.Move( row, captionColumn + offset ); screen.StandardWindow.Write( element, style.WithAttributes( style.Attributes | CursesTextAttributes.Underline ) ); }
+				return;
+			}
+			offset += width;
 		}
 	}
 }
