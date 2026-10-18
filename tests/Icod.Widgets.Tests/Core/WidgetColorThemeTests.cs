@@ -300,6 +300,26 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void CustomStylesReachEveryDialogPartWithoutChangingBehavior() {
+		CursesStyle action = new( CursesColor.Indexed( 1 ), CursesColor.Indexed( 7 ), CursesTextAttributes.Bold );
+		WidgetStyles styles = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface, Red ).With( WidgetStyleRole.Text, Blue )
+			.With( WidgetStyleRole.DialogTitle, Green ).With( WidgetStyleRole.DialogBorder, Gray )
+			.With( WidgetStyleRole.DialogFocusedAction, action );
+		CursesScreen screen = new( 36, 7 ); using WidgetHost host = new( screen, WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "custom", "Styled", "Question", [
+			new( "proceed", "Proceed", WidgetDialogOutcome.Accepted ) { IsDefault = true, Mnemonic = 'P', Value = 42 }
+		] ) { Styles = styles };
+		host.ShowModal( dialog ); host.Render(); CursesWindow panel = host.GetPresentationWindow( dialog );
+
+		Assert.Equal( Gray, panel.GetCell( 0, 0 ).Style ); Assert.Equal( Green, panel.GetCell( 0, 3 ).Style );
+		Assert.Equal( Blue, panel.GetCell( 1, 1 ).Style ); Assert.Equal( Red, panel.GetCell( 3, 20 ).Style );
+		Assert.Equal( action, panel.GetCell( 5, 1 ).Style );
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.TextInput( new System.Text.Rune( 'p' ) ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.Accepted, completed.Result.Outcome ); Assert.Equal( 42, completed.Result.Value );
+	}
+
+	[Fact]
 	public void PaletteOnMonochromeProfileKeepsNonColorFocusSelectionAndErrorCues() {
 		WidgetTheme theme = WidgetPalette.Create( default );
 		Assert.Equal( CursesColorKind.Default, theme.Resolve( WidgetStyleRole.TabActive ).Foreground.Kind );

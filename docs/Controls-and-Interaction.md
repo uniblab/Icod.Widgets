@@ -97,20 +97,39 @@ hover toggling while a menu is open.
 Every dialog renders its `Title` as a caption in a `WidgetTheme.Border` frame
 and insets its content within that frame. Viewports too small for a complete
 frame retain a borderless title-and-content fallback. Message-dialog factories
-cover acknowledgement and choice flows:
+cover acknowledgement and common choice flows. Use an action array when
+captions and behavior are application-specific:
 
 ```csharp
 WidgetMessageDialog notice = WidgetMessageDialog.Ok(
     "saved", "Saved", "The document was saved.");
-WidgetMessageDialog question = WidgetMessageDialog.YesNo(
-    "overwrite", "Overwrite?", "Replace the existing file?");
+IReadOnlyList<WidgetDialogAction> actions = [
+    new("yes", "Yes", WidgetDialogOutcome.Yes) { Mnemonic = 'Y' },
+    new("no", "Don't Save", WidgetDialogOutcome.No) { Mnemonic = 'N' },
+    new("cancel", "Cancel", WidgetDialogOutcome.Cancel) {
+        Mnemonic = 'C', IsDefault = true, IsCancel = true
+    }
+];
+WidgetMessageDialog question = new(
+    "close", "Unsaved changes", "Do you want to save these changes?", actions
+);
 ```
 
-Enter completes the selected action. A primary-button press and release on the
-same visible message-dialog choice completes that choice. Gaps and the Escape
-hint are not buttons; a release outside the choice cancels the click. Escape always reports
-`WidgetDialogOutcome.Cancel`, including from an OK-only dialog; cancellation is
-therefore distinct from acknowledging the message.
+`Label` controls presentation while `Value` and `Outcome` define the result.
+`Mnemonic`, `IsDefault`, and `IsCancel` independently define plain-letter,
+Enter, and Escape behavior. `Actions` is read-only; `SetActionEnabled` changes
+availability while retaining at least one enabled choice. The legacy `YesNo`
+factory remains binary compatible but is warning-level obsolete; migrate to the
+constructor when the decision is not literally Yes/No.
+
+Every action renders as `[Label]`. Enter completes the selected/default action;
+plain mnemonics, keyboard selection, and a primary-button press/release on the
+same visible choice all use the same action procedure. Gaps are not buttons;
+capture loss or a release outside the pressed choice cancels the click. Escape
+activates the declared cancel action, or reports synthetic
+`WidgetDialogOutcome.Cancel` when none exists, including an OK-only dialog.
+Scoped `Styles` can change all dialog presentation roles without changing
+mnemonics, hit testing, defaults, cancellation, or result policy.
 
 For a centered dialog, call `host.ShowModal(dialog)` and then arrange the dialog
 inside the screen; repeat that layout after resizing. The gallery's About

@@ -36,8 +36,15 @@ WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "file", "File", [ Wi
 host.Attach( menu ); host.Arrange( host.Screen.Bounds ); host.Focus( menu );
 host.Process( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Alt, new( 'f' ) ), TimeSpan.Zero );
 WidgetDispatchResult menuResult = host.Process( WidgetInput.Key( WidgetKey.Character, character: new( 'r' ) ), TimeSpan.FromMilliseconds( 1 ) );
-WidgetMessageDialog notice = WidgetMessageDialog.Ok( "notice", "Notice", "Packaged API works." ); host.ShowModal( notice );
-WidgetDispatchResult dialogResult = host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 2 ) );
+WidgetMessageDialog notice = new( "notice", "Notice", "Packaged API works.", [
+	new( "yes", "Yes", WidgetDialogOutcome.Yes ) { Mnemonic = 'Y' },
+	new( "no", "Don't Save", WidgetDialogOutcome.No ) { Mnemonic = 'N' },
+	new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { Mnemonic = 'C', IsDefault = true, IsCancel = true }
+] ) { Styles = WidgetStyles.Empty.With( WidgetStyleRole.DialogSurface,
+	new CursesStyle( CursesColor.Indexed( 15 ), CursesColor.Indexed( 1 ) ) ) };
+notice.SetActionEnabled( "no", false ); notice.SetActionEnabled( "no", true );
+bool dialogApi = notice.Actions.Count == 3 && notice.Actions[ 1 ].Mnemonic == 'N'; host.ShowModal( notice );
+WidgetDispatchResult dialogResult = host.Process( WidgetInput.TextInput( new( 'n' ) ), TimeSpan.FromMilliseconds( 2 ) );
 PublicProbe probe = new( "public-probe" ); host.Attach( probe ); probe.Arrange( new CursesRectangle( 0, 0, 1, 12 ) ); host.Focus( probe );
 WidgetDispatchResult probeResult = host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 3 ) );
 host.Update( TimeSpan.FromMilliseconds( 4 ) );
@@ -80,7 +87,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 	statusField.CommandId == "edit.find" && decision.Actions.Count == 3 && saveTarget.NameInput.Value == "draft.txt" &&
 	search.ReplacementInput is not null && goTo.LineInput is not null && WidgetLimits.MaximumTabs == 1024;
 return menuResult.Actions.Single() is WidgetInvokedAction &&
-	dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.Ok } &&
+	dialogApi && dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.No } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
 	themeApi && currentLineThemeApi && gutterThemeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 

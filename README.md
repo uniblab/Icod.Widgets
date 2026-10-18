@@ -130,9 +130,9 @@ for complete session setup, input, resizing, rendering, and cleanup.
 - Single- and multi-select lists, keyboard search, and framed drop-down popups.
 - Menu bars, framed popup menus, submenus, separators, disabled/checkable items,
   scoped mnemonics, independent command shortcuts, and cascading overlays.
-- Captioned, framed OK, Yes/No, OK/Cancel, and Previous/Next/Cancel dialogs with
-  explicit results and modal focus restoration; message choices support keyboard
-  and pointer activation.
+- Captioned, framed message and form dialogs with explicit action arrays,
+  results, mnemonics, defaults, cancellation, modal focus restoration, and
+  matching keyboard/pointer activation.
 - Composable forms with Save/Don't Save/Cancel decisions, separate save-target
   inspection, and typed Find/Replace/Go To Line requests.
 - Provider-backed folder selection and single/multiple existing-file selection.
@@ -200,6 +200,24 @@ after a primary-button press and release on the same visible label. Escape
 cancels the top dialog/menu;
 **even an OK-only dialog returns Cancel on Escape**, not acknowledgement.
 
+For application-specific choices, pass an `IReadOnlyList<WidgetDialogAction>`.
+`Label` is presentation, `Value`/`Outcome` are results, `Mnemonic` is the plain
+shortcut, and `IsDefault`/`IsCancel` define Enter/Escape behavior. Per-dialog
+`Styles` change presentation only. Every action is displayed as `[Label]`.
+
+```csharp
+IReadOnlyList<WidgetDialogAction> actions = [
+    new("yes", "Yes", WidgetDialogOutcome.Yes) { Mnemonic = 'Y' },
+    new("no", "Don't Save", WidgetDialogOutcome.No) { Mnemonic = 'N' },
+    new("cancel", "Cancel", WidgetDialogOutcome.Cancel) {
+        Mnemonic = 'C', IsDefault = true, IsCancel = true
+    }
+];
+WidgetMessageDialog question = new(
+    "close", "Unsaved changes", "Do you want to save these changes?", actions
+);
+```
+
 The [controls and interaction guide](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md)
 contains menu and dialog examples, picker keys, configuration, errors, and limits.
 
@@ -248,7 +266,7 @@ Recommended entry points:
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
 - [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) — versions and release history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
-- [1.3 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.3.md), [1.2 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.2.0/docs/Public-API-Baseline-1.2.md), [1.1 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.1.0/docs/Public-API-Baseline-1.1.md), and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
+- [Current public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.8.md) and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
 Release audits, versioned plans, API snapshots, and qualification worksheets

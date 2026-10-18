@@ -21,10 +21,123 @@
 
 namespace Icod.Widgets.Tests.Dialogs;
 
+using System.Text;
 using Icod.DCurses;
 using Xunit;
 
 public sealed class WidgetDialogTests {
+	[Theory]
+	[InlineData( 'y', WidgetDialogOutcome.Yes )]
+	[InlineData( 'N', WidgetDialogOutcome.No )]
+	[InlineData( 'c', WidgetDialogOutcome.Cancel )]
+	public void MnemonicActivatesConfiguredOutcomeCaseInsensitively( char key, WidgetDialogOutcome expected ) {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = DecisionDialog(); host.ShowModal( dialog );
+
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.TextInput( new Rune( key ) ), TimeSpan.Zero ).Actions ) );
+
+		Assert.Equal( expected, completed.Result.Outcome );
+	}
+
+	[Theory]
+	[InlineData( WidgetInputModifiers.Shift )]
+	[InlineData( WidgetInputModifiers.Control )]
+	[InlineData( WidgetInputModifiers.Alt )]
+	public void ModifiedMnemonicDoesNotActivate( WidgetInputModifiers modifiers ) {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = DecisionDialog(); host.ShowModal( dialog );
+
+		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Character, modifiers, new Rune( 'y' ) ), TimeSpan.Zero );
+
+		Assert.Empty( result.Actions ); Assert.True( dialog.IsOpen );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public void MnemonicCompletesOnceForTextOrPressedKeyAndIgnoresRelease( bool useText ) {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = DecisionDialog(); host.ShowModal( dialog );
+		WidgetInput release = WidgetInput.Key( WidgetKey.Character, character: new Rune( 'y' ) ) with { KeyPhase = CursesKeyEventPhase.Release };
+		Assert.Empty( host.Process( release, TimeSpan.Zero ).Actions ); Assert.True( dialog.IsOpen );
+		WidgetInput activation = useText ? WidgetInput.TextInput( new Rune( 'Y' ) ) :
+			WidgetInput.Key( WidgetKey.Character, character: new Rune( 'y' ) );
+
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( activation, TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
+
+		Assert.Equal( WidgetDialogOutcome.Yes, completed.Result.Outcome ); Assert.Empty( host.DrainActions() );
+	}
+
+	[Fact]
+	public void EscapeUsesDeclaredCancelActionAndValue() {
+		object value = new(); using WidgetHost host = HostWithBackground( out _ );
+		WidgetMessageDialog dialog = new( "cancel", "Cancel", "Choose.", [
+			new( "ok", "OK", WidgetDialogOutcome.Ok ) { IsDefault = true },
+			new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { IsCancel = true, Value = value }
+		] );
+		host.ShowModal( dialog );
+
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.Zero ).Actions ) );
+
+		Assert.Equal( WidgetDialogOutcome.Cancel, completed.Result.Outcome ); Assert.Same( value, completed.Result.Value );
+	}
+
+	[Fact]
+	public void ArrowsAndTabSkipDisabledActions() {
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = DecisionDialog( disableNo: true ); host.ShowModal( dialog );
+
+		host.Process( WidgetInput.Key( WidgetKey.Right ), TimeSpan.Zero ); Assert.Equal( WidgetDialogOutcome.Cancel, dialog.SelectedOutcome );
+		host.Process( WidgetInput.Key( WidgetKey.Left ), TimeSpan.Zero ); Assert.Equal( WidgetDialogOutcome.Yes, dialog.SelectedOutcome );
+		host.Process( WidgetInput.Key( WidgetKey.Tab ), TimeSpan.Zero ); Assert.Equal( WidgetDialogOutcome.Cancel, dialog.SelectedOutcome );
+	}
+
+	[Fact]
+	public void EnterUsesExplicitDefault() {
+		object value = new(); using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = DecisionDialog( cancelValue: value ); host.ShowModal( dialog );
+
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
+
+		Assert.Equal( WidgetDialogOutcome.Cancel, completed.Result.Outcome ); Assert.Same( value, completed.Result.Value );
+	}
+
+	[Fact]
+	public void AllActionsRenderAsBracketedButtons() {
+		using WidgetHost host = new( new CursesScreen( 50, 6 ), WidgetTheme.Default ); WidgetMessageDialog dialog = DecisionDialog();
+		host.ShowModal( dialog ); host.Render();
+
+		Assert.Contains( "[Yes]  [Don't Save]  [Cancel]", Row( host.GetPresentationWindow( dialog ), 4, 50 ), StringComparison.Ordinal );
+	}
+
+	[Fact]
+	public void MnemonicUnderlinesFirstCaptionMatchWithoutChangingColors() {
+		CursesStyle actionStyle = new( CursesColor.Indexed( 11 ), CursesColor.Indexed( 1 ), CursesTextAttributes.Bold );
+		using WidgetHost host = new( new CursesScreen( 30, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "mnemonic", "Mnemonic", "Choose.", [
+			new( "never", "Never Now", WidgetDialogOutcome.Accepted ) { IsDefault = true, Mnemonic = 'N' }
+		] ) { Styles = WidgetStyles.Empty.With( WidgetStyleRole.DialogFocusedAction, actionStyle ) };
+		host.ShowModal( dialog ); host.Render(); CursesWindow window = host.GetPresentationWindow( dialog );
+
+		Assert.Equal( actionStyle, window.GetCell( 4, 1 ).Style );
+		Assert.Equal( actionStyle.WithAttributes( CursesTextAttributes.Bold | CursesTextAttributes.Underline ), window.GetCell( 4, 2 ).Style );
+		Assert.Equal( actionStyle, window.GetCell( 4, 8 ).Style );
+	}
+
+	[Fact]
+	public void NarrowDialogTruncatesWithoutChangingActionIdentity() {
+		using WidgetHost host = new( new CursesScreen( 8, 5 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "narrow", "Narrow", "Choose.", [
+			new( "long", "Long Zebra", WidgetDialogOutcome.Accepted ) { IsDefault = true, Mnemonic = 'Z' }
+		] );
+		host.ShowModal( dialog ); host.Render(); CursesWindow window = host.GetPresentationWindow( dialog );
+		Assert.DoesNotContain( Enumerable.Range( 0, 8 ).Select( column => window.GetCell( 3, column ).Style.Attributes ),
+			attributes => 0 != ( attributes & CursesTextAttributes.Underline ) );
+
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.TextInput( new Rune( 'z' ) ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.Accepted, completed.Result.Outcome );
+	}
+
 	[Fact]
 	public void OkDialogAcknowledgesEnterAndEscapeCancels() {
 		using WidgetHost host = HostWithBackground( out _ );
@@ -67,17 +180,17 @@ public sealed class WidgetDialogTests {
 	[Fact]
 	public void NoDiffersFromCancel() {
 		using WidgetHost host = HostWithBackground( out _ );
-		WidgetMessageDialog noDialog = WidgetMessageDialog.YesNo( "question", "Question", "Continue?" ); host.ShowModal( noDialog );
+		WidgetMessageDialog noDialog = LegacyQuestion( "question" ); host.ShowModal( noDialog );
 		host.Process( WidgetInput.Key( WidgetKey.Right ), TimeSpan.Zero );
 		WidgetDialogCompletedAction no = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 1 ) ).Actions ) );
-		WidgetMessageDialog cancelDialog = WidgetMessageDialog.YesNo( "question2", "Question", "Continue?" ); host.ShowModal( cancelDialog );
+		WidgetMessageDialog cancelDialog = LegacyQuestion( "question2" ); host.ShowModal( cancelDialog );
 		WidgetDialogCompletedAction cancel = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.FromMilliseconds( 2 ) ).Actions ) );
 		Assert.Equal( WidgetDialogOutcome.No, no.Result.Outcome ); Assert.Equal( WidgetDialogOutcome.Cancel, cancel.Result.Outcome );
 	}
 
 	[Fact]
 	public void SafeDefaultActions() {
-		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = WidgetMessageDialog.YesNo( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
+		using WidgetHost host = HostWithBackground( out _ ); WidgetMessageDialog dialog = LegacyQuestion( "q" ); host.ShowModal( dialog );
 		WidgetDialogCompletedAction action = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single( host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.Zero ).Actions ) );
 		Assert.Equal( WidgetDialogOutcome.No, action.Result.Outcome );
 	}
@@ -162,5 +275,13 @@ public sealed class WidgetDialogTests {
 	}
 
 	private static WidgetHost HostWithBackground( out WidgetButton button ) { WidgetHost host = new( new CursesScreen( 40, 10 ), WidgetTheme.Default ); button = new WidgetButton( "background", "Run", "run" ); host.Attach( button ); host.Arrange( host.Screen.Bounds ); host.Focus( button ); return host; }
+	private static WidgetMessageDialog DecisionDialog( bool disableNo = false, object? cancelValue = null ) => new( "decision", "Unsaved Changes", "Do you want to save these changes?", [
+		new( "yes", "Yes", WidgetDialogOutcome.Yes ) { Mnemonic = 'Y' },
+		new( "no", "Don't Save", WidgetDialogOutcome.No ) { Mnemonic = 'N', IsEnabled = !disableNo },
+		new( "cancel", "Cancel", WidgetDialogOutcome.Cancel ) { Mnemonic = 'C', IsDefault = true, IsCancel = true, Value = cancelValue }
+	] );
+	private static WidgetMessageDialog LegacyQuestion( string id ) => new( id, "Question", "Continue?", [
+		new( "yes", "Yes", WidgetDialogOutcome.Yes ), new( "no", "No", WidgetDialogOutcome.No ) { IsDefault = true }
+	] );
 	private static string Row( CursesWindow window, int row, int columns ) => string.Concat( Enumerable.Range( 0, columns ).Select( column => window.GetCell( row, column ).Content ) );
 }

@@ -21,12 +21,13 @@
 
 namespace Icod.Widgets.Tests.Core;
 
+using System.Text.Json;
 using System.Xml.Linq;
 using Xunit;
 
 public sealed class ReleaseIdentityTests {
 	[Fact]
-	public void CandidateAndPackageConsumerUseVersion172() {
+	public void CandidateAndPackageConsumerUseVersion180() {
 		string root = FindRepositoryRoot();
 		XDocument production = XDocument.Load(
 			Path.Combine( root, "Icod.Widgets.csproj" )
@@ -38,33 +39,70 @@ public sealed class ReleaseIdentityTests {
 			"PackageConsumer.csproj"
 		) );
 
-		Assert.Equal( "1.7.2", GetSingleValue( production, "Version" ) );
-		Assert.Equal( "1.7.2", GetSingleValue( production, "PackageVersion" ) );
+		Assert.Equal( "1.8.0", GetSingleValue( production, "Version" ) );
+		Assert.Equal( "1.8.0", GetSingleValue( production, "PackageVersion" ) );
 		Assert.Equal( "1.0.0.0", GetSingleValue( production, "AssemblyVersion" ) );
-		XElement reference = Assert.Single(
+		XElement consumerReference = Assert.Single(
 			consumer.Descendants(),
 			static current => "PackageReference" == current.Name.LocalName
 		);
-		Assert.Equal( "Icod.Widgets", reference.Attribute( "Include" )?.Value );
-		Assert.Equal( "1.7.2", reference.Attribute( "Version" )?.Value );
+		Assert.Equal( "Icod.Widgets", consumerReference.Attribute( "Include" )?.Value );
+		Assert.Equal( "1.8.0", consumerReference.Attribute( "Version" )?.Value );
+		XElement dependency = Assert.Single( production.Descendants(), static current =>
+			"PackageReference" == current.Name.LocalName && "Icod.DCurses" == current.Attribute( "Include" )?.Value );
+		Assert.Equal( "2.5.2", dependency.Attribute( "Version" )?.Value );
 	}
 
 	[Fact]
-	public void CandidateHasCuratedIdenticalPasteNotes() {
+	public void CandidateHasCuratedGenericDialogNotes() {
 		string notesPath = Path.Combine(
 			FindRepositoryRoot(),
 			"docs",
 			"releases",
-			"1.7.2.md"
+			"1.8.0.md"
 		);
 		Assert.True( File.Exists( notesPath ), $"Missing curated notes: {notesPath}" );
 
 		string notes = File.ReadAllText( notesPath );
-		Assert.Contains( "pointer", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "Ctrl+V", notes, StringComparison.Ordinal );
-		Assert.Contains( "selection", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "undo", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "action array", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "mnemonic", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "default", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "cancel", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "presentation", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "obsolete", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "AssemblyVersion", notes, StringComparison.Ordinal );
+	}
+
+	[Fact]
+	public void PublicApi180RecordContainsGenericDialogMembers() {
+		string root = FindRepositoryRoot(); string fingerprintPath = Path.Combine( root, "docs", "Public-API-Fingerprint-1.8.json" );
+		Assert.True( File.Exists( fingerprintPath ), $"Missing API fingerprint: {fingerprintPath}" );
+		Assert.True( File.Exists( Path.Combine( root, "docs", "Public-API-Baseline-1.8.md" ) ) );
+		Assert.True( File.Exists( Path.Combine( root, "packaging", "Get-PublicApiFingerprint.ps1" ) ) );
+		using JsonDocument fingerprint = JsonDocument.Parse( File.ReadAllText( fingerprintPath ) );
+		Assert.Equal( "1.8.0", fingerprint.RootElement.GetProperty( "packageVersion" ).GetString() );
+		Assert.Equal( "1.0.0.0", fingerprint.RootElement.GetProperty( "assemblyVersion" ).GetString() );
+		JsonElement[] types = fingerprint.RootElement.GetProperty( "types" ).EnumerateArray().ToArray();
+		string[] actionMembers = Assert.Single( types, type => "Icod.Widgets.WidgetDialogAction" == type.GetProperty( "name" ).GetString() )
+			.GetProperty( "members" ).EnumerateArray().Select( member => member.GetString()! ).ToArray();
+		Assert.Contains( "Property: System.Nullable`1[System.Char] Mnemonic", actionMembers );
+		string[] messageMembers = Assert.Single( types, type => "Icod.Widgets.WidgetMessageDialog" == type.GetProperty( "name" ).GetString() )
+			.GetProperty( "members" ).EnumerateArray().Select( member => member.GetString()! ).ToArray();
+		Assert.Contains( "Constructor: Void .ctor(System.String, System.String, System.String, System.Collections.Generic.IReadOnlyList`1[Icod.Widgets.WidgetDialogAction])", messageMembers );
+		Assert.Contains( "Property: System.Collections.Generic.IReadOnlyList`1[Icod.Widgets.WidgetDialogAction] Actions", messageMembers );
+		Assert.Contains( "Method: Void SetActionEnabled(System.String, Boolean)", messageMembers );
+	}
+
+	[Fact]
+	public void ReadmeDocumentsGenericDialogsWithoutReleaseHistory() {
+		string readme = File.ReadAllText( Path.Combine( FindRepositoryRoot(), "README.md" ) );
+		Assert.Contains( "IReadOnlyList<WidgetDialogAction>", readme, StringComparison.Ordinal );
+		Assert.Contains( "Mnemonic", readme, StringComparison.Ordinal );
+		Assert.Contains( "IsDefault", readme, StringComparison.Ordinal );
+		Assert.Contains( "IsCancel", readme, StringComparison.Ordinal );
+		Assert.Contains( "Styles", readme, StringComparison.Ordinal );
+		Assert.DoesNotContain( "## Release history", readme, StringComparison.OrdinalIgnoreCase );
+		Assert.DoesNotContain( "Icod.Widgets 1.8.0", readme, StringComparison.Ordinal );
 	}
 
 	[Fact]

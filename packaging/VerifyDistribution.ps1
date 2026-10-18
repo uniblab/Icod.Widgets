@@ -29,6 +29,9 @@ try {
         '--no-restore',
         '-p:ContinuousIntegrationBuild=true'
     )
+    & (Join-Path $PSScriptRoot 'Get-PublicApiFingerprint.ps1') `
+        -Configuration $Configuration `
+        -Verify
     Invoke-DotNet -Arguments @(
         'test', $solutionPath,
         '-c', $Configuration,

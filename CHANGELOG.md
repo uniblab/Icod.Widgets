@@ -2,6 +2,25 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.8.0 — generic dialog actions
+
+- Added action-array message dialogs whose captions, semantic values/outcomes,
+  plain-key mnemonics, default action, and cancel action are independent.
+- Render every action as a bracketed button with Unicode display-column-aware
+  layout and hit testing. Keyboard, mnemonic, and pointer choices complete
+  through the same action procedure.
+- Exposed read-only actions and controlled enablement. Disabling an action moves
+  selection safely and cannot leave a dialog without an enabled choice.
+- Gave form-dialog actions the same mnemonic, default, cancel, and measured
+  button behavior while retaining generation-safe validation.
+- Kept scoped styles presentation-only. Dialog colors and attributes cannot
+  change commands, hit regions, outcomes, or application policy.
+- Retained the legacy `YesNo` factory signature and behavior for binary
+  compatibility and marked source use warning-level obsolete in favor of the
+  generic constructor.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency.
+
 ## 1.7.2 — identical paste completion
 
 - Complete a paste when its text is identical to the selected document text by
