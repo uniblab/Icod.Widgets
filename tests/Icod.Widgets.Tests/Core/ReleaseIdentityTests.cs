@@ -79,7 +79,7 @@ public sealed class ReleaseIdentityTests {
 		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.8.0.md" ) );
 
 		Assert.Contains( "## Verification", notes, StringComparison.Ordinal );
-		Assert.Contains( "416 tests", notes, StringComparison.Ordinal );
+		Assert.Contains( "418 tests", notes, StringComparison.Ordinal );
 		Assert.Contains( "Windows", notes, StringComparison.Ordinal );
 		Assert.Contains( "Linux", notes, StringComparison.Ordinal );
 		Assert.Contains( "macOS", notes, StringComparison.Ordinal );
