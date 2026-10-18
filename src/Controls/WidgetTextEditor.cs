@@ -442,6 +442,12 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		this.EnsureActionCapacity( 2 ); WidgetTextDocument document = this.View.Document;
 		WidgetTextEditContext context = new( this.View.Id, this.View.Anchor, this.View.Caret, afterAnchor, afterCaret, kind, timestamp, coalesce );
 		WidgetTextEditResult result = document.Apply( edits, document.Revision, context );
+		if ( WidgetTextEditStatus.NoChange == result.Status ) {
+			if ( afterAnchor != this.View.Anchor || afterCaret != this.View.Caret ) {
+				this.View.SetSelection( afterAnchor, afterCaret ); this.EmitSelection(); this.RevealCaret();
+			}
+			return true;
+		}
 		if ( WidgetTextEditStatus.Applied != result.Status ) return true;
 		this.View.SetSelection( afterAnchor, afterCaret ); this.EmitEdit(); this.EmitSelection(); this.RevealCaret(); return true;
 	}
