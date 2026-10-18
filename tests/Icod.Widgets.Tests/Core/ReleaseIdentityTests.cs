@@ -74,6 +74,33 @@ public sealed class ReleaseIdentityTests {
 	}
 
 	[Fact]
+	public void CuratedNotesIncludeVerificationAndInstall() {
+		string root = FindRepositoryRoot();
+		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.8.0.md" ) );
+
+		Assert.Contains( "## Verification", notes, StringComparison.Ordinal );
+		Assert.Contains( "416 tests", notes, StringComparison.Ordinal );
+		Assert.Contains( "Windows", notes, StringComparison.Ordinal );
+		Assert.Contains( "Linux", notes, StringComparison.Ordinal );
+		Assert.Contains( "macOS", notes, StringComparison.Ordinal );
+		Assert.Contains( "dotnet add package Icod.Widgets --version 1.8.0", notes, StringComparison.Ordinal );
+	}
+
+	[Fact]
+	public void GenericDialogImplementationPlanIsMarkedComplete() {
+		string plan = File.ReadAllText( Path.Combine(
+			FindRepositoryRoot(),
+			"docs",
+			"superpowers",
+			"plans",
+			"2026-10-18-generic-dialog-actions.md"
+		) );
+
+		Assert.Contains( "**Status:** Complete", plan, StringComparison.Ordinal );
+		Assert.DoesNotContain( "- [ ]", plan, StringComparison.Ordinal );
+	}
+
+	[Fact]
 	public void PublicApi180RecordContainsGenericDialogMembers() {
 		string root = FindRepositoryRoot(); string fingerprintPath = Path.Combine( root, "docs", "Public-API-Fingerprint-1.8.json" );
 		Assert.True( File.Exists( fingerprintPath ), $"Missing API fingerprint: {fingerprintPath}" );
