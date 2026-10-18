@@ -2,6 +2,17 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.7.2 — identical paste completion
+
+- Complete a paste when its text is identical to the selected document text by
+  collapsing the selection to the resulting caret position.
+- Keep identical pastes out of document revision and undo history because the
+  document content does not change.
+- Verify that clicking a Paste menu item and pressing Ctrl+V dispatch the same
+  focused-editor clipboard request and restore editor focus after the menu closes.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency. No public API changed.
+
 ## 1.7.1 — wrapped editor caret navigation
 
 - Corrected Up/Down and Page Up/Page Down navigation to count wrapped visual

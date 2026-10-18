@@ -44,7 +44,9 @@ host, run the gallery and editor commands above and check:
    and no replacement characters or doubled box-drawing cells.
 2. On the Menus page, `Alt+F` opens File. Mouse presses and releases select menu
    headings and commands; moving the pointer highlights rows only when F8 has
-   enabled the theme's hover treatment.
+   enabled the theme's hover treatment. Select text, click Edit > Copy, and then
+   click Edit > Paste over that same selection: the selection collapses just as
+   it does with Ctrl+C followed by Ctrl+V.
 3. A nested submenu appears to the right when space permits. After narrowing
    the terminal, it overlays its parent without replacing or closing that parent.
 4. Help > About opens the modal; click OK to close it and restore editor focus.
