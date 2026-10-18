@@ -26,7 +26,7 @@ using Xunit;
 
 public sealed class ReleaseIdentityTests {
 	[Fact]
-	public void CandidateAndPackageConsumerUseVersion171() {
+	public void CandidateAndPackageConsumerUseVersion172() {
 		string root = FindRepositoryRoot();
 		XDocument production = XDocument.Load(
 			Path.Combine( root, "Icod.Widgets.csproj" )
@@ -38,33 +38,32 @@ public sealed class ReleaseIdentityTests {
 			"PackageConsumer.csproj"
 		) );
 
-		Assert.Equal( "1.7.1", GetSingleValue( production, "Version" ) );
-		Assert.Equal( "1.7.1", GetSingleValue( production, "PackageVersion" ) );
+		Assert.Equal( "1.7.2", GetSingleValue( production, "Version" ) );
+		Assert.Equal( "1.7.2", GetSingleValue( production, "PackageVersion" ) );
 		Assert.Equal( "1.0.0.0", GetSingleValue( production, "AssemblyVersion" ) );
 		XElement reference = Assert.Single(
 			consumer.Descendants(),
 			static current => "PackageReference" == current.Name.LocalName
 		);
 		Assert.Equal( "Icod.Widgets", reference.Attribute( "Include" )?.Value );
-		Assert.Equal( "1.7.1", reference.Attribute( "Version" )?.Value );
+		Assert.Equal( "1.7.2", reference.Attribute( "Version" )?.Value );
 	}
 
 	[Fact]
-	public void CandidateHasCuratedWrappedNavigationNotes() {
+	public void CandidateHasCuratedIdenticalPasteNotes() {
 		string notesPath = Path.Combine(
 			FindRepositoryRoot(),
 			"docs",
 			"releases",
-			"1.7.1.md"
+			"1.7.2.md"
 		);
 		Assert.True( File.Exists( notesPath ), $"Missing curated notes: {notesPath}" );
 
 		string notes = File.ReadAllText( notesPath );
-		Assert.Contains( "visual row", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "preferred", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "Page Up", notes, StringComparison.Ordinal );
-		Assert.Contains( "Shift", notes, StringComparison.Ordinal );
-		Assert.Contains( "logical", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "pointer", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "Ctrl+V", notes, StringComparison.Ordinal );
+		Assert.Contains( "selection", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "undo", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "AssemblyVersion", notes, StringComparison.Ordinal );
 	}
 

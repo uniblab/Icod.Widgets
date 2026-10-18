@@ -51,6 +51,30 @@ public sealed class WidgetMenuRoutingTests {
 	}
 
 	[Fact]
+	public void PointerAndControlShortcutUseSameFocusedPasteRoute() {
+		using WidgetHost host = new( new CursesScreen( 30, 8 ), WidgetTheme.Default );
+		WidgetTextDocument document = new( [ "abc".AsMemory() ] ); WidgetTextEditor editor = new( "editor", new WidgetTextViewState( document ) );
+		WidgetMenuBar menu = new( "menu", [ WidgetMenuItem.Submenu( "edit", "Edit", [
+			WidgetMenuItem.Command( "paste", "Paste", "app.paste", focusedEditCommand: WidgetEditCommand.Paste,
+				shortcut: new WidgetMenuShortcut( WidgetKey.Character, WidgetInputModifiers.Control, 'V' ) )
+		], 'e' ) ] );
+		host.Attach( editor ); host.Attach( menu ); editor.Arrange( host.Screen.Bounds ); menu.Arrange( host.Screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		WidgetClipboardRequest shortcut = Assert.IsType<WidgetClipboardRequestedAction>( Assert.Single( host.Process(
+			WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new System.Text.Rune( 'v' ) ), TimeSpan.Zero ).Actions ) ).Request;
+		Assert.Empty( host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 1, 0 ) ), TimeSpan.FromMilliseconds( 1 ) ).Actions );
+		Assert.Empty( host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 1, 0 ) ), TimeSpan.FromMilliseconds( 2 ) ).Actions );
+		host.Render(); int column = menu.RenderBounds.Column + 1; int row = menu.RenderBounds.Row + 1;
+		Assert.Empty( host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, column, row ) ), TimeSpan.FromMilliseconds( 3 ) ).Actions );
+		WidgetClipboardRequest pointer = Assert.IsType<WidgetClipboardRequestedAction>( Assert.Single( host.Process(
+			WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, column, row ) ), TimeSpan.FromMilliseconds( 4 ) ).Actions ) ).Request;
+
+		Assert.Equal( ( shortcut.Operation, shortcut.ViewId, shortcut.DocumentId, shortcut.SelectionStart, shortcut.SelectionEnd ),
+			( pointer.Operation, pointer.ViewId, pointer.DocumentId, pointer.SelectionStart, pointer.SelectionEnd ) );
+		Assert.Equal( WidgetClipboardOperation.Paste, pointer.Operation ); Assert.Same( editor, host.FocusedWidget );
+	}
+
+	[Fact]
 	public void PointerReleaseOutsideCannotActivateItem() {
 		using WidgetHost host = new( new CursesScreen( 30, 8 ), WidgetTheme.Default );
 		WidgetPopupMenu menu = new( "menu", [ WidgetMenuItem.Command( "a", "A", "a" ), WidgetMenuItem.Command( "b", "B", "b" ) ] );

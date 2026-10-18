@@ -194,6 +194,19 @@ public sealed class WidgetClipboardTests {
 	}
 
 	[Fact]
+	public void IdenticalSelectionPasteCollapsesSelectionWithoutEditHistory() {
+		using Fixture fixture = new( "copy" ); fixture.View.SetSelection( 0, 4 ); long revision = fixture.Document.Revision;
+		WidgetClipboardRequest request = fixture.Request( WidgetEditCommand.Paste );
+
+		Assert.True( fixture.Host.ApplyClipboardResult( Success( request, "copy" ) ) );
+
+		Assert.Equal( "copy", fixture.Text ); Assert.Equal( revision, fixture.Document.Revision ); Assert.False( fixture.Document.CanUndo );
+		Assert.False( fixture.View.HasSelection ); Assert.Equal( 4, fixture.View.Caret );
+		IReadOnlyList<WidgetAction> actions = fixture.Host.DrainActions();
+		Assert.Single( actions.OfType<WidgetTextSelectionChangedAction>() ); Assert.Empty( actions.OfType<WidgetTextEditedAction>() );
+	}
+
+	[Fact]
 	public void InvalidOrOversizedPasteIsRejectedWithoutMutation() {
 		using Fixture invalid = new( "a" ); WidgetClipboardRequest invalidRequest = invalid.Request( WidgetEditCommand.Paste );
 		Assert.False( invalid.Host.ApplyClipboardResult( Success( invalidRequest, "\uD800" ) ) ); Assert.Equal( "a", invalid.Text );
