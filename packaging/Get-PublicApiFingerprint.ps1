@@ -51,8 +51,16 @@ try {
 		if (-not (Test-Path -LiteralPath $fingerprintPath)) {
 			throw "Missing stored fingerprint: $fingerprintPath"
 		}
-		if ($reference -cne (Get-Content -LiteralPath $fingerprintPath -Raw)) {
-			throw "Stored public API fingerprint is stale: $fingerprintPath"
+		$stored = [System.IO.File]::ReadAllText($fingerprintPath)
+		if ($reference -cne $stored) {
+			$limit = [Math]::Min($reference.Length, $stored.Length)
+			$index = 0
+			while ($index -lt $limit -and $reference[$index] -ceq $stored[$index]) {
+				$index++
+			}
+			$generatedCode = if ($index -lt $reference.Length) { [int][char]$reference[$index] } else { -1 }
+			$storedCode = if ($index -lt $stored.Length) { [int][char]$stored[$index] } else { -1 }
+			throw "Stored public API fingerprint is stale: $fingerprintPath. First difference at character $index (generated $generatedCode, stored $storedCode); lengths $($reference.Length)/$($stored.Length)."
 		}
 		Write-Host "Verified identical $packageVersion public API for $($targets -join ', ')."
 	} else {

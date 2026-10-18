@@ -87,6 +87,19 @@ public sealed class WidgetMessageDialogPointerTests {
 	}
 
 	[Fact]
+	public void MovingAwayCancelsPressEvenAfterPointerReturns() {
+		using WidgetHost host = new( new CursesScreen( 40, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = WidgetMessageDialog.Ok( "message", "Notice", "Saved." );
+		host.ShowModal( dialog ); host.Render();
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 1 ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Move, 4, 20, CursesMouseButton.None ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Move, 4, 1, CursesMouseButton.None ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 1 ).Actions );
+		Assert.True( dialog.IsOpen );
+	}
+
+	[Fact]
 	public void ClickUsesClippedActionRowAndKeyboardSelectedLabelWidths() {
 		using WidgetHost host = new( new CursesScreen( 12, 6 ), WidgetTheme.Default );
 		WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "message", "Question", "Continue?" ); using WidgetModalLease lease = host.ShowModal( dialog );
@@ -114,6 +127,22 @@ public sealed class WidgetMessageDialogPointerTests {
 		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
 			Pointer( host, CursesMouseAction.Release, 4, 10 ).Actions ) );
 		Assert.Equal( WidgetDialogOutcome.No, completed.Result.Outcome );
+	}
+
+	[Fact]
+	public void ClippedWideGlyphLeavesNoInvisibleClickableColumn() {
+		using WidgetHost host = new( new CursesScreen( 12, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "unicode", "Unicode", "Choose.", [
+			new( "wide", "界", WidgetDialogOutcome.Yes ) { IsDefault = true }
+		] );
+		host.ShowModal( dialog ); dialog.Arrange( new( 0, 8, 6, 20 ) ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( dialog );
+		Assert.Equal( "[", window.GetCell( 4, 1 ).Content );
+		Assert.Equal( " ", window.GetCell( 4, 2 ).Content );
+
+		Assert.Empty( Pointer( host, CursesMouseAction.Press, 4, 10 ).Actions );
+		Assert.Empty( Pointer( host, CursesMouseAction.Release, 4, 10 ).Actions );
+		Assert.True( dialog.IsOpen );
 	}
 
 	[Fact]

@@ -196,6 +196,21 @@ public sealed class WidgetDialogTests {
 	}
 
 	[Fact]
+	public void EscapeHintUsesConfiguredCancelCaption() {
+		using WidgetHost host = new( new CursesScreen( 60, 6 ), WidgetTheme.Default );
+		WidgetMessageDialog dialog = new( "custom-cancel", "Question", "Continue?", [
+			new( "ok", "OK", WidgetDialogOutcome.Ok ) { IsDefault = true },
+			new( "keep", "Keep Editing", WidgetDialogOutcome.No ) { IsCancel = true }
+		] );
+		host.ShowModal( dialog ); host.Render();
+
+		Assert.Contains( "(Esc: Keep Editing)", Row( host.GetPresentationWindow( dialog ), 4, 60 ) );
+		WidgetDialogCompletedAction completed = Assert.IsType<WidgetDialogCompletedAction>( Assert.Single(
+			host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.Zero ).Actions ) );
+		Assert.Equal( WidgetDialogOutcome.No, completed.Result.Outcome );
+	}
+
+	[Fact]
 	public void EscapeCancelsOnceAndRestoresFocus() {
 		using WidgetHost host = HostWithBackground( out WidgetButton background ); WidgetMessageDialog dialog = WidgetMessageDialog.OkCancel( "q", "Q", "Proceed?" ); host.ShowModal( dialog );
 		WidgetDispatchResult result = host.Process( WidgetInput.Key( WidgetKey.Escape ), TimeSpan.Zero );

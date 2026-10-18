@@ -52,7 +52,10 @@ JsonSerializerOptions options = new() {
 	TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
 	WriteIndented = true
 };
-string json = JsonSerializer.Serialize( fingerprint, options ) + "\n";
+string json = JsonSerializer.Serialize( fingerprint, options )
+	.Replace( "\r\n", "\n", StringComparison.Ordinal )
+	.Replace( '\r', '\n' )
+	+ "\n";
 Directory.CreateDirectory( Path.GetDirectoryName( outputPath )! );
 File.WriteAllText( outputPath, json );
 return 0;

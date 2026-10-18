@@ -177,7 +177,8 @@ editor; an inapplicable edit falls back to the application command. Optional
 status field commands create visible, keyboard/pointer-operable fields.
 
 `WidgetFormDialog` supports composed child controls and typed validation. The
-Save/Don't Save/Cancel factory defaults to Cancel, and Escape always cancels.
+Save/Don't Save/Cancel factory defaults to its Cancel action, which Escape also
+activates.
 `WidgetSaveTargetPicker` asks a separate optional provider to inspect a proposed
 target and never writes files. Search and Go To Line forms emit typed requests;
 the application validates the document/view/revision before applying results.

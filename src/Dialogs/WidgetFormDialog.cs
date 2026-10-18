@@ -61,11 +61,13 @@ public sealed class WidgetFormDialog : WidgetDialog {
 	internal override void OnClosed() { this.Invalidate(); this.pressed = -1; }
 	protected override void OnCaptureCanceled() => this.pressed = -1;
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
-		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { Button: CursesMouseButton.Primary } pointer ) {
+		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } pointer ) {
 			CursesRectangle area = this.GetContentBounds( host.Screen ); int row = area.BottomExclusive - 1;
-			int index = pointer.Row == row && area.Contains( pointer.Row, pointer.Column ) ? this.HitAction( pointer.Column - area.Column, host.Screen ) : -1;
-			if ( CursesMouseAction.Press == pointer.Action ) { this.pressed = index; return index >= 0; }
-			if ( CursesMouseAction.Release == pointer.Action ) { bool match = index >= 0 && index == this.pressed; this.pressed = -1; if ( match ) { this.Select( index ); this.Activate( host, this.actions.Selected ); } return match; }
+			int index = pointer.Row == row && area.Contains( pointer.Row, pointer.Column ) ? this.HitAction( pointer.Column, area, host.Screen ) : -1;
+			if ( CursesMouseAction.Press == pointer.Action ) { this.pressed = CursesMouseButton.Primary == pointer.Button ? index : -1; return this.pressed >= 0; }
+			if ( CursesMouseAction.Move == pointer.Action ) { if ( this.pressed >= 0 && index != this.pressed ) this.pressed = -1; return false; }
+			if ( CursesMouseAction.Release == pointer.Action ) { bool match = CursesMouseButton.Primary == pointer.Button && index >= 0 && index == this.pressed; this.pressed = -1; if ( match ) { this.Select( index ); this.Activate( host, this.actions.Selected ); } return match; }
+			return false;
 		}
 		this.pressed = -1;
 		if ( this.actions.TryGetMnemonic( input, out WidgetDialogAction mnemonicAction ) ) { this.Activate( host, mnemonicAction ); return true; }
@@ -81,13 +83,11 @@ public sealed class WidgetFormDialog : WidgetDialog {
 		if ( WidgetKey.Enter == input.KeyCode ) { this.Activate( host, this.actions.Selected ); return true; }
 		return false;
 	}
-	private int HitAction( int column, CursesScreen screen ) {
-		int at = 0;
-		for ( int index = 0; index < this.actions.Actions.Count; index++ ) {
-			WidgetDialogAction action = this.actions.Actions[ index ]; int width = CursesText.MeasureColumns( ActionLabel( action ), screen.TextWidthProvider );
-			if ( column >= at && column < at + width ) return action.IsEnabled ? index : -1;
-			at += width + 1;
-		}
+	private int HitAction( int column, CursesRectangle area, CursesScreen screen ) {
+		foreach ( WidgetDialogActionPresentation presentation in WidgetDialogActionLayout.Measure(
+			this.actions.Actions, area.Column, area.RightExclusive, 1, screen.TextWidthProvider ) )
+			if ( column >= presentation.Column && column < presentation.Column + presentation.RenderedWidth )
+				return presentation.Action.IsEnabled ? presentation.Index : -1;
 		return -1;
 	}
 	private void Activate( WidgetHost host, WidgetDialogAction action ) {
@@ -98,7 +98,6 @@ public sealed class WidgetFormDialog : WidgetDialog {
 		}
 		this.Finish( host, new WidgetDialogResult( action.Outcome, action.Value ) );
 	}
-	private static string ActionLabel( WidgetDialogAction action ) => $"[{WidgetBrowserView.Sanitize( action.Label )}]";
 	private void Select( int index ) {
 		while ( this.actions.SelectedIndex < index && this.actions.Move( 1, false ) ) { }
 		while ( this.actions.SelectedIndex > index && this.actions.Move( -1, false ) ) { }
@@ -108,18 +107,18 @@ public sealed class WidgetFormDialog : WidgetDialog {
 		CursesRectangle area = this.RenderFrame( screen, theme ); if ( area.IsEmpty ) return;
 		if ( this.message is not null ) WidgetBrowserView.WriteLine( screen, area, 0, this.message, this.Style( theme, WidgetStyleRole.Text ) );
 		if ( this.Error is not null ) WidgetBrowserView.WriteLine( screen, area, Math.Max( 0, area.Rows - 2 ), this.Error, this.Style( theme, WidgetStyleRole.Error ) );
-		string[] labels = this.actions.Actions.Select( ActionLabel ).ToArray();
+		string[] labels = this.actions.Actions.Select( WidgetDialogActionLayout.Label ).ToArray();
 		WidgetBrowserView.WriteLine( screen, area, area.Rows - 1, string.Join( " ", labels ), this.Style( theme, WidgetStyleRole.DialogAction ) );
-		int column = area.Column;
-		for ( int index = 0; index < labels.Length && column < area.Column + area.Columns; index++ ) {
-			WidgetDialogAction action = this.actions.Actions[ index ]; string label = labels[ index ];
+		foreach ( WidgetDialogActionPresentation presentation in WidgetDialogActionLayout.Measure(
+			this.actions.Actions, area.Column, area.RightExclusive, 1, screen.TextWidthProvider ) ) {
+			WidgetDialogAction action = presentation.Action;
 			CursesStyle style = this.Style( theme, !action.IsEnabled ? WidgetStyleRole.DialogDisabledAction :
-				index == this.actions.SelectedIndex && focused ? WidgetStyleRole.DialogFocusedAction :
+				presentation.Index == this.actions.SelectedIndex && focused ? WidgetStyleRole.DialogFocusedAction :
 				action.IsDefault ? WidgetStyleRole.DialogDefaultAction : WidgetStyleRole.DialogAction );
-			screen.StandardWindow.Move( area.BottomExclusive - 1, column );
-			screen.StandardWindow.Write( CursesText.TruncateToColumns( label, area.Column + area.Columns - column, screen.TextWidthProvider ), style );
-			this.RenderMnemonic( screen, area.BottomExclusive - 1, column + 1, area.RightExclusive, action, style );
-			column += CursesText.MeasureColumns( label, screen.TextWidthProvider ) + 1;
+			screen.StandardWindow.Move( area.BottomExclusive - 1, presentation.Column );
+			screen.StandardWindow.Write( presentation.RenderedLabel, style );
+			this.RenderMnemonic( screen, area.BottomExclusive - 1, presentation.Column + 1,
+				presentation.Column + presentation.RenderedWidth, action, style );
 		}
 	}
 	private void RenderMnemonic( CursesScreen screen, int row, int captionColumn, int right, WidgetDialogAction action, CursesStyle style ) {

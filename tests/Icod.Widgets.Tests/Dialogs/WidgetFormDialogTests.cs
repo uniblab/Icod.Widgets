@@ -81,6 +81,22 @@ public sealed class WidgetFormDialogTests {
 	}
 
 	[Fact]
+	public void ClippedWideFormGlyphLeavesNoInvisibleClickableColumn() {
+		using WidgetHost host = new( new CursesScreen( 12, 6 ), WidgetTheme.Default );
+		WidgetFormDialog dialog = new( "unicode", "Form", [
+			new( "wide", "界", WidgetDialogOutcome.Yes ) { IsDefault = true }
+		] );
+		host.ShowModal( dialog ); dialog.Arrange( new( 0, 8, 6, 20 ) ); host.Render();
+		CursesWindow window = host.GetPresentationWindow( dialog );
+		Assert.Equal( "[", window.GetCell( 4, 1 ).Content );
+		Assert.Equal( " ", window.GetCell( 4, 2 ).Content );
+
+		host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Press, CursesMouseButton.Primary, 10, 4 ) ), TimeSpan.Zero );
+		Assert.Empty( host.Process( WidgetInput.PointerInput( new( CursesMouseAction.Release, CursesMouseButton.Primary, 10, 4 ) ), TimeSpan.Zero ).Actions );
+		Assert.True( dialog.IsOpen );
+	}
+
+	[Fact]
 	public void EscapeActivatesDeclaredCancelAction() {
 		object value = new(); using WidgetHost host = new( new CursesScreen( 30, 6 ), WidgetTheme.Default );
 		WidgetFormDialog dialog = new( "cancel", "Form", [

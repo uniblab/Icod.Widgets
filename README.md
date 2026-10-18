@@ -197,8 +197,9 @@ and `WidgetTheme.HighlightMenuHover` opts into hover styling without changing
 keyboard selection. Nested submenus remain visible beside their parent when
 space permits and overlay it in narrow layouts. Message-dialog choices activate
 after a primary-button press and release on the same visible label. Escape
-cancels the top dialog/menu;
-**even an OK-only dialog returns Cancel on Escape**, not acknowledgement.
+closes a menu; in a dialog it activates an enabled declared cancel action, or
+returns synthetic Cancel when none exists. Thus an OK-only dialog returns Cancel
+on Escape rather than acknowledgement.
 
 For application-specific choices, pass an `IReadOnlyList<WidgetDialogAction>`.
 `Label` is presentation, `Value`/`Outcome` are results, `Mnemonic` is the plain
