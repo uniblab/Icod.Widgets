@@ -94,6 +94,17 @@ public sealed class ReleaseIdentityTests {
 	}
 
 	[Fact]
+	public void PublicApiFingerprintsUseCrossPlatformLfCheckouts() {
+		string attributesPath = Path.Combine( FindRepositoryRoot(), ".gitattributes" );
+		Assert.True( File.Exists( attributesPath ), $"Missing Git attributes: {attributesPath}" );
+		Assert.Contains(
+			"docs/Public-API-Fingerprint-*.json text eol=lf",
+			File.ReadAllLines( attributesPath ),
+			StringComparer.Ordinal
+		);
+	}
+
+	[Fact]
 	public void ReadmeDocumentsGenericDialogsWithoutReleaseHistory() {
 		string readme = File.ReadAllText( Path.Combine( FindRepositoryRoot(), "README.md" ) );
 		Assert.Contains( "IReadOnlyList<WidgetDialogAction>", readme, StringComparison.Ordinal );
