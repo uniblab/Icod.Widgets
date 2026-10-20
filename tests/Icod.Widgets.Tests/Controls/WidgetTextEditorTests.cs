@@ -293,6 +293,90 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void FittingDocumentDoesNotRenderOrReserveScrollbar() {
+		using Fixture fixture = new( "abcd", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 4 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "d", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.DoesNotContain( new[] { "▲", "▼", "│", "┃" }, glyph => glyph == fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+	}
+
+	[Fact]
+	public void OverflowingDocumentUsesRightmostColumn() {
+		using Fixture fixture = new( "one\ntwo\nthree\nfour", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "┃", fixture.Host.Screen.StandardWindow.GetCell( 1, 4 ).Content );
+		Assert.Equal( "▼", fixture.Host.Screen.StandardWindow.GetCell( 2, 4 ).Content );
+		Assert.Equal( "o", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+	}
+
+	[Fact]
+	public void FullWidthFitProbeDoesNotOscillateWhenReservedColumnWouldWrap() {
+		using Fixture fixture = new( "abcdefgh", new WidgetEditorOptions { ShowVerticalScrollBar = true, WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 4 ) );
+
+		fixture.Host.Render(); fixture.Host.Render();
+
+		Assert.Equal( "d", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.Equal( "h", fixture.Host.Screen.StandardWindow.GetCell( 1, 3 ).Content );
+	}
+
+	[Fact]
+	public void EditAndResizeHideAndRestoreScrollbar() {
+		using Fixture fixture = new( "one", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 6 ) ); fixture.Host.Render();
+		Assert.NotEqual( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+		long end = fixture.Document.Length;
+		Assert.Equal( WidgetTextEditStatus.Applied, fixture.Document.Apply( [ new WidgetTextEdit( end, 0, "\ntwo\nthree" ) ], fixture.Document.Revision,
+			new WidgetTextEditContext( fixture.View.Id, 0, 0, end + 10, end + 10, WidgetTextEditKind.Programmatic, TimeSpan.Zero ) ).Status );
+
+		fixture.Host.Render(); Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 6 ) ); fixture.Host.Render();
+
+		Assert.NotEqual( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+	}
+
+	[Fact]
+	public void ScrollbarComposesWithLeftLineNumberGutter() {
+		using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 10 ).Select( index => $"line {index}" ) ),
+			new WidgetEditorOptions { ShowLineNumbers = true, ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 8 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		Assert.Equal( "l", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 7 ).Content );
+	}
+
+	[Fact]
+	public void TwoRowEditorShowsOnlyArrowButtons() {
+		using Fixture fixture = new( "one\ntwo\nthree", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "▼", fixture.Host.Screen.StandardWindow.GetCell( 1, 4 ).Content );
+	}
+
+	[Fact]
+	public void OneRowEditorSuppressesScrollbar() {
+		using Fixture fixture = new( "abcde\nsecond", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "e", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+	}
+
+	[Fact]
 	public void NewLinePolicyCanChangeForFutureEnterWithoutRewritingExistingText() {
 		using Fixture fixture = new( "one\ntwo", new WidgetEditorOptions { NewLine = "\n" } );
 		fixture.View.SetSelection( fixture.Document.Length, fixture.Document.Length );

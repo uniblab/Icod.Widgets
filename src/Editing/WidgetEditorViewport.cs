@@ -23,17 +23,24 @@ namespace Icod.Widgets;
 
 using Icod.DCurses;
 
-internal readonly record struct WidgetEditorViewport( CursesRectangle Gutter, CursesRectangle Text ) {
+internal readonly record struct WidgetEditorViewport( CursesRectangle Gutter, CursesRectangle Text, CursesRectangle VerticalScrollBar ) {
 	internal int GutterColumns => this.Gutter.Columns;
 
-	internal static WidgetEditorViewport Create( CursesRectangle area, long lineCount, bool showLineNumbers ) {
-		if ( !showLineNumbers || area.IsEmpty ) return new WidgetEditorViewport( default, area );
-		int digits = 1;
-		for ( long value = Math.Max( 1, lineCount ); value >= 10; value /= 10 ) digits++;
-		int gutterColumns = checked( digits + 1 );
-		if ( area.Columns <= gutterColumns ) return new WidgetEditorViewport( default, area );
-		return new WidgetEditorViewport(
-			new CursesRectangle( area.Row, area.Column, area.Rows, gutterColumns ),
-			new CursesRectangle( area.Row, area.Column + gutterColumns, area.Rows, area.Columns - gutterColumns ) );
+	internal static WidgetEditorViewport Create( CursesRectangle area, long lineCount, bool showLineNumbers, bool showVerticalScrollBar ) {
+		if ( area.IsEmpty ) return new WidgetEditorViewport( default, area, default );
+		CursesRectangle gutter = default; CursesRectangle text = area;
+		if ( showLineNumbers ) {
+			int digits = 1;
+			for ( long value = Math.Max( 1, lineCount ); value >= 10; value /= 10 ) digits++;
+			int gutterColumns = checked( digits + 1 );
+			if ( area.Columns > gutterColumns ) {
+				gutter = new CursesRectangle( area.Row, area.Column, area.Rows, gutterColumns );
+				text = new CursesRectangle( area.Row, area.Column + gutterColumns, area.Rows, area.Columns - gutterColumns );
+			}
+		}
+		if ( !showVerticalScrollBar || 2 > area.Rows || 2 > text.Columns ) return new WidgetEditorViewport( gutter, text, default );
+		CursesRectangle scrollBar = new( text.Row, text.RightExclusive - 1, text.Rows, 1 );
+		text = new CursesRectangle( text.Row, text.Column, text.Rows, text.Columns - 1 );
+		return new WidgetEditorViewport( gutter, text, scrollBar );
 	}
 }

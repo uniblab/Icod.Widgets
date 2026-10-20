@@ -70,6 +70,17 @@ public sealed class WidgetCaretTests {
 	}
 
 	[Fact]
+	public void CaretCoordinatesUseReducedTextViewport() {
+		using Fixture fixture = new( "abcd\ntwo\nthree\nfour", new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.View.SetSelection( 3, 3 );
+		fixture.Editor.Arrange( new CursesRectangle( 1, 2, 3, 5 ) );
+
+		WidgetCaretIntent intent = Assert.IsType<WidgetCaretIntent>( fixture.Host.GetCaretIntent() ); fixture.Host.Render();
+
+		Assert.Equal( ( 1, 5 ), ( intent.Row, intent.Column ) );
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 1, 6 ).Content );
+	}
+
+	[Fact]
 	public async Task StaleStyleCompletionIsDisposed() {
 		FakeCaretSession session = new(); await using WidgetSampleCaretCoordinator coordinator = new( session );
 		FakeLease stale = new(); FakeLease current = new();
