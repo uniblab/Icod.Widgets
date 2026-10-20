@@ -181,6 +181,10 @@ Multiline editors opt into a full-width current-line band with
 and remains visually dominant. Wrapped visual rows of the same logical line
 share the band. `ShowLineNumbers = true` adds a fixed, decorative left gutter
 styled by `EditorGutter` and `EditorGutterCurrentLine`.
+`ShowVerticalScrollBar = true` adds an auto-hidden right scrollbar using the
+existing `ScrollTrack`, `ScrollThumb`, and `ScrollFocusedThumb` theme roles.
+Ctrl+Up/Ctrl+Down scroll by one displayed row; wheel and pointer controls use
+the same wrapped-row viewport and clamp the caret only if it would leave view.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;

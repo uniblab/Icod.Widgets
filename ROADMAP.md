@@ -1,9 +1,9 @@
 # Icod.Widgets Main Roadmap
 
-**Decision date:** 2026-10-12\
-**Baseline:** 1.2.0 document workspace merged on `main` at `a009190c1b79e3aa761919466e8b854fe8a2ea8c`\
-**Next target:** 1.3.0 widget color themes over Icod.DCurses 2.5.0\
-**State:** 1.3.0 implementation and local stable qualification complete in PR #6; owner merge, tag and publication pending
+**Decision date:** 2026-10-19\
+**Baseline:** 1.8.0 generic dialog actions released\
+**Next target:** 1.9.0 editor viewport scrollbar over Icod.DCurses 2.5.2\
+**State:** 1.9.0 implementation and qualification in PR #19; owner merge and publication pending
 
 ## Purpose
 
@@ -12,12 +12,11 @@ The next consumer is [dedit](https://github.com/uniblab/Icod.Dedit/pull/1): an
 Edit-inspired GPL text editor with multiple documents in a tabbed interface and
 no print support. Widgets supplies reusable behavior, not dedit's file policy.
 
-The 1.1 editing foundation and 1.2 document workspace are merged. The selected
-next direction is **widget color themes**: give applications independent
-foreground/background styles for the meaningful parts and states of every
-widget, and ensure each owned surface paints completely. This prepares a
-consistent visual vocabulary for dedit without moving its file policy or event
-loop into Widgets.
+The 1.1 editing foundation through 1.8 generic dialogs are released. The
+selected 1.9 direction is an opt-in, auto-hidden editor scrollbar whose
+viewport commands count wrapped display rows. This completes the reusable
+scrolling mechanism needed by dedit without moving file policy or application
+commands into Widgets.
 
 ## Ownership and permanent constraints
 
@@ -28,10 +27,8 @@ loop into Widgets.
 | Icod.Terminal | Terminal protocols, input decoding, clipboard transport/budgets, reversible terminal state |
 | Application / dedit | File identity, encoding/BOM/EOL policy, metadata-aware dirty state, safe save, external changes, document lifetime/close, search execution, loop and timing |
 
-One direct runtime dependency remains `Icod.DCurses`. The merged 1.2.0 package
-declares **2.4.0**; the 1.3.0 source adopts the published stable
-**2.5.0**, with Terminal 1.29.0 transitive. The DCurses
-2.5.0 public style API is unchanged. Do not add direct Terminal/TermInfo
+One direct runtime dependency remains the published `Icod.DCurses 2.5.2`.
+Do not add direct Terminal/TermInfo
 references, protocol escapes, another input reader, hidden timers, or a
 filesystem-writing service to Widgets.
 
@@ -48,6 +45,8 @@ samples and tests remain GPL-3.0-or-later with their prescribed full headers.
 | 1.1.0 — released | Reusable document/editing foundation; Unicode editing, bounded undo/redo and view projection; input/focus/capture repairs; scrollbars; explicit clipboard and caret integration; better single-line fields | Single-document editing is useful on its own; no tabbed application or file-save engine |
 | 1.2.0 — merged | Cohesive Document Workspace: tabs, composable forms/dialogs, save-target picker, dynamic command/menu state, find/replace/navigation forms, actionable status fields, and public composition seams | App owns documents, file writes, search/regex, close approval, and metadata |
 | 1.3.0 — prepared in PR #6 | Capability-aware color theme selection, part/state styles, complete surface painting, and a themed gallery above DCurses 2.5.0 | Existing monochrome theme and public APIs remain compatible; applications still control presentation choices and repaint timing |
+| 1.4.0–1.8.0 — released | Editor insertion and linewise clipboard policies, menu interaction/themes, current-line/gutter presentation, wrapped caret navigation, and generic dialog actions | Application file policy and presentation choices remain outside Widgets |
+| 1.9.0 — in PR #19 | Opt-in auto-hidden editor scrollbar, displayed-row viewport commands, pointer controls, and caret edge clamping | Public scroll offsets remain logical-line compatible; wrapped-row bookkeeping is internal |
 | Later — unscheduled | Data tables/trees, virtualized data sources, richer accessibility, advanced forms | Separate requirements, design, and approval; not blockers for dedit's first release |
 
 ## 1.1.0 — editing foundation
