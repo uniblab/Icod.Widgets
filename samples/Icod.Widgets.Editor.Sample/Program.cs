@@ -47,10 +47,20 @@ internal static class Program {
 			if ( app.CurrentLine != 1 ) return 22;
 			app.Input( WidgetInput.Key( WidgetKey.Up ) );
 			app.ArrangeEditorForSmoke( new CursesRectangle( 3, 0, 4, 6 ) ); app.Draw();
-			if ( app.Host.Screen.StandardWindow.GetCell( 3, 0 ).Content != "1" || !app.Host.Screen.StandardWindow.GetCell( 4, 0 ).IsBlank ) return 23;
+			if ( app.Host.Screen.StandardWindow.GetCell( 3, 0 ).Content != "1" || !app.Host.Screen.StandardWindow.GetCell( 4, 0 ).IsBlank ||
+				app.Host.Screen.StandardWindow.GetCell( 3, 5 ).Content != "▲" || app.Host.Screen.StandardWindow.GetCell( 6, 5 ).Content != "▼" ) return 23;
+			app.Input( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+			if ( app.VerticalScrollRange.Offset != 1 || app.CurrentLine != 0 ) return 25;
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.WheelUp, CursesMouseButton.None, 3, 3 ) ) );
+			if ( app.VerticalScrollRange.Offset != 0 || app.CurrentLine != 0 ) return 26;
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 5, 6 ) ) );
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 5, 6 ) ) );
+			if ( app.VerticalScrollRange.Offset != 1 || app.CurrentLine != 0 ) return 27;
+			app.ResetEditorForSmoke();
 			app.ArrangeEditorForSmoke( new CursesRectangle( 3, 0, 1, 2 ) ); app.Draw();
 			if ( app.Host.Screen.StandardWindow.GetCell( 3, 0 ).Content != "h" ) return 24;
 			app.Arrange(); app.Draw();
+			if ( app.Host.Screen.StandardWindow.GetCell( 3, 59 ).Content == "▲" ) return 28;
 			app.Input( WidgetInput.TextInput( new System.Text.Rune( '!' ) ) );
 			if ( app.Text != "!hello\r\nwidgets\n" || !app.IsModified ) return 2;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'z' ) ) );
@@ -89,7 +99,7 @@ internal static class Program {
 			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
 			if ( app.Running ) return 8;
-			Console.WriteLine( "PASS exact file load, gutter geometry and input, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
+			Console.WriteLine( "PASS exact file load, gutter and auto-hidden scrollbar geometry/input, wrapped-row Ctrl and wheel scrolling, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
 	private sealed class Editor : WidgetSampleApplication {
@@ -105,6 +115,7 @@ internal static class Program {
 		internal bool IsModified => this.document.IsModified;
 		internal (long Anchor, long Caret) Selection => ( this.view.Anchor, this.view.Caret );
 		internal long CurrentLine => this.document.GetLineIndex( this.view.Caret );
+		internal WidgetScrollRange VerticalScrollRange => this.editor.VerticalScrollRange;
 		protected override string Heading => "Icod.Widgets in-memory editor example";
 		protected override string Keys => "F7 Enter style | F8 indent | Ctrl+O open | Ctrl+Z/Y undo/redo | F6 focus | Ctrl+Q exit";
 		internal Editor( CursesScreen screen, string start ) : base( screen ) {
@@ -120,6 +131,7 @@ internal static class Program {
 		}
 		internal void Open() => this.Show( new WidgetFilePicker( "open." + ++this.nextId, new LocalWidgetFileSystemProvider(), this.start, false, [ new WidgetFileFilter( "Text", [ ".txt", ".md", ".cs", ".json" ] ), WidgetFileFilter.AllFiles ] ) );
 		internal void ArrangeEditorForSmoke( CursesRectangle bounds ) => this.editor.Arrange( bounds );
+		internal void ResetEditorForSmoke() { this.view.SetSelection( 0, 0 ); this.view.SetScroll( 0, 0 ); }
 		protected override bool OnShortcut( WidgetInput input ) {
 			if ( input.KeyCode == WidgetKey.Function && input.KeyPhase != CursesKeyEventPhase.Release ) {
 				if ( input.FunctionKeyNumber == 7 ) {
@@ -163,7 +175,7 @@ internal static class Program {
 			this.Host.Attach( this.editor ); this.Arrange(); this.Host.Focus( this.editor ); this.Status = path + " — unmodified, memory only";
 		}
 		private WidgetTextEditor CreateEditor() => new( "editor", this.view, new WidgetEditorOptions {
-			HighlightCurrentLine = true, ShowLineNumbers = true, WrapMode = CursesTextWrapMode.TextElement
+			HighlightCurrentLine = true, ShowLineNumbers = true, ShowVerticalScrollBar = true, WrapMode = CursesTextWrapMode.TextElement
 		} );
 		public override void Dispose() { this.view.Dispose(); base.Dispose(); }
 	}

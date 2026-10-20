@@ -178,6 +178,15 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void VerticalScrollbarOptionDefaultsOffAndCanOptIn() {
+		WidgetEditorOptions defaults = new();
+		WidgetEditorOptions enabled = defaults with { ShowVerticalScrollBar = true };
+
+		Assert.False( defaults.ShowVerticalScrollBar );
+		Assert.True( enabled.ShowVerticalScrollBar );
+	}
+
+	[Fact]
 	public void CurrentLineGutterStyleCoversWrappedRows() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
 			.With( WidgetStyleRole.EditorGutter, Red ).With( WidgetStyleRole.EditorGutterCurrentLine, Gray );
@@ -233,6 +242,64 @@ public sealed class WidgetColorThemeTests {
 		bar.SetRange( 100, 20, 0 ); bar.OnRender( screen, theme, false );
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
 		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 9 ).Style );
+	}
+
+	[Fact]
+	public void VerticalScrollbarUsesExistingThemeRoles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.ScrollTrack, Blue )
+			.With( WidgetStyleRole.ScrollThumb, Red ).With( WidgetStyleRole.ScrollFocusedThumb, Green );
+		CursesScreen screen = new( 1, 10 ); WidgetTheme theme = WidgetTheme.Default with { Parts = parts };
+		WidgetScrollBar bar = new( "bar", WidgetScrollOrientation.Vertical ); bar.Arrange( screen.Bounds ); bar.SetRange( 100, 20, 0 );
+
+		bar.OnRender( screen, theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 9, 0 ).Style );
+
+		bar.OnRender( screen, theme, true );
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 1, 0 ).Style );
+	}
+
+	[Fact]
+	public void IntegratedScrollbarUsesExactGlyphsAndThemeRoles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.ScrollTrack, Blue )
+			.With( WidgetStyleRole.ScrollThumb, Red ).With( WidgetStyleRole.ScrollFocusedThumb, Green );
+		CursesScreen screen = new( 5, 4 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "one\ntwo\nthree\nfour\nfive".AsMemory() ] ) );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowVerticalScrollBar = true } ); editor.Arrange( screen.Bounds );
+
+		editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, true );
+
+		Assert.Equal( ( "▲", Blue ), ( screen.StandardWindow.GetCell( 0, 4 ).Content, screen.StandardWindow.GetCell( 0, 4 ).Style ) );
+		Assert.Equal( ( "┃", Green ), ( screen.StandardWindow.GetCell( 1, 4 ).Content, screen.StandardWindow.GetCell( 1, 4 ).Style ) );
+		Assert.Equal( ( "│", Blue ), ( screen.StandardWindow.GetCell( 2, 4 ).Content, screen.StandardWindow.GetCell( 2, 4 ).Style ) );
+		Assert.Equal( ( "▼", Blue ), ( screen.StandardWindow.GetCell( 3, 4 ).Content, screen.StandardWindow.GetCell( 3, 4 ).Style ) );
+	}
+
+	[Fact]
+	public void SelectionAndCurrentLineDoNotPaintScrollbar() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorCurrentLine, Gray ).With( WidgetStyleRole.TextSelection, Green )
+			.With( WidgetStyleRole.ScrollTrack, Blue ).With( WidgetStyleRole.ScrollFocusedThumb, Red );
+		CursesScreen screen = new( 5, 3 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "one\ntwo\nthree\nfour".AsMemory() ] ) ); view.SetSelection( 0, 3 );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { HighlightCurrentLine = true, ShowVerticalScrollBar = true } ); editor.Arrange( screen.Bounds );
+
+		editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, true );
+
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 4 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 4 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 2, 4 ).Style );
+	}
+
+	[Fact]
+	public void DisabledEditorUsesDisabledScrollbarStyle() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.Disabled, Gray ).With( WidgetStyleRole.ScrollTrack, Blue ).With( WidgetStyleRole.ScrollThumb, Red );
+		CursesScreen screen = new( 5, 3 ); using WidgetTextViewState view = new( new WidgetTextDocument( [ "one\ntwo\nthree\nfour".AsMemory() ] ) );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { ShowVerticalScrollBar = true } ) { IsEnabled = false }; editor.Arrange( screen.Bounds );
+
+		editor.OnRender( screen, WidgetTheme.Default with { Parts = parts }, false );
+
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 0, 4 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 1, 4 ).Style );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 2, 4 ).Style );
 	}
 
 	[Fact]

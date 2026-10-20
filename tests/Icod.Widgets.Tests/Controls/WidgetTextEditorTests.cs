@@ -28,6 +28,71 @@ using Xunit;
 
 public sealed class WidgetTextEditorTests {
 	[Fact]
+	public void ControlDownScrollsOneDisplayedRowWithoutMovingVisibleCaret() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 2, 2 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 1, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void ControlDownPullsCaretAlongTopEdge() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 0, 0 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 1, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void ControlUpPullsCaretAlongBottomEdge() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetViewport( 0, new WidgetTextViewportAnchor( 1, 0 ) ); fixture.View.SetSelection( 6, 6 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Up, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 4, fixture.View.Caret );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void ControlScrollPreservesPreferredVisualColumnAcrossWrappedRows() {
+		using Fixture fixture = new( "abcdefghi", new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 3 ) ); fixture.View.SetSelection( 2, 2 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+		Assert.Equal( ( 5L, 2 ), ( fixture.View.Caret, fixture.View.PreferredColumn ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( ( 8L, 2 ), ( fixture.View.Caret, fixture.View.PreferredColumn ) );
+	}
+
+	[Fact]
+	public void ControlShiftDoesNotExtendSelection() {
+		using Fixture fixture = new( "aa\nbb\ncc\ndd" ); fixture.View.SetSelection( 3, 4 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control | WidgetInputModifiers.Shift ) );
+
+		Assert.Equal( ( 3L, 4L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void OrdinaryVerticalMovementRemainsCaretNavigation() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 0, 0 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Down ) );
+
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), fixture.View.ViewportAnchor );
+	}
+
+	[Fact]
 	public void MovementAndDeletionRespectTextElements() {
 		using Fixture fixture = new( "a\u0301界👩‍💻\n" ); fixture.View.SetSelection( 9, 9 );
 
@@ -290,6 +355,90 @@ public sealed class WidgetTextEditorTests {
 		fixture.Host.Render();
 
 		Assert.Equal( 17, fixture.Editor.HorizontalScrollRange.Viewport );
+	}
+
+	[Fact]
+	public void FittingDocumentDoesNotRenderOrReserveScrollbar() {
+		using Fixture fixture = new( "abcd", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 4 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "d", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.DoesNotContain( new[] { "▲", "▼", "│", "┃" }, glyph => glyph == fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+	}
+
+	[Fact]
+	public void OverflowingDocumentUsesRightmostColumn() {
+		using Fixture fixture = new( "one\ntwo\nthree\nfour", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "┃", fixture.Host.Screen.StandardWindow.GetCell( 1, 4 ).Content );
+		Assert.Equal( "▼", fixture.Host.Screen.StandardWindow.GetCell( 2, 4 ).Content );
+		Assert.Equal( "o", fixture.Host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+	}
+
+	[Fact]
+	public void FullWidthFitProbeDoesNotOscillateWhenReservedColumnWouldWrap() {
+		using Fixture fixture = new( "abcdefgh", new WidgetEditorOptions { ShowVerticalScrollBar = true, WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 4 ) );
+
+		fixture.Host.Render(); fixture.Host.Render();
+
+		Assert.Equal( "d", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.Equal( "h", fixture.Host.Screen.StandardWindow.GetCell( 1, 3 ).Content );
+	}
+
+	[Fact]
+	public void EditAndResizeHideAndRestoreScrollbar() {
+		using Fixture fixture = new( "one", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 6 ) ); fixture.Host.Render();
+		Assert.NotEqual( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+		long end = fixture.Document.Length;
+		Assert.Equal( WidgetTextEditStatus.Applied, fixture.Document.Apply( [ new WidgetTextEdit( end, 0, "\ntwo\nthree" ) ], fixture.Document.Revision,
+			new WidgetTextEditContext( fixture.View.Id, 0, 0, end + 10, end + 10, WidgetTextEditKind.Programmatic, TimeSpan.Zero ) ).Status );
+
+		fixture.Host.Render(); Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 6 ) ); fixture.Host.Render();
+
+		Assert.NotEqual( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 5 ).Content );
+	}
+
+	[Fact]
+	public void ScrollbarComposesWithLeftLineNumberGutter() {
+		using Fixture fixture = new( string.Join( '\n', Enumerable.Range( 1, 10 ).Select( index => $"line {index}" ) ),
+			new WidgetEditorOptions { ShowLineNumbers = true, ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 8 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "1", fixture.Host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		Assert.Equal( "l", fixture.Host.Screen.StandardWindow.GetCell( 0, 3 ).Content );
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 7 ).Content );
+	}
+
+	[Fact]
+	public void TwoRowEditorShowsOnlyArrowButtons() {
+		using Fixture fixture = new( "one\ntwo\nthree", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 2, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "▼", fixture.Host.Screen.StandardWindow.GetCell( 1, 4 ).Content );
+	}
+
+	[Fact]
+	public void OneRowEditorSuppressesScrollbar() {
+		using Fixture fixture = new( "abcde\nsecond", new WidgetEditorOptions { ShowVerticalScrollBar = true } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 5 ) );
+
+		fixture.Host.Render();
+
+		Assert.Equal( "e", fixture.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
 	}
 
 	[Fact]

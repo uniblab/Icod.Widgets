@@ -50,6 +50,8 @@ public sealed record WidgetEditorOptions {
 	public bool HighlightCurrentLine { get; init; }
 	/// <summary>Gets whether the editor reserves a fixed left gutter for one-based logical line numbers.</summary>
 	public bool ShowLineNumbers { get; init; }
+	/// <summary>Gets whether the editor may show an auto-hidden vertical scrollbar when its content overflows.</summary>
+	public bool ShowVerticalScrollBar { get; init; }
 
 	internal void Validate() {
 		if ( !Enum.IsDefined( this.WrapMode ) ) throw new ArgumentOutOfRangeException( nameof( this.WrapMode ) );

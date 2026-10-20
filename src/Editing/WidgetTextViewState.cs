@@ -30,6 +30,7 @@ public sealed class WidgetTextViewState : IDisposable {
 	private int tabWidth = 4;
 	private int? preferredColumn;
 	private CursesTextAffinity caretAffinity;
+	private WidgetTextViewportAnchor viewportAnchor;
 	private bool disposed;
 
 	public WidgetTextViewState( WidgetTextDocument document ) {
@@ -46,7 +47,7 @@ public sealed class WidgetTextViewState : IDisposable {
 	public bool HasSelection => this.Anchor != this.Caret;
 	public long SelectionEpoch { get; private set; }
 	public long HorizontalOffset { get; private set; }
-	public long VerticalOffset { get; private set; }
+	public long VerticalOffset => this.viewportAnchor.LogicalLineIndex;
 	public long ViewRevision { get; private set; }
 	public int? PreferredColumn {
 		get { this.ThrowIfDisposed(); return this.preferredColumn; }
@@ -54,7 +55,10 @@ public sealed class WidgetTextViewState : IDisposable {
 	}
 	public CursesTextWrapMode WrapMode {
 		get { this.ThrowIfDisposed(); return this.wrapMode; }
-		set { this.ThrowIfDisposed(); if ( !Enum.IsDefined( value ) ) throw new ArgumentOutOfRangeException( nameof( value ) ); if ( this.wrapMode == value ) return; this.wrapMode = value; this.ViewRevision++; }
+		set {
+			this.ThrowIfDisposed(); if ( !Enum.IsDefined( value ) ) throw new ArgumentOutOfRangeException( nameof( value ) ); if ( this.wrapMode == value ) return;
+			this.wrapMode = value; if ( CursesTextWrapMode.NoWrap == value ) this.viewportAnchor = new WidgetTextViewportAnchor( this.VerticalOffset, 0 ); this.ViewRevision++;
+		}
 	}
 	public int TabWidth {
 		get { this.ThrowIfDisposed(); return this.tabWidth; }
@@ -65,14 +69,22 @@ public sealed class WidgetTextViewState : IDisposable {
 
 	public void SetScroll( long horizontalOffset, long verticalOffset ) {
 		this.ThrowIfDisposed(); if ( 0 > horizontalOffset ) throw new ArgumentOutOfRangeException( nameof( horizontalOffset ) ); if ( 0 > verticalOffset ) throw new ArgumentOutOfRangeException( nameof( verticalOffset ) );
-		if ( this.HorizontalOffset == horizontalOffset && this.VerticalOffset == verticalOffset ) return;
-		this.HorizontalOffset = horizontalOffset; this.VerticalOffset = verticalOffset; this.ViewRevision++;
+		this.SetViewport( horizontalOffset, new WidgetTextViewportAnchor( verticalOffset, 0 ) );
 	}
 
 	public void Dispose() { if ( this.disposed ) return; this.document.Changed -= this.OnDocumentChanged; this.disposed = true; }
 
 	internal WidgetTextDocumentChangedEventArgs? LastDocumentChange { get; private set; }
 	internal CursesTextAffinity CaretAffinity => this.caretAffinity;
+	internal WidgetTextViewportAnchor ViewportAnchor => this.viewportAnchor;
+	internal void SetViewport( long horizontalOffset, WidgetTextViewportAnchor anchor ) {
+		this.ThrowIfDisposed(); if ( 0 > horizontalOffset ) throw new ArgumentOutOfRangeException( nameof( horizontalOffset ) );
+		if ( 0 > anchor.LogicalLineIndex ) throw new ArgumentOutOfRangeException( nameof( anchor ) );
+		if ( 0 > anchor.VisualRowIndex ) throw new ArgumentOutOfRangeException( nameof( anchor ) );
+		if ( CursesTextWrapMode.NoWrap == this.WrapMode ) anchor = new WidgetTextViewportAnchor( anchor.LogicalLineIndex, 0 );
+		if ( this.HorizontalOffset == horizontalOffset && this.viewportAnchor == anchor ) return;
+		this.HorizontalOffset = horizontalOffset; this.viewportAnchor = anchor; this.ViewRevision++;
+	}
 	internal void SetSelectionFromProjection( long anchor, long caret, bool preservePreferredColumn, CursesTextAffinity? affinity = null ) =>
 		this.SetSelectionCore( anchor, caret, preservePreferredColumn, affinity ?? this.caretAffinity );
 	internal void InvalidatePendingOperations() { this.ThrowIfDisposed(); this.SelectionEpoch++; this.ViewRevision++; }

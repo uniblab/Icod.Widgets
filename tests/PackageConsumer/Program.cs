@@ -51,9 +51,12 @@ host.Update( TimeSpan.FromMilliseconds( 4 ) );
 host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 1, 0 ) ), TimeSpan.FromMilliseconds( 5 ) );
 probe.IsVisible = false;
 WidgetTextDocument document = new( [ "one\r\ntwo\n".AsMemory() ] ); using WidgetTextViewState view = new( document );
-WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions { HighlightCurrentLine = true, ShowLineNumbers = true } );
+WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions {
+	HighlightCurrentLine = true, ShowLineNumbers = true, ShowVerticalScrollBar = true
+} );
 host.Attach( editor ); editor.Arrange( new CursesRectangle( 0, 0, 4, 24 ) ); host.Focus( editor ); view.SetSelection( 0, 3 );
 bool initialPolicies = editor.NewLine == "\n" && editor.Indentation == "\t";
+bool scrollBarApi = editor.VerticalScrollRange.Viewport == 4;
 editor.NewLine = "\r\n"; editor.Indentation = "  ";
 bool mutablePolicies = editor.NewLine == "\r\n" && editor.Indentation == "  ";
 host.Process( WidgetInput.TextInput( new System.Text.Rune( 'X' ) ), TimeSpan.FromMilliseconds( 6 ) );
@@ -89,7 +92,7 @@ bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEdit
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogApi && dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.No } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&
-	themeApi && currentLineThemeApi && gutterThemeApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
+	themeApi && currentLineThemeApi && gutterThemeApi && scrollBarApi && initialPolicies && mutablePolicies && edited && undone && staleClipboard && linewiseApi && linewisePaste && workspaceApi && snapshot.Read( 0, checked( (int)snapshot.Length ) ) == "one\r\ntwo\n" ? 0 : 1;
 
 static WidgetClipboardRequest RequestClipboard( WidgetHost host, WidgetEditCommand command, TimeSpan timestamp ) {
 	if ( host.ExecuteEditCommand( command, timestamp ) != WidgetCommandResult.Executed ) throw new InvalidOperationException();

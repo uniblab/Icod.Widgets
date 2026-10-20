@@ -22,5 +22,5 @@
 
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><IsPackable>false</IsPackable><PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression><TargetFramework Condition="'$(PackageConsumerAllFrameworks)' != 'true'">net10.0</TargetFramework><TargetFrameworks Condition="'$(PackageConsumerAllFrameworks)' == 'true'">net8.0;net9.0;net10.0</TargetFrameworks><RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile></PropertyGroup>
-  <ItemGroup><PackageReference Include="Icod.Widgets" Version="1.8.0" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Icod.Widgets" Version="1.9.0" /></ItemGroup>
 </Project>

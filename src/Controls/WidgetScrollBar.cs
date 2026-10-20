@@ -71,13 +71,24 @@ public sealed class WidgetScrollBar : Widget {
 
 	protected internal override void OnRender( CursesScreen screen, WidgetTheme theme, bool focused ) {
 		CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); if ( area.IsEmpty ) return; int length = this.TrackLength;
-		( int thumbStart, int thumbLength ) = this.GetThumb( length );
 		CursesStyle track = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.ScrollTrack );
 		CursesStyle thumb = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.ScrollFocusedThumb : WidgetStyleRole.ScrollThumb );
 		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( track ) );
+		if ( WidgetScrollOrientation.Vertical == this.Orientation ) {
+			WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( length, this.extent, this.viewport, this.Offset );
+			if ( 2 > length ) return;
+			this.WriteVerticalCell( screen, 0, "▲", track );
+			for ( int coordinate = geometry.TrackStart; coordinate < geometry.TrackStart + geometry.TrackLength; coordinate++ ) {
+				bool insideThumb = coordinate >= geometry.ThumbStart && coordinate < geometry.ThumbStart + geometry.ThumbLength;
+				this.WriteVerticalCell( screen, coordinate, insideThumb ? "┃" : "│", insideThumb ? thumb : track );
+			}
+			this.WriteVerticalCell( screen, length - 1, "▼", track );
+			return;
+		}
+		( int thumbStart, int thumbLength ) = this.GetThumb( length );
 		for ( int index = 0; index < length; index++ ) {
-			int row = WidgetScrollOrientation.Vertical == this.Orientation ? this.Bounds.Row + index : this.Bounds.Row;
-			int column = WidgetScrollOrientation.Horizontal == this.Orientation ? this.Bounds.Column + index : this.Bounds.Column;
+			int row = this.Bounds.Row;
+			int column = this.Bounds.Column + index;
 			if ( !screen.Bounds.Contains( row, column ) ) continue; screen.StandardWindow.Move( row, column );
 			bool insideThumb = index >= thumbStart && index < thumbStart + thumbLength;
 			screen.StandardWindow.Write( insideThumb ? "█" : "░", insideThumb ? thumb : track );
@@ -102,6 +113,18 @@ public sealed class WidgetScrollBar : Widget {
 		if ( CursesMouseButton.Primary != pointer.Button ) return false;
 		int coordinate = WidgetScrollOrientation.Horizontal == this.Orientation ? pointer.Column - this.Bounds.Column : pointer.Row - this.Bounds.Row;
 		if ( CursesMouseAction.Press == pointer.Action ) {
+			if ( WidgetScrollOrientation.Vertical == this.Orientation ) {
+				WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( this.TrackLength, this.extent, this.viewport, this.Offset );
+				switch ( geometry.HitTest( coordinate ) ) {
+					case WidgetScrollBarPointerTarget.DecrementButton: return this.SetUserOffset( SaturatingAdd( this.Offset, -1 ) );
+					case WidgetScrollBarPointerTarget.IncrementButton: return this.SetUserOffset( SaturatingAdd( this.Offset, 1 ) );
+					case WidgetScrollBarPointerTarget.PageBefore: return this.SetUserOffset( SaturatingAdd( this.Offset, -this.Page ) );
+					case WidgetScrollBarPointerTarget.PageAfter: return this.SetUserOffset( SaturatingAdd( this.Offset, this.Page ) );
+					case WidgetScrollBarPointerTarget.Thumb:
+						this.dragging = true; this.dragCoordinate = coordinate; this.dragOffset = this.Offset; return true;
+					default: return false;
+				}
+			}
 			( int start, int length ) = this.GetThumb( this.TrackLength );
 			if ( coordinate < start ) return this.SetUserOffset( SaturatingAdd( this.Offset, -this.Page ) );
 			if ( coordinate >= start + length ) return this.SetUserOffset( SaturatingAdd( this.Offset, this.Page ) );
@@ -113,6 +136,10 @@ public sealed class WidgetScrollBar : Widget {
 	}
 
 	private bool DragTo( int coordinate ) {
+		if ( WidgetScrollOrientation.Vertical == this.Orientation ) {
+			WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( this.TrackLength, this.extent, this.viewport, this.dragOffset );
+			return this.SetUserOffset( geometry.OffsetForDrag( this.dragCoordinate, this.dragOffset, coordinate ) );
+		}
 		( _, int thumbLength ) = this.GetThumb( this.TrackLength ); int travel = Math.Max( 0, this.TrackLength - thumbLength );
 		if ( 0 == travel || 0 == this.MaximumOffset ) return true;
 		long delta = ScaleSigned( coordinate - this.dragCoordinate, this.MaximumOffset, travel ); return this.SetUserOffset( SaturatingAdd( this.dragOffset, delta ) );
@@ -143,5 +170,11 @@ public sealed class WidgetScrollBar : Widget {
 		if ( 0 < right && left > long.MaxValue - right ) return long.MaxValue;
 		if ( long.MinValue == right || 0 > right && left < -right ) return 0;
 		return left + right;
+	}
+
+	private void WriteVerticalCell( CursesScreen screen, int coordinate, string content, CursesStyle style ) {
+		int row = this.Bounds.Row + coordinate; int column = this.Bounds.Column;
+		if ( !screen.Bounds.Contains( row, column ) ) return;
+		screen.StandardWindow.Move( row, column ); screen.StandardWindow.Write( content, style );
 	}
 }

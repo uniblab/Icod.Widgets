@@ -2,6 +2,24 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.9.0 — editor viewport scrollbar
+
+- Added opt-in `WidgetEditorOptions.ShowVerticalScrollBar` with auto-hide when
+  the entire document fits at full editor width.
+- Scroll editors in displayed rows across wrapped continuations. Ctrl+Up and
+  Ctrl+Down step one row; the wheel retains its three-row step; arrow buttons,
+  track paging, and thumb dragging share the same viewport route.
+- Clamp the caret to the approaching viewport edge only when scrolling would
+  move it out of view, preserving its preferred visual column and leaving a
+  visible caret and selection untouched.
+- Render `▲`, `▼`, `│`, and `┃` in the extreme-right column using existing
+  scrollbar theme roles, while composing with the decorative line-number
+  gutter and suppressing chrome in one-row layouts.
+- Kept row discovery and projection bounded for large documents and wrapped
+  lines, with conservative ranges refined as content is visited.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency.
+
 ## 1.8.0 — generic dialog actions
 
 - Added action-array message dialogs whose captions, semantic values/outcomes,
