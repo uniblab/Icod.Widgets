@@ -119,6 +119,22 @@ public sealed class WidgetTextProjectionTests {
 
 		Assert.True( edited > initial ); Assert.True( undone > edited ); Assert.True( map.MeasurementCount > undone );
 	}
+
+	[Fact]
+	public void RowMapClampsStaleWrappedAnchorAfterLineShortens() {
+		WidgetTextDocument document = Create( new string( 'x', 200 ) ); using WidgetTextViewState view = new( document );
+		view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumProjectionSourceUnits = 32, MaximumWorkPerUpdate = 2 } );
+		WidgetTextViewportAnchor anchor = new( 0, 0 );
+		for ( int row = 0; row < 20; row++ ) anchor = map.Move( view, anchor, 1, UnicodeCursesTextWidthProvider.Instance, 5 );
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 20 ), anchor );
+		WidgetTextEditContext context = new( view.Id, 0, 0, 1, 1, WidgetTextEditKind.Programmatic, TimeSpan.Zero );
+		Assert.Equal( WidgetTextEditStatus.Applied, document.Apply( [ new WidgetTextEdit( 5, 195, string.Empty ) ], document.Revision, context ).Status );
+
+		WidgetTextViewportAnchor normalized = map.Normalize( view, anchor, UnicodeCursesTextWidthProvider.Instance, 5 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), normalized );
+	}
 	[Fact]
 	public void TwoViewsKeepIndependentState() {
 		WidgetTextDocument document = Create( "alpha\nbeta" );
