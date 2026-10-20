@@ -1,7 +1,7 @@
 # Editor Scrollbar and Viewport Scrolling Design
 
 **Date:** 2026-10-19  
-**Status:** Proposed written specification for review
+**Status:** Implemented for the Icod.Widgets 1.9.0 candidate
 
 ## Context
 
