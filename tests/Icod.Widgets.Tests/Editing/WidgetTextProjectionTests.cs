@@ -26,6 +26,100 @@ using Xunit;
 
 public sealed class WidgetTextProjectionTests {
 	[Fact]
+	public void PublicSetScrollStartsAtFirstWrappedRow() {
+		WidgetTextDocument document = Create( "abcdefgh" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		view.SetViewport( 0, new WidgetTextViewportAnchor( 0, 1 ) );
+		Assert.Equal( 1, view.ViewportAnchor.VisualRowIndex );
+
+		view.SetScroll( 0, 0 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), view.ViewportAnchor );
+		Assert.Equal( 0, view.VerticalOffset );
+	}
+
+	[Fact]
+	public void ProjectionStartsAtWrappedContinuation() {
+		WidgetTextDocument document = Create( "abcdef" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		view.SetViewport( 0, new WidgetTextViewportAnchor( 0, 1 ) ); WidgetTextProjection projection = new( new WidgetEditorOptions() );
+
+		WidgetProjectedRow row = Assert.Single( projection.Project( view, UnicodeCursesTextWidthProvider.Instance, new CursesRectangle( 0, 0, 1, 3 ) ).Rows );
+
+		Assert.Equal( 1, row.VisualLineIndex );
+		Assert.Equal( 3, row.SourceStart );
+	}
+
+	[Fact]
+	public void MoveViewportAdvancesOneDisplayedRowWithinLogicalLine() {
+		WidgetTextDocument document = Create( "abcdef" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumWorkPerUpdate = 4 } );
+
+		WidgetTextViewportAnchor result = map.Move( view, new WidgetTextViewportAnchor( 0, 0 ), 1, UnicodeCursesTextWidthProvider.Instance, 3 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 1 ), result );
+	}
+
+	[Fact]
+	public void MoveViewportRetreatsAcrossLogicalBoundary() {
+		WidgetTextDocument document = Create( "abcdef\nz" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumWorkPerUpdate = 4 } );
+
+		WidgetTextViewportAnchor result = map.Move( view, new WidgetTextViewportAnchor( 1, 0 ), -1, UnicodeCursesTextWidthProvider.Instance, 3 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 1 ), result );
+	}
+
+	[Fact]
+	public void NoWrapAnchorAlwaysUsesVisualRowZero() {
+		WidgetTextDocument document = Create( "abcdef\nz" ); using WidgetTextViewState view = new( document );
+		WidgetTextRowMap map = new( new WidgetEditorOptions() );
+
+		WidgetTextViewportAnchor result = map.Move( view, new WidgetTextViewportAnchor( 0, 8 ), 1, UnicodeCursesTextWidthProvider.Instance, 3 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 1, 0 ), result );
+	}
+
+	[Fact]
+	public void WrappedScrollRangeUsesDisplayedRowsAndReportsExactness() {
+		WidgetTextDocument document = Create( "abcdef\nz" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumWorkPerUpdate = 4 } );
+
+		WidgetScrollRange range = map.GetRange( view, new WidgetTextViewportAnchor( 0, 0 ), UnicodeCursesTextWidthProvider.Instance, 3, 2 );
+
+		Assert.Equal( new WidgetScrollRange( 3, 2, 0, true ), range );
+	}
+
+	[Fact]
+	public void RowMapRekeysAfterWidthWrapTabAndProviderChanges() {
+		WidgetTextDocument document = Create( "\t····" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumWorkPerUpdate = 8 } );
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 4, 2 ); long initial = map.MeasurementCount;
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 4, 2 ); Assert.Equal( initial, map.MeasurementCount );
+
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long width = map.MeasurementCount;
+		view.TabWidth = 8; _ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long tab = map.MeasurementCount;
+		view.WrapMode = CursesTextWrapMode.Word; _ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long wrap = map.MeasurementCount;
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.WideAmbiguousInstance, 3, 2 );
+
+		Assert.True( width > initial ); Assert.True( tab > width ); Assert.True( wrap > tab ); Assert.True( map.MeasurementCount > wrap );
+	}
+
+	[Fact]
+	public void EditUndoAndRedoInvalidateAffectedPrefix() {
+		WidgetTextDocument document = Create( "abcdef\nz" ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetTextRowMap map = new( new WidgetEditorOptions { MaximumWorkPerUpdate = 8 } );
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long initial = map.MeasurementCount;
+		WidgetTextEditContext context = new( view.Id, 0, 0, 1, 1, WidgetTextEditKind.Programmatic, TimeSpan.Zero );
+
+		Assert.Equal( WidgetTextEditStatus.Applied, document.Apply( [ new WidgetTextEdit( 0, 0, "x" ) ], document.Revision, context ).Status );
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long edited = map.MeasurementCount;
+		Assert.Equal( WidgetTextEditStatus.Applied, document.Undo().Status );
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 ); long undone = map.MeasurementCount;
+		Assert.Equal( WidgetTextEditStatus.Applied, document.Redo().Status );
+		_ = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 3, 2 );
+
+		Assert.True( edited > initial ); Assert.True( undone > edited ); Assert.True( map.MeasurementCount > undone );
+	}
+	[Fact]
 	public void TwoViewsKeepIndependentState() {
 		WidgetTextDocument document = Create( "alpha\nbeta" );
 		using WidgetTextViewState first = new( document ); using WidgetTextViewState second = new( document );
@@ -162,6 +256,19 @@ public sealed class WidgetTextProjectionTests {
 		Assert.InRange( result.SourceUnitsRead, 1, 1_024 );
 		Assert.True( Assert.Single( result.Rows ).HasContinuation );
 		Assert.False( result.IsComplete );
+	}
+
+	[Fact]
+	public void MillionUnitWrappedLineScrollUsesBoundedWork() {
+		WidgetTextDocument document = Create( new string( 'x', 1_000_000 ) ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 1_024, MaximumWorkPerUpdate = 4, MaximumCachedRows = 4 };
+		WidgetTextRowMap map = new( options );
+
+		WidgetTextViewportAnchor result = map.Move( view, view.ViewportAnchor, 1, UnicodeCursesTextWidthProvider.Instance, 80 );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 1 ), result );
+		Assert.InRange( map.LastSourceUnitsRead, 1, options.MaximumProjectionSourceUnits );
+		Assert.InRange( map.CachedEntryCount, 1, options.MaximumCachedRows );
 	}
 
 	[Fact]

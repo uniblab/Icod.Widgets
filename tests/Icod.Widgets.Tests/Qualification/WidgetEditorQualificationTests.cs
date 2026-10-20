@@ -78,6 +78,20 @@ public sealed class WidgetEditorQualificationTests {
 		Assert.Equal( "x", host.Screen.StandardWindow.GetCell( 0, 6 ).Content );
 	}
 
+	[Fact]
+	public void LargeDocumentDoesNotAllocateOneEntryPerLine() {
+		string text = string.Join( '\n', Enumerable.Repeat( "wrapped text", 20_000 ) );
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 64, MaximumWorkPerUpdate = 4, MaximumCachedRows = 8 };
+		WidgetTextDocument document = new( [ text.AsMemory() ] ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.Word;
+		WidgetTextRowMap map = new( options );
+
+		WidgetScrollRange range = map.GetRange( view, view.ViewportAnchor, UnicodeCursesTextWidthProvider.Instance, 6, 3 );
+
+		Assert.False( range.IsExtentExact );
+		Assert.InRange( map.CachedEntryCount, 1, options.MaximumCachedRows );
+		Assert.True( map.CachedEntryCount < document.LineCount );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text ) { this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View ); this.Host = new WidgetHost( new CursesScreen( 30, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 30 ) ); Assert.True( this.Host.Focus( this.Editor ) ); }

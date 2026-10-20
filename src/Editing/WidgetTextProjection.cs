@@ -117,11 +117,14 @@ internal sealed class WidgetTextProjection {
 	}
 
 	private readonly WidgetEditorOptions options;
+	private readonly WidgetTextRowMap rowMap;
 	private readonly List<CacheEntry> cache = [];
 	private readonly List<ScanState> scans = [];
 	private long useClock;
 
-	internal WidgetTextProjection( WidgetEditorOptions options ) { this.options = options ?? throw new ArgumentNullException( nameof( options ) ); this.options.Validate(); }
+	internal WidgetTextProjection( WidgetEditorOptions options ) {
+		this.options = options ?? throw new ArgumentNullException( nameof( options ) ); this.options.Validate(); this.rowMap = new WidgetTextRowMap( options );
+	}
 
 	internal WidgetTextProjectionResult Project( WidgetTextViewState view, ICursesTextWidthProvider widthProvider, CursesRectangle viewport ) {
 		ArgumentNullException.ThrowIfNull( view ); ArgumentNullException.ThrowIfNull( widthProvider );
@@ -129,12 +132,13 @@ internal sealed class WidgetTextProjection {
 		long extent = document.LineCount; bool exactExtent = CursesTextWrapMode.NoWrap == view.WrapMode;
 		if ( 0 == viewport.Rows || 0 == viewport.Columns ) return new WidgetTextProjectionResult( [], null, [], extent, exactExtent, true, 0, 0, 0 );
 
-		long firstLine = Math.Min( view.VerticalOffset, Math.Max( 0, document.LineCount - 1 ) );
+		long firstLine = Math.Min( view.VerticalOffset, Math.Max( 0, document.LineCount - 1 ) ); int firstVisualRow = CursesTextWrapMode.NoWrap == view.WrapMode ? 0 : view.ViewportAnchor.VisualRowIndex;
 		int remainingUnits = this.options.MaximumProjectionSourceUnits; int sourceUnitsRead = 0; int hits = 0; int misses = 0; int work = 0; bool complete = true;
 		List<WidgetProjectedRow> rows = [];
 		for ( long lineIndex = firstLine; lineIndex < document.LineCount && rows.Count < viewport.Rows; lineIndex++ ) {
 			if ( work >= this.options.MaximumWorkPerUpdate ) { complete = false; break; }
-			int layoutRows = Math.Max( 1, Math.Min( viewport.Rows - rows.Count, this.options.MaximumWorkPerUpdate - work ) ); work++;
+			long wantedRows = viewport.Rows - rows.Count + ( lineIndex == firstLine ? (long)firstVisualRow : 0 );
+			int layoutRows = Math.Max( 1, (int)Math.Min( Math.Min( wantedRows, int.MaxValue ), this.options.MaximumWorkPerUpdate - work ) ); work++;
 			CacheEntry? entry = this.Find( document, lineIndex, viewport.Columns, layoutRows, view, widthProvider );
 			if ( entry is null ) {
 				misses++; if ( 0 == remainingUnits ) { complete = false; break; }
@@ -142,7 +146,8 @@ internal sealed class WidgetTextProjection {
 				sourceUnitsRead = checked( sourceUnitsRead + read ); remainingUnits -= read; if ( cacheable ) this.Add( entry );
 			} else { hits++; entry.LastUse = ++this.useClock; }
 			complete &= !entry.HasContinuation;
-			for ( int visual = 0; visual < entry.Layout.Lines.Count && rows.Count < viewport.Rows; visual++ )
+			int visualStart = lineIndex == firstLine ? Math.Min( firstVisualRow, entry.Layout.Lines.Count ) : 0;
+			for ( int visual = visualStart; visual < entry.Layout.Lines.Count && rows.Count < viewport.Rows; visual++ )
 				rows.Add( new WidgetProjectedRow( lineIndex, entry.Origin, entry.BaseColumn, entry.StartingColumn, entry.Layout, visual, entry.IsPlaceholder, entry.HasContinuation ) );
 		}
 
@@ -178,6 +183,12 @@ internal sealed class WidgetTextProjection {
 		WidgetProjectedHit hit = targetRow.HitTestWithAffinity( preferred );
 		view.PreferredColumn = preferred; view.SetSelectionFromProjection( hit.Offset, hit.Offset, true, hit.Affinity ); return true;
 	}
+
+	internal WidgetTextViewportAnchor MoveViewport( WidgetTextViewState view, WidgetTextViewportAnchor origin, long displayedRows,
+		ICursesTextWidthProvider widthProvider, int columns ) => this.rowMap.Move( view, origin, displayedRows, widthProvider, columns );
+
+	internal WidgetScrollRange GetVerticalRange( WidgetTextViewState view, WidgetTextViewportAnchor origin, ICursesTextWidthProvider widthProvider,
+		int columns, int viewportRows ) => this.rowMap.GetRange( view, origin, widthProvider, columns, viewportRows );
 
 	private CacheEntry BuildEntry( WidgetTextDocument document, long lineIndex, int viewportColumns, int layoutRows, WidgetTextViewState view,
 		ICursesTextWidthProvider widthProvider, int budget, out int sourceUnitsRead, out bool cacheable ) {
