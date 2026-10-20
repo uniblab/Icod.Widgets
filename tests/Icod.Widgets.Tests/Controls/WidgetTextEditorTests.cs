@@ -28,6 +28,71 @@ using Xunit;
 
 public sealed class WidgetTextEditorTests {
 	[Fact]
+	public void ControlDownScrollsOneDisplayedRowWithoutMovingVisibleCaret() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 2, 2 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 1, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void ControlDownPullsCaretAlongTopEdge() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 0, 0 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 1, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void ControlUpPullsCaretAlongBottomEdge() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetViewport( 0, new WidgetTextViewportAnchor( 1, 0 ) ); fixture.View.SetSelection( 6, 6 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Up, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), fixture.View.ViewportAnchor );
+		Assert.Equal( 4, fixture.View.Caret );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void ControlScrollPreservesPreferredVisualColumnAcrossWrappedRows() {
+		using Fixture fixture = new( "abcdefghi", new WidgetEditorOptions { WrapMode = CursesTextWrapMode.TextElement } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 1, 3 ) ); fixture.View.SetSelection( 2, 2 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+		Assert.Equal( ( 5L, 2 ), ( fixture.View.Caret, fixture.View.PreferredColumn ) );
+		fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control ) );
+
+		Assert.Equal( ( 8L, 2 ), ( fixture.View.Caret, fixture.View.PreferredColumn ) );
+	}
+
+	[Fact]
+	public void ControlShiftDoesNotExtendSelection() {
+		using Fixture fixture = new( "aa\nbb\ncc\ndd" ); fixture.View.SetSelection( 3, 4 );
+
+		WidgetDispatchResult result = fixture.Send( WidgetInput.Key( WidgetKey.Down, WidgetInputModifiers.Control | WidgetInputModifiers.Shift ) );
+
+		Assert.Equal( ( 3L, 4L ), ( fixture.View.Anchor, fixture.View.Caret ) );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void OrdinaryVerticalMovementRemainsCaretNavigation() {
+		using Fixture fixture = new( "a\nb\nc\nd" ); fixture.View.SetSelection( 0, 0 );
+
+		fixture.Send( WidgetInput.Key( WidgetKey.Down ) );
+
+		Assert.Equal( 2, fixture.View.Caret );
+		Assert.Equal( new WidgetTextViewportAnchor( 0, 0 ), fixture.View.ViewportAnchor );
+	}
+
+	[Fact]
 	public void MovementAndDeletionRespectTextElements() {
 		using Fixture fixture = new( "a\u0301界👩‍💻\n" ); fixture.View.SetSelection( 9, 9 );
 

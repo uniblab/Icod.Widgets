@@ -127,12 +127,17 @@ internal sealed class WidgetTextProjection {
 	}
 
 	internal WidgetTextProjectionResult Project( WidgetTextViewState view, ICursesTextWidthProvider widthProvider, CursesRectangle viewport ) {
+		ArgumentNullException.ThrowIfNull( view ); return this.ProjectAt( view, widthProvider, viewport, view.ViewportAnchor );
+	}
+
+	internal WidgetTextProjectionResult ProjectAt( WidgetTextViewState view, ICursesTextWidthProvider widthProvider, CursesRectangle viewport,
+		WidgetTextViewportAnchor anchor ) {
 		ArgumentNullException.ThrowIfNull( view ); ArgumentNullException.ThrowIfNull( widthProvider );
 		WidgetTextDocument document = view.Document; this.ReconcileCache( view );
 		long extent = document.LineCount; bool exactExtent = CursesTextWrapMode.NoWrap == view.WrapMode;
 		if ( 0 == viewport.Rows || 0 == viewport.Columns ) return new WidgetTextProjectionResult( [], null, [], extent, exactExtent, true, 0, 0, 0 );
 
-		long firstLine = Math.Min( view.VerticalOffset, Math.Max( 0, document.LineCount - 1 ) ); int firstVisualRow = CursesTextWrapMode.NoWrap == view.WrapMode ? 0 : view.ViewportAnchor.VisualRowIndex;
+		long firstLine = Math.Min( anchor.LogicalLineIndex, Math.Max( 0, document.LineCount - 1 ) ); int firstVisualRow = CursesTextWrapMode.NoWrap == view.WrapMode ? 0 : anchor.VisualRowIndex;
 		int remainingUnits = this.options.MaximumProjectionSourceUnits; int sourceUnitsRead = 0; int hits = 0; int misses = 0; int work = 0; bool complete = true;
 		List<WidgetProjectedRow> rows = [];
 		for ( long lineIndex = firstLine; lineIndex < document.LineCount && rows.Count < viewport.Rows; lineIndex++ ) {

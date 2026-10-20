@@ -26,6 +26,115 @@ using Xunit;
 
 public sealed class WidgetEditorPointerTests {
 	[Fact]
+	public void WheelScrollsThreeDisplayedRowsAndClampsCaret() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.View.SetSelection( 0, 0 );
+
+		WidgetDispatchResult result = fixture.Send( CursesMouseAction.WheelDown, 5, 0 );
+
+		Assert.Equal( 3, fixture.View.VerticalOffset );
+		Assert.Equal( fixture.Document.GetLine( 3 ).Start, fixture.View.Caret );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void ArrowClicksScrollOneDisplayedRow() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.View.SetSelection( 0, 0 ); fixture.Host.Render();
+
+		fixture.Send( CursesMouseAction.Press, 19, 1 );
+
+		Assert.Equal( 1, fixture.View.VerticalOffset );
+		Assert.Equal( fixture.Document.GetLine( 1 ).Start, fixture.View.Caret );
+	}
+
+	[Fact]
+	public void TrackClicksPageAndClampCaret() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) );
+		fixture.View.SetSelection( 0, 0 ); fixture.Host.Render();
+
+		fixture.Send( CursesMouseAction.Press, 19, 4 );
+
+		Assert.Equal( 6, fixture.View.VerticalOffset );
+		Assert.Equal( fixture.Document.GetLine( 6 ).Start, fixture.View.Caret );
+	}
+
+	[Fact]
+	public void ThumbDragUsesDisplayedRowsAndReachesBothBoundaries() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) ); fixture.Host.Render();
+
+		fixture.Send( CursesMouseAction.Press, 19, 1 ); fixture.Send( CursesMouseAction.Move, 19, 4 ); fixture.Send( CursesMouseAction.Release, 19, 4 );
+		Assert.Equal( fixture.Editor.VerticalScrollRange.Extent - fixture.Editor.VerticalScrollRange.Viewport, fixture.Editor.VerticalScrollRange.Offset );
+		fixture.Host.Render(); fixture.Send( CursesMouseAction.Press, 19, 4 ); fixture.Send( CursesMouseAction.Move, 19, 1 ); fixture.Send( CursesMouseAction.Release, 19, 1 );
+
+		Assert.Equal( 0, fixture.View.VerticalOffset );
+	}
+
+	[Fact]
+	public void InexactThumbMovementIsMonotonic() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true, WrapMode = CursesTextWrapMode.Word } );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 8 ) ); fixture.Host.Render(); long previous = fixture.Editor.VerticalScrollRange.Offset;
+		fixture.Send( CursesMouseAction.Press, 7, 1 );
+
+		for ( int row = 2; row <= 4; row++ ) {
+			fixture.Send( CursesMouseAction.Move, 7, row );
+			Assert.True( fixture.Editor.VerticalScrollRange.Offset >= previous ); previous = fixture.Editor.VerticalScrollRange.Offset;
+		}
+		fixture.Send( CursesMouseAction.Release, 7, 4 );
+	}
+
+	[Fact]
+	public void CaretClampCollapsesSelectionAndEmitsOneSelectionAction() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.View.SetSelection( 0, fixture.Document.GetLine( 1 ).Start );
+
+		WidgetDispatchResult result = fixture.Send( CursesMouseAction.WheelDown, 5, 0 );
+
+		Assert.False( fixture.View.HasSelection );
+		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
+	}
+
+	[Fact]
+	public void VisibleCaretProducesNoSelectionAction() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) );
+		long caret = fixture.Document.GetLine( 4 ).Start; fixture.View.SetSelection( caret, caret );
+
+		WidgetDispatchResult result = fixture.Send( CursesMouseAction.WheelDown, 5, 0 );
+
+		Assert.Equal( caret, fixture.View.Caret );
+		Assert.Empty( result.Actions );
+	}
+
+	[Fact]
+	public void ScrollbarDragCancelsOnReleaseFocusLossDetachModalAndResize() {
+		using Fixture released = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); StartScrollbarDrag( released ); released.Send( CursesMouseAction.Release, 19, 1 ); AssertDragCanceled( released );
+		using Fixture unfocused = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); StartScrollbarDrag( unfocused ); unfocused.Host.Process( WidgetInput.FocusChanged( CursesFocusState.Unfocused ), TimeSpan.FromMilliseconds( 1 ) ); AssertDragCanceled( unfocused );
+		using Fixture resized = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); StartScrollbarDrag( resized ); resized.Host.Arrange( resized.Host.Screen.Bounds ); AssertDragCanceled( resized );
+		using Fixture modal = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); StartScrollbarDrag( modal ); using ( modal.Host.ShowModal( WidgetMessageDialog.Ok( "dialog", "Title", "Message" ) ) ) AssertDragCanceled( modal );
+		using Fixture detached = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); StartScrollbarDrag( detached ); Assert.True( detached.Host.Detach( detached.Editor ) ); long before = detached.View.VerticalOffset; detached.Editor.OnInput( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Move, CursesMouseButton.Primary, 19, 0 ) ), detached.Host ); Assert.Equal( before, detached.View.VerticalOffset );
+	}
+
+	[Fact]
+	public void RapidWheelAndDragStayInRange() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) ); fixture.Host.Render();
+
+		for ( int index = 0; index < 50; index++ ) {
+			fixture.Send( 0 == index % 2 ? CursesMouseAction.WheelDown : CursesMouseAction.WheelUp, 5, 0 );
+			fixture.Send( CursesMouseAction.Press, 19, 1 ); fixture.Send( CursesMouseAction.Move, 19, 4 ); fixture.Send( CursesMouseAction.Release, 19, 4 );
+		}
+
+		Assert.InRange( fixture.Editor.VerticalScrollRange.Offset, 0, Math.Max( 0, fixture.Editor.VerticalScrollRange.Extent - fixture.Editor.VerticalScrollRange.Viewport ) );
+	}
+
+	[Fact]
+	public void SelectionActionCapacityIsReservedBeforeCaretClamp() {
+		using Fixture fixture = new( new WidgetEditorOptions { ShowVerticalScrollBar = true } ); fixture.View.SetSelection( 0, 0 );
+		for ( int index = 0; index < WidgetLimits.MaximumPendingActions; index++ ) fixture.Host.Enqueue( new WidgetInvokedAction( "seed", index.ToString() ) );
+
+		Assert.Throws<InvalidOperationException>( () => fixture.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent(
+			CursesMouseAction.WheelDown, CursesMouseButton.None, 5, 0 ) ), TimeSpan.Zero ) );
+
+		Assert.Equal( 0, fixture.View.VerticalOffset );
+		Assert.Equal( 0, fixture.View.Caret );
+	}
+	[Fact]
 	public void DragOutsideExtendsSelection() {
 		using Fixture fixture = new();
 
@@ -122,6 +231,8 @@ public sealed class WidgetEditorPointerTests {
 
 	private static void StartDrag( Fixture fixture ) { fixture.Send( CursesMouseAction.Press, 0, 1 ); fixture.Send( CursesMouseAction.Move, 0, 5 ); }
 	private static void AssertNoAutoscroll( Fixture fixture ) { long before = fixture.View.VerticalOffset; fixture.Host.Update( TimeSpan.FromSeconds( 1 ) ); Assert.Equal( before, fixture.View.VerticalOffset ); }
+	private static void StartScrollbarDrag( Fixture fixture ) { fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) ); fixture.Host.Render(); fixture.Send( CursesMouseAction.Press, 19, 1 ); }
+	private static void AssertDragCanceled( Fixture fixture ) { long before = fixture.View.VerticalOffset; fixture.Send( CursesMouseAction.Move, 19, 4 ); Assert.Equal( before, fixture.View.VerticalOffset ); }
 
 	private sealed class Fixture : IDisposable {
 		private int tick;
@@ -134,10 +245,10 @@ public sealed class WidgetEditorPointerTests {
 		internal WidgetTextViewState View { get; }
 		internal WidgetTextEditor Editor { get; }
 		internal WidgetHost Host { get; }
-		internal void Send( CursesMouseAction action, int column, int row, CursesKeyModifiers modifiers = CursesKeyModifiers.None ) {
+			internal WidgetDispatchResult Send( CursesMouseAction action, int column, int row, CursesKeyModifiers modifiers = CursesKeyModifiers.None ) {
 			CursesMouseButton button = action is CursesMouseAction.WheelUp or CursesMouseAction.WheelDown or CursesMouseAction.WheelLeft or CursesMouseAction.WheelRight
 				? CursesMouseButton.None : CursesMouseButton.Primary;
-			this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, button, column, row, modifiers ) ), TimeSpan.FromMilliseconds( this.tick++ ) );
+				return this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, button, column, row, modifiers ) ), TimeSpan.FromMilliseconds( this.tick++ ) );
 		}
 		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
 	}
