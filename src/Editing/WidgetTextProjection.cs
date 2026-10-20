@@ -202,6 +202,9 @@ internal sealed class WidgetTextProjection {
 	internal WidgetTextViewportAnchor MoveViewport( WidgetTextViewState view, WidgetTextViewportAnchor origin, long displayedRows,
 		ICursesTextWidthProvider widthProvider, int columns ) => this.rowMap.Move( view, origin, displayedRows, widthProvider, columns );
 
+	internal WidgetTextViewportAnchor NormalizeViewport( WidgetTextViewState view, WidgetTextViewportAnchor origin,
+		ICursesTextWidthProvider widthProvider, int columns ) => this.rowMap.Normalize( view, origin, widthProvider, columns );
+
 	internal WidgetScrollRange GetVerticalRange( WidgetTextViewState view, WidgetTextViewportAnchor origin, ICursesTextWidthProvider widthProvider,
 		int columns, int viewportRows ) => this.rowMap.GetRange( view, origin, widthProvider, columns, viewportRows );
 

@@ -599,14 +599,20 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private WidgetEditorViewport ResolveViewport( CursesRectangle area, ICursesTextWidthProvider widthProvider ) {
 		WidgetEditorViewport full = WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers, false );
-		if ( !this.options.ShowVerticalScrollBar || 2 > full.Text.Rows || 2 > full.Text.Columns ) return full;
-		int probeRows = full.Text.Rows == int.MaxValue ? int.MaxValue : full.Text.Rows + 1;
-		WidgetTextProjectionResult probe = this.projection.ProjectAt( this.View, widthProvider, new CursesRectangle( 0, 0, probeRows, full.Text.Columns ),
-			new WidgetTextViewportAnchor( 0, 0 ) );
-		bool reachedEnd = 0 < probe.Rows.Count && probe.Rows[ ^1 ].LogicalLineIndex == this.View.Document.LineCount - 1 &&
-			!probe.Rows[ ^1 ].HasContinuation && probe.Rows[ ^1 ].VisualLineIndex == probe.Rows[ ^1 ].Layout.Lines.Count - 1;
-		bool fits = probe.Rows.Count <= full.Text.Rows && probe.IsComplete && reachedEnd;
-		return fits ? full : WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers, true );
+		WidgetEditorViewport result = full;
+		if ( this.options.ShowVerticalScrollBar && 2 <= full.Text.Rows && 2 <= full.Text.Columns ) {
+			int probeRows = full.Text.Rows == int.MaxValue ? int.MaxValue : full.Text.Rows + 1;
+			WidgetTextProjectionResult probe = this.projection.ProjectAt( this.View, widthProvider, new CursesRectangle( 0, 0, probeRows, full.Text.Columns ),
+				new WidgetTextViewportAnchor( 0, 0 ) );
+			bool reachedEnd = 0 < probe.Rows.Count && probe.Rows[ ^1 ].LogicalLineIndex == this.View.Document.LineCount - 1 &&
+				!probe.Rows[ ^1 ].HasContinuation && probe.Rows[ ^1 ].VisualLineIndex == probe.Rows[ ^1 ].Layout.Lines.Count - 1;
+			bool fits = probe.Rows.Count <= full.Text.Rows && probe.IsComplete && reachedEnd;
+			if ( !fits ) result = WidgetEditorViewport.Create( area, this.View.Document.LineCount, this.options.ShowLineNumbers, true );
+		}
+		WidgetTextViewportAnchor normalized = this.projection.NormalizeViewport( this.View, this.View.ViewportAnchor, widthProvider,
+			Math.Max( 1, result.Text.Columns ) );
+		if ( normalized != this.View.ViewportAnchor ) this.View.SetViewport( this.View.HorizontalOffset, normalized );
+		return result;
 	}
 
 	private void RenderVerticalScrollBar( CursesScreen screen, WidgetTheme theme, bool focused, CursesRectangle area ) {

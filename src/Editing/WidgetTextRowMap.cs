@@ -52,6 +52,17 @@ internal sealed class WidgetTextRowMap {
 	internal int LastSourceUnitsRead { get; private set; }
 	internal long MeasurementCount { get; private set; }
 
+	internal WidgetTextViewportAnchor Normalize( WidgetTextViewState view, WidgetTextViewportAnchor origin,
+		ICursesTextWidthProvider widthProvider, int columns ) {
+		ArgumentNullException.ThrowIfNull( view ); ArgumentNullException.ThrowIfNull( widthProvider );
+		WidgetTextDocument document = view.Document;
+		long line = Math.Min( origin.LogicalLineIndex, Math.Max( 0, document.LineCount - 1 ) );
+		if ( CursesTextWrapMode.NoWrap == view.WrapMode ) return new WidgetTextViewportAnchor( line, 0 );
+		Entry entry = this.Get( view, line, widthProvider, columns );
+		int visual = origin.LogicalLineIndex == line ? origin.VisualRowIndex : 0;
+		return new WidgetTextViewportAnchor( line, Math.Min( visual, Math.Max( 0, entry.KnownRows - 1 ) ) );
+	}
+
 	internal WidgetTextViewportAnchor Move( WidgetTextViewState view, WidgetTextViewportAnchor origin, long displayedRows,
 		ICursesTextWidthProvider widthProvider, int columns ) {
 		ArgumentNullException.ThrowIfNull( view ); ArgumentNullException.ThrowIfNull( widthProvider );
