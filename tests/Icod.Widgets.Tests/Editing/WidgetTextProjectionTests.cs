@@ -272,6 +272,26 @@ public sealed class WidgetTextProjectionTests {
 	}
 
 	[Fact]
+	public void LongWrappedLineKeepsExactOneRowStepsAcrossBoundedChunks() {
+		WidgetTextDocument document = Create( new string( 'x', 200 ) ); using WidgetTextViewState view = new( document ); view.WrapMode = CursesTextWrapMode.TextElement;
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 32, MaximumWorkPerUpdate = 2, MaximumCachedRows = 8 };
+		WidgetTextProjection projection = new( options ); WidgetTextViewportAnchor anchor = view.ViewportAnchor;
+
+		for ( int row = 1; row <= 20; row++ ) {
+			anchor = projection.MoveViewport( view, anchor, 1, UnicodeCursesTextWidthProvider.Instance, 4 );
+			Assert.Equal( new WidgetTextViewportAnchor( 0, row ), anchor );
+		}
+		WidgetProjectedRow projected = Assert.Single( projection.ProjectAt( view, UnicodeCursesTextWidthProvider.Instance,
+			new CursesRectangle( 0, 0, 1, 4 ), anchor ).Rows );
+		Assert.Equal( 80, projected.SourceStart );
+
+		for ( int row = 19; row >= 0; row-- ) {
+			anchor = projection.MoveViewport( view, anchor, -1, UnicodeCursesTextWidthProvider.Instance, 4 );
+			Assert.Equal( new WidgetTextViewportAnchor( 0, row ), anchor );
+		}
+	}
+
+	[Fact]
 	public void HugeClusterHasSafeBoundedFallback() {
 		WidgetTextDocument document = Create( "a" + new string( '\u0301', 10_000 ) + "b" ); using WidgetTextViewState view = new( document );
 		WidgetTextProjection projection = new( new WidgetEditorOptions { MaximumProjectionSourceUnits = 1_024, MaximumClusterScan = 256 } );

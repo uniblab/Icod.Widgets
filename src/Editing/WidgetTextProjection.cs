@@ -32,8 +32,10 @@ internal sealed class WidgetProjectedRow {
 	private readonly long origin;
 	private readonly long baseColumn;
 	private readonly int layoutStartingColumn;
-	internal WidgetProjectedRow( long logicalLineIndex, long origin, long baseColumn, int layoutStartingColumn, CursesTextLayout layout, int visualLineIndex, bool placeholder, bool continuation ) {
-		this.LogicalLineIndex = logicalLineIndex; this.origin = origin; this.Layout = layout; this.VisualLineIndex = visualLineIndex;
+	private readonly int layoutVisualLineIndex;
+	internal WidgetProjectedRow( long logicalLineIndex, long origin, long baseColumn, int layoutStartingColumn, CursesTextLayout layout, int visualLineIndex, bool placeholder, bool continuation, int visualLineOrigin = 0 ) {
+		this.LogicalLineIndex = logicalLineIndex; this.origin = origin; this.Layout = layout; this.layoutVisualLineIndex = visualLineIndex;
+		this.VisualLineIndex = checked( visualLineOrigin + visualLineIndex );
 		this.baseColumn = baseColumn; this.layoutStartingColumn = layoutStartingColumn; this.IsPlaceholder = placeholder; this.HasContinuation = continuation;
 	}
 	internal long LogicalLineIndex { get; }
@@ -42,8 +44,9 @@ internal sealed class WidgetProjectedRow {
 	internal bool IsPlaceholder { get; }
 	internal bool HasContinuation { get; }
 	internal long BaseColumn => this.baseColumn;
-	internal long SourceStart => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.VisualLineIndex ].SourceStart.Offset;
-	internal long SourceEnd => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.VisualLineIndex ].SourceEnd.Offset;
+	internal int LayoutVisualLineIndex => this.layoutVisualLineIndex;
+	internal long SourceStart => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.layoutVisualLineIndex ].SourceStart.Offset;
+	internal long SourceEnd => this.IsPlaceholder ? this.origin : this.origin + this.Layout.Lines[ this.layoutVisualLineIndex ].SourceEnd.Offset;
 
 	internal long GetColumn( long sourceOffset, CursesTextAffinity affinity = CursesTextAffinity.Leading ) {
 		if ( this.IsPlaceholder ) { if ( sourceOffset != this.origin ) throw new ArgumentOutOfRangeException( nameof( sourceOffset ) ); return 0; }
@@ -65,7 +68,7 @@ internal sealed class WidgetProjectedRow {
 	internal WidgetProjectedHit HitTestWithAffinity( long column ) {
 		if ( this.IsPlaceholder ) return new WidgetProjectedHit( this.origin, CursesTextAffinity.Leading );
 		long localColumn = this.layoutStartingColumn + column - this.baseColumn;
-		CursesTextHitTestResult hit = this.Layout.HitTest( this.VisualLineIndex, (int)Math.Clamp( localColumn, 0, int.MaxValue ) );
+		CursesTextHitTestResult hit = this.Layout.HitTest( this.layoutVisualLineIndex, (int)Math.Clamp( localColumn, 0, int.MaxValue ) );
 		return new WidgetProjectedHit( this.origin + hit.Position.Offset, hit.Affinity );
 	}
 
@@ -90,6 +93,7 @@ internal sealed class WidgetTextProjection {
 		internal required long LogicalLine { get; init; }
 		internal required long Origin { get; init; }
 		internal required long BaseColumn { get; init; }
+		internal required int VisualRowOrigin { get; init; }
 		internal required int StartingColumn { get; init; }
 		internal required long AffectedEnd { get; init; }
 		internal required int ViewportColumns { get; init; }
@@ -142,18 +146,24 @@ internal sealed class WidgetTextProjection {
 		List<WidgetProjectedRow> rows = [];
 		for ( long lineIndex = firstLine; lineIndex < document.LineCount && rows.Count < viewport.Rows; lineIndex++ ) {
 			if ( work >= this.options.MaximumWorkPerUpdate ) { complete = false; break; }
-			long wantedRows = viewport.Rows - rows.Count + ( lineIndex == firstLine ? (long)firstVisualRow : 0 );
+			long relativeStart = 0; int visualRowOrigin = 0;
+			if ( lineIndex == firstLine && CursesTextWrapMode.NoWrap != view.WrapMode ) {
+				WidgetTextRowCheckpoint checkpoint = this.rowMap.Resolve( view, lineIndex, firstVisualRow, widthProvider, viewport.Columns );
+				relativeStart = checkpoint.SourceOffset; visualRowOrigin = checkpoint.VisualRow;
+			}
+			int relativeFirstVisualRow = lineIndex == firstLine ? Math.Max( 0, firstVisualRow - visualRowOrigin ) : 0;
+			long wantedRows = viewport.Rows - rows.Count + (long)relativeFirstVisualRow;
 			int layoutRows = Math.Max( 1, (int)Math.Min( Math.Min( wantedRows, int.MaxValue ), this.options.MaximumWorkPerUpdate - work ) ); work++;
-			CacheEntry? entry = this.Find( document, lineIndex, viewport.Columns, layoutRows, view, widthProvider );
+			CacheEntry? entry = this.Find( document, lineIndex, viewport.Columns, layoutRows, visualRowOrigin, view, widthProvider );
 			if ( entry is null ) {
 				misses++; if ( 0 == remainingUnits ) { complete = false; break; }
-				entry = this.BuildEntry( document, lineIndex, viewport.Columns, layoutRows, view, widthProvider, remainingUnits, out int read, out bool cacheable );
+				entry = this.BuildEntry( document, lineIndex, viewport.Columns, layoutRows, view, widthProvider, remainingUnits, out int read, out bool cacheable, relativeStart, visualRowOrigin );
 				sourceUnitsRead = checked( sourceUnitsRead + read ); remainingUnits -= read; if ( cacheable ) this.Add( entry );
 			} else { hits++; entry.LastUse = ++this.useClock; }
 			complete &= !entry.HasContinuation;
-			int visualStart = lineIndex == firstLine ? Math.Min( firstVisualRow, entry.Layout.Lines.Count ) : 0;
+			int visualStart = lineIndex == firstLine ? Math.Min( relativeFirstVisualRow, entry.Layout.Lines.Count ) : 0;
 			for ( int visual = visualStart; visual < entry.Layout.Lines.Count && rows.Count < viewport.Rows; visual++ )
-				rows.Add( new WidgetProjectedRow( lineIndex, entry.Origin, entry.BaseColumn, entry.StartingColumn, entry.Layout, visual, entry.IsPlaceholder, entry.HasContinuation ) );
+				rows.Add( new WidgetProjectedRow( lineIndex, entry.Origin, entry.BaseColumn, entry.StartingColumn, entry.Layout, visual, entry.IsPlaceholder, entry.HasContinuation, entry.VisualRowOrigin ) );
 		}
 
 		WidgetProjectedCaret? caret = FindCaret( view, rows, viewport.Columns );
@@ -196,8 +206,8 @@ internal sealed class WidgetTextProjection {
 		int columns, int viewportRows ) => this.rowMap.GetRange( view, origin, widthProvider, columns, viewportRows );
 
 	private CacheEntry BuildEntry( WidgetTextDocument document, long lineIndex, int viewportColumns, int layoutRows, WidgetTextViewState view,
-		ICursesTextWidthProvider widthProvider, int budget, out int sourceUnitsRead, out bool cacheable ) {
-		WidgetTextLine line = document.GetLine( lineIndex ); sourceUnitsRead = 0; long relativeStart = 0; long baseColumn = 0; bool reachedHorizontal = true;
+		ICursesTextWidthProvider widthProvider, int budget, out int sourceUnitsRead, out bool cacheable, long relativeStart = 0, int visualRowOrigin = 0 ) {
+		WidgetTextLine line = document.GetLine( lineIndex ); sourceUnitsRead = 0; long baseColumn = 0; bool reachedHorizontal = true;
 		if ( CursesTextWrapMode.NoWrap == view.WrapMode && 0 < view.HorizontalOffset && 0 < line.ContentLength ) {
 			ScanState scan = this.GetScan( document, lineIndex, view.TabWidth, widthProvider );
 			if ( view.HorizontalOffset < scan.Column ) { scan.SourceOffset = 0; scan.Column = 0; }
@@ -232,17 +242,17 @@ internal sealed class WidgetTextProjection {
 		cacheable = reachedHorizontal && ( 0 < display.Length || 0 == available );
 		return new CacheEntry {
 			DocumentId = document.Id, Revision = document.Revision, LogicalLine = lineIndex, Origin = line.Start + relativeStart,
-			BaseColumn = baseColumn, StartingColumn = startingColumn, AffectedEnd = line.End, ViewportColumns = viewportColumns,
+			BaseColumn = baseColumn, VisualRowOrigin = visualRowOrigin, StartingColumn = startingColumn, AffectedEnd = line.End, ViewportColumns = viewportColumns,
 			HorizontalOffset = view.HorizontalOffset, LayoutRows = layoutRows, TabWidth = view.TabWidth, WrapMode = view.WrapMode,
 			WidthProvider = widthProvider, Layout = layout, IsPlaceholder = placeholder,
 			HasContinuation = continuation || CursesTextWrapMode.NoWrap != view.WrapMode && layout.IsTruncated, LastUse = ++this.useClock
 		};
 	}
 
-	private CacheEntry? Find( WidgetTextDocument document, long line, int viewportColumns, int layoutRows, WidgetTextViewState view, ICursesTextWidthProvider widthProvider ) =>
+	private CacheEntry? Find( WidgetTextDocument document, long line, int viewportColumns, int layoutRows, int visualRowOrigin, WidgetTextViewState view, ICursesTextWidthProvider widthProvider ) =>
 		this.cache.FirstOrDefault( entry => entry.DocumentId == document.Id && entry.Revision == document.Revision && entry.LogicalLine == line &&
 			entry.ViewportColumns == viewportColumns && entry.HorizontalOffset == view.HorizontalOffset && entry.LayoutRows == layoutRows &&
-			entry.TabWidth == view.TabWidth && entry.WrapMode == view.WrapMode && ReferenceEquals( entry.WidthProvider, widthProvider ) );
+			entry.VisualRowOrigin == visualRowOrigin && entry.TabWidth == view.TabWidth && entry.WrapMode == view.WrapMode && ReferenceEquals( entry.WidthProvider, widthProvider ) );
 
 	private void Add( CacheEntry entry ) {
 		if ( entry.RetainedRows > this.options.MaximumCachedRows || entry.RetainedUnits > this.options.MaximumCachedSourceUnits ) return;
@@ -298,7 +308,7 @@ internal sealed class WidgetTextProjection {
 			WidgetProjectedRow row = rows[ rowIndex ]; if ( view.Caret < row.SourceStart || view.Caret > row.SourceEnd ) continue;
 			try {
 				if ( !row.TryGetVisualPosition( view.Caret, view.CaretAffinity, out CursesTextVisualPosition visual ) ) continue;
-				if ( visual.Line != row.VisualLineIndex ) continue;
+				if ( visual.Line != row.LayoutVisualLineIndex ) continue;
 				long shifted = row.GetColumn( view.Caret, view.CaretAffinity ) - view.HorizontalOffset;
 				if ( shifted >= 0 && shifted < viewportColumns ) return new WidgetProjectedCaret( rowIndex, (int)shifted, view.Caret );
 			}
@@ -313,9 +323,9 @@ internal sealed class WidgetTextProjection {
 		for ( int rowIndex = 0; rowIndex < rows.Count; rowIndex++ ) {
 			WidgetProjectedRow row = rows[ rowIndex ]; if ( row.IsPlaceholder ) continue;
 			long start = Math.Max( view.SelectionStart, row.SourceStart ); long end = Math.Min( view.SelectionEnd, row.SourceEnd ); if ( end <= start ) continue;
-			int localStart = checked( (int)( start - row.SourceStart + row.Layout.Lines[ row.VisualLineIndex ].SourceStart.Offset ) );
-			int localEnd = checked( (int)( end - row.SourceStart + row.Layout.Lines[ row.VisualLineIndex ].SourceStart.Offset ) );
-			CursesRectangle[] rectangles = row.Layout.GetSelectionRectangles( new CursesTextSelection( new CursesTextPosition( localStart ), new CursesTextPosition( localEnd ) ), row.VisualLineIndex, 1 );
+			int localStart = checked( (int)( start - row.SourceStart + row.Layout.Lines[ row.LayoutVisualLineIndex ].SourceStart.Offset ) );
+			int localEnd = checked( (int)( end - row.SourceStart + row.Layout.Lines[ row.LayoutVisualLineIndex ].SourceStart.Offset ) );
+			CursesRectangle[] rectangles = row.Layout.GetSelectionRectangles( new CursesTextSelection( new CursesTextPosition( localStart ), new CursesTextPosition( localEnd ) ), row.LayoutVisualLineIndex, 1 );
 			foreach ( CursesRectangle rectangle in rectangles ) {
 				long trueColumn = row.TranslateLayoutColumn( rectangle.Column ); long shifted = trueColumn - view.HorizontalOffset;
 				int left = (int)Math.Clamp( shifted, 0, viewportColumns ); int right = (int)Math.Clamp( shifted + rectangle.Columns, 0, viewportColumns );

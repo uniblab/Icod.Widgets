@@ -25,6 +25,8 @@ using System.Globalization;
 using Icod.DCurses;
 
 internal sealed class WidgetTextRowMap {
+	private readonly record struct Checkpoint( int VisualRow, long SourceOffset );
+
 	private sealed class Entry {
 		internal required Guid DocumentId { get; init; }
 		internal required long Revision { get; init; }
@@ -33,9 +35,10 @@ internal sealed class WidgetTextRowMap {
 		internal required int TabWidth { get; init; }
 		internal required CursesTextWrapMode WrapMode { get; init; }
 		internal required ICursesTextWidthProvider WidthProvider { get; init; }
-		internal required int KnownRows { get; init; }
-		internal required bool IsExact { get; init; }
-		internal required int SourceUnitsRead { get; init; }
+		internal int KnownRows { get; set; }
+		internal bool IsExact { get; set; }
+		internal long NextSourceOffset { get; set; }
+		internal List<Checkpoint> Checkpoints { get; } = [ new( 0, 0 ) ];
 		internal long LastUse { get; set; }
 	}
 
@@ -57,11 +60,20 @@ internal sealed class WidgetTextRowMap {
 			long target = SaturatingAdd( line, displayedRows ); return new WidgetTextViewportAnchor( Math.Clamp( target, 0, document.LineCount - 1 ), 0 );
 		}
 		int visual = origin.LogicalLineIndex == line ? origin.VisualRowIndex : 0; long remaining = displayedRows;
-		int work = 0;
+		int work = 0; int iterations = 0;
 		while ( 0 != remaining && work < this.options.MaximumWorkPerUpdate ) {
+			if ( ++iterations > this.options.MaximumWorkPerUpdate * 2 + 2 ) throw new InvalidOperationException( "Row-map movement did not converge within its bounded work budget." );
 			if ( 0 < remaining ) {
 				Entry current = this.Get( view, line, widthProvider, columns );
 				if ( visual + 1 < current.KnownRows ) { visual++; remaining--; work++; continue; }
+				if ( !current.IsExact ) {
+					int knownBefore = current.KnownRows; long sourceBefore = current.NextSourceOffset;
+					if ( this.Expand( view, current, widthProvider ) ) {
+						if ( current.KnownRows <= knownBefore || current.NextSourceOffset <= sourceBefore ) throw new InvalidOperationException(
+							$"Row-map expansion made no progress: rows={knownBefore}/{current.KnownRows}, source={sourceBefore}/{current.NextSourceOffset}." );
+						continue;
+					}
+				}
 				if ( !current.IsExact || line + 1 >= document.LineCount ) break;
 				line++; visual = 0; remaining--; work++; continue;
 			}
@@ -71,6 +83,15 @@ internal sealed class WidgetTextRowMap {
 			line--; visual = Math.Max( 0, previous.KnownRows - 1 ); remaining++; work++;
 		}
 		return new WidgetTextViewportAnchor( line, visual );
+	}
+
+	internal WidgetTextRowCheckpoint Resolve( WidgetTextViewState view, long logicalLine, int visualRow,
+		ICursesTextWidthProvider widthProvider, int columns ) {
+		if ( 0 > visualRow ) throw new ArgumentOutOfRangeException( nameof( visualRow ) );
+		Entry entry = this.Get( view, logicalLine, widthProvider, columns );
+		if ( visualRow >= entry.KnownRows && !entry.IsExact ) _ = this.Expand( view, entry, widthProvider );
+		Checkpoint checkpoint = entry.Checkpoints.LastOrDefault( current => current.VisualRow <= visualRow );
+		return new WidgetTextRowCheckpoint( checkpoint.VisualRow, checkpoint.SourceOffset );
 	}
 
 	internal WidgetScrollRange GetRange( WidgetTextViewState view, WidgetTextViewportAnchor origin, ICursesTextWidthProvider widthProvider,
@@ -105,24 +126,51 @@ internal sealed class WidgetTextRowMap {
 			entry.LogicalLine == lineIndex && entry.Columns == columns && entry.TabWidth == view.TabWidth && entry.WrapMode == view.WrapMode &&
 			ReferenceEquals( entry.WidthProvider, widthProvider ) );
 		if ( cached is not null ) { cached.LastUse = ++this.useClock; this.LastSourceUnitsRead = 0; return cached; }
-		WidgetTextLine line = document.GetLine( lineIndex ); int count = checked( (int)Math.Min( line.ContentLength, this.options.MaximumProjectionSourceUnits ) );
-		string source = document.Read( line.Start, count );
-		if ( count < line.ContentLength && !document.IsTextElementBoundary( line.Start + count ) ) {
-			int[] starts = StringInfo.ParseCombiningCharacters( source ); source = starts.Length <= 1 ? "�" : source[ ..starts[ ^1 ] ];
-		}
-		string display = Sanitize( source ); int maximumRows = Math.Min( int.MaxValue, this.options.MaximumWorkPerUpdate + 1 );
-		CursesTextLayout layout = CursesTextLayout.Create( display, new CursesTextLayoutOptions( columns ) {
-			MaximumRows = Math.Max( 1, maximumRows ), WrapMode = view.WrapMode, Overflow = CursesTextOverflow.Clip,
-			TabInterval = view.TabWidth, WidthProvider = widthProvider
-		} );
-		bool exact = count == line.ContentLength && !layout.IsTruncated;
-		int rows = Math.Max( 1, layout.Lines.Count ); if ( layout.IsTruncated ) rows = checked( rows + 1 );
 		Entry result = new() { DocumentId = document.Id, Revision = document.Revision, LogicalLine = lineIndex, Columns = columns,
-			TabWidth = view.TabWidth, WrapMode = view.WrapMode, WidthProvider = widthProvider, KnownRows = rows, IsExact = exact,
-			SourceUnitsRead = count, LastUse = ++this.useClock };
-		this.MeasurementCount++; this.LastSourceUnitsRead = count; this.entries.Add( result );
+			TabWidth = view.TabWidth, WrapMode = view.WrapMode, WidthProvider = widthProvider, LastUse = ++this.useClock };
+		this.entries.Add( result ); _ = this.Expand( view, result, widthProvider );
 		while ( this.entries.Count > this.options.MaximumCachedRows ) this.entries.Remove( this.entries.MinBy( static entry => entry.LastUse )! );
 		return result;
+	}
+
+	private bool Expand( WidgetTextViewState view, Entry entry, ICursesTextWidthProvider widthProvider ) {
+		if ( entry.IsExact ) { this.LastSourceUnitsRead = 0; return false; }
+		WidgetTextDocument document = view.Document; WidgetTextLine line = document.GetLine( entry.LogicalLine );
+		long available = Math.Max( 0, line.ContentLength - entry.NextSourceOffset );
+		int count = checked( (int)Math.Min( available, this.options.MaximumProjectionSourceUnits ) );
+		string source = document.Read( line.Start + entry.NextSourceOffset, count );
+		if ( count < available && !document.IsTextElementBoundary( line.Start + entry.NextSourceOffset + count ) ) {
+			int[] starts = StringInfo.ParseCombiningCharacters( source ); source = starts.Length <= 1 ? "�" : source[ ..starts[ ^1 ] ];
+		}
+		string display = Sanitize( source ); int maximumRows = this.options.MaximumWorkPerUpdate;
+		CursesTextLayout layout = CursesTextLayout.Create( display, new CursesTextLayoutOptions( entry.Columns ) {
+			MaximumRows = maximumRows, WrapMode = view.WrapMode, Overflow = CursesTextOverflow.Clip,
+			TabInterval = view.TabWidth, WidthProvider = widthProvider
+		} );
+		this.MeasurementCount++; this.LastSourceUnitsRead = source.Length; entry.LastUse = ++this.useClock;
+		bool sourceComplete = entry.NextSourceOffset + source.Length == line.ContentLength;
+		if ( sourceComplete && !layout.IsTruncated ) {
+			int rows = Math.Max( 1, layout.Lines.Count ); entry.KnownRows = checked( entry.KnownRows + rows );
+			entry.NextSourceOffset = line.ContentLength; entry.IsExact = true; return true;
+		}
+		if ( layout.IsTruncated && 0 < layout.Lines.Count ) {
+			CursesTextVisualLine final = layout.Lines[ ^1 ]; int consumed = final.SourceEnd.Offset;
+			if ( consumed == final.SourceStart.Offset ) consumed = layout.GetNextPosition( final.SourceStart ).Offset;
+			if ( 0 < consumed ) {
+				entry.KnownRows = checked( entry.KnownRows + layout.Lines.Count );
+				entry.NextSourceOffset = checked( entry.NextSourceOffset + consumed );
+				entry.Checkpoints.Add( new Checkpoint( entry.KnownRows, entry.NextSourceOffset ) ); return true;
+			}
+		}
+		if ( !sourceComplete && 1 < layout.Lines.Count ) {
+			CursesTextVisualLine partial = layout.Lines[ ^1 ]; int consumed = partial.SourceStart.Offset;
+			if ( 0 < consumed ) {
+				entry.KnownRows = checked( entry.KnownRows + layout.Lines.Count - 1 );
+				entry.NextSourceOffset = checked( entry.NextSourceOffset + consumed );
+				entry.Checkpoints.Add( new Checkpoint( entry.KnownRows, entry.NextSourceOffset ) ); return true;
+			}
+		}
+		return false;
 	}
 
 	private static string Sanitize( string value ) {
@@ -140,3 +188,5 @@ internal sealed class WidgetTextRowMap {
 		return left + right;
 	}
 }
+
+internal readonly record struct WidgetTextRowCheckpoint( int VisualRow, long SourceOffset );
