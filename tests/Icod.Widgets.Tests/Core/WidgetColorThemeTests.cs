@@ -178,6 +178,15 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void VerticalScrollbarOptionDefaultsOffAndCanOptIn() {
+		WidgetEditorOptions defaults = new();
+		WidgetEditorOptions enabled = defaults with { ShowVerticalScrollBar = true };
+
+		Assert.False( defaults.ShowVerticalScrollBar );
+		Assert.True( enabled.ShowVerticalScrollBar );
+	}
+
+	[Fact]
 	public void CurrentLineGutterStyleCoversWrappedRows() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.EditorSurface, Red ).With( WidgetStyleRole.EditorText, Blue )
 			.With( WidgetStyleRole.EditorGutter, Red ).With( WidgetStyleRole.EditorGutterCurrentLine, Gray );
@@ -233,6 +242,22 @@ public sealed class WidgetColorThemeTests {
 		bar.SetRange( 100, 20, 0 ); bar.OnRender( screen, theme, false );
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
 		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 9 ).Style );
+	}
+
+	[Fact]
+	public void VerticalScrollbarUsesExistingThemeRoles() {
+		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.ScrollTrack, Blue )
+			.With( WidgetStyleRole.ScrollThumb, Red ).With( WidgetStyleRole.ScrollFocusedThumb, Green );
+		CursesScreen screen = new( 1, 10 ); WidgetTheme theme = WidgetTheme.Default with { Parts = parts };
+		WidgetScrollBar bar = new( "bar", WidgetScrollOrientation.Vertical ); bar.Arrange( screen.Bounds ); bar.SetRange( 100, 20, 0 );
+
+		bar.OnRender( screen, theme, false );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 0, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 9, 0 ).Style );
+
+		bar.OnRender( screen, theme, true );
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 1, 0 ).Style );
 	}
 
 	[Fact]

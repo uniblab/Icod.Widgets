@@ -26,6 +26,56 @@ using Xunit;
 
 public sealed class WidgetScrollBarTests {
 	[Fact]
+	public void VerticalScrollbarRendersArrowTrackAndThumbGlyphs() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 20, 0 );
+		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 10, 1 ) );
+
+		host.Render();
+
+		Assert.Equal( "▲", host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.Equal( "┃", host.Screen.StandardWindow.GetCell( 1, 0 ).Content );
+		Assert.Equal( "│", host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+		Assert.Equal( "▼", host.Screen.StandardWindow.GetCell( 9, 0 ).Content );
+
+		WidgetScrollBar horizontal = new( "horizontal", WidgetScrollOrientation.Horizontal ); horizontal.SetRange( 100, 20, 0 );
+		horizontal.Arrange( new CursesRectangle( 0, 1, 1, 10 ) ); horizontal.OnRender( host.Screen, host.Theme, false );
+		Assert.Equal( "█", host.Screen.StandardWindow.GetCell( 0, 1 ).Content );
+		Assert.Equal( "░", host.Screen.StandardWindow.GetCell( 0, 9 ).Content );
+	}
+
+	[Fact]
+	public void ArrowButtonsStepOneUnit() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 10, 10 );
+		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 10, 1 ) );
+
+		host.Process( Pointer( CursesMouseAction.Press, 0, 0 ), TimeSpan.Zero );
+		Assert.Equal( 9, bar.Offset );
+		host.Process( Pointer( CursesMouseAction.Press, 0, 9 ), TimeSpan.FromMilliseconds( 1 ) );
+		Assert.Equal( 10, bar.Offset );
+	}
+
+	[Fact]
+	public void TrackClicksPage() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 10, 0 );
+		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 10, 1 ) );
+
+		host.Process( Pointer( CursesMouseAction.Press, 0, 8 ), TimeSpan.Zero );
+
+		Assert.Equal( 10, bar.Offset );
+	}
+
+	[Fact]
+	public void TwoRowVerticalScrollbarRendersBothButtonsWithoutTrack() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 10, 0 );
+		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 2, 1 ) );
+
+		host.Render();
+
+		Assert.Equal( "▲", host.Screen.StandardWindow.GetCell( 0, 0 ).Content );
+		Assert.Equal( "▼", host.Screen.StandardWindow.GetCell( 1, 0 ).Content );
+	}
+
+	[Fact]
 	public void ThumbMapsLargeRangeWithoutOverflow() {
 		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Horizontal ); bar.SetRange( long.MaxValue, 1, 0 );
 		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 1, 10 ) );
@@ -54,7 +104,7 @@ public sealed class WidgetScrollBarTests {
 		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 10, 0 );
 		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 10, 1 ) );
 
-		host.Process( Pointer( CursesMouseAction.Press, 0, 9 ), TimeSpan.Zero );
+		host.Process( Pointer( CursesMouseAction.Press, 0, 8 ), TimeSpan.Zero );
 		Assert.Equal( 10, bar.Offset );
 		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 1 ) );
 		Assert.Equal( 11, bar.Offset );
