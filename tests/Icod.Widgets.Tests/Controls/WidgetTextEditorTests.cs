@@ -442,6 +442,66 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void HorizontalOptionDefaultsFalse() {
+		Assert.False( new WidgetEditorOptions().ShowHorizontalScrollBar );
+	}
+
+	[Fact]
+	public void HorizontalBarAutoHidesAndUsesApprovedGlyphs() {
+		using Fixture fitting = new( "abcd", new WidgetEditorOptions { ShowHorizontalScrollBar = true } );
+		fitting.Editor.Arrange( new CursesRectangle( 0, 0, 3, 10 ) ); fitting.Host.Render();
+		Assert.NotEqual( "◄", fitting.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+
+		using Fixture overflowing = new( "abcdefghijklmnop", new WidgetEditorOptions { ShowHorizontalScrollBar = true } );
+		overflowing.Editor.Arrange( new CursesRectangle( 0, 0, 3, 10 ) ); overflowing.Host.Render();
+		Assert.Equal( "◄", overflowing.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+		Assert.Equal( "━", overflowing.Host.Screen.StandardWindow.GetCell( 2, 1 ).Content );
+		Assert.Equal( "─", overflowing.Host.Screen.StandardWindow.GetCell( 2, 8 ).Content );
+		Assert.Equal( "►", overflowing.Host.Screen.StandardWindow.GetCell( 2, 9 ).Content );
+	}
+
+	[Fact]
+	public void WrappingSuppressesHorizontalBarAndNormalizesOffset() {
+		using Fixture fixture = new( "abcdefghijklmnop", new WidgetEditorOptions {
+			ShowHorizontalScrollBar = true, WrapMode = CursesTextWrapMode.TextElement
+		} );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 5 ) ); fixture.View.SetScroll( 3, 0 );
+
+		fixture.Host.Render();
+
+		Assert.Equal( 0, fixture.View.HorizontalOffset );
+		Assert.DoesNotContain( new[] { "◄", "►", "─", "━" }, glyph => glyph == fixture.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+	}
+
+	[Fact]
+	public void BothBarsReserveOneCornerCell() {
+		using Fixture fixture = new( "abcdefghijk\nsecond\nthird\nfourth", new WidgetEditorOptions {
+			ShowVerticalScrollBar = true, ShowHorizontalScrollBar = true
+		} );
+		fixture.Editor.Arrange( new CursesRectangle( 0, 0, 3, 8 ) ); fixture.Host.Render();
+
+		Assert.Equal( "▲", fixture.Host.Screen.StandardWindow.GetCell( 0, 7 ).Content );
+		Assert.Equal( "▼", fixture.Host.Screen.StandardWindow.GetCell( 1, 7 ).Content );
+		Assert.Equal( "◄", fixture.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+		Assert.Equal( "►", fixture.Host.Screen.StandardWindow.GetCell( 2, 6 ).Content );
+		Assert.True( fixture.Host.Screen.StandardWindow.GetCell( 2, 7 ).IsBlank );
+	}
+
+	[Fact]
+	public void OneBarCanCauseOverflowOnTheOtherAxisWithoutOscillation() {
+		WidgetEditorOptions options = new() { ShowVerticalScrollBar = true, ShowHorizontalScrollBar = true };
+		using Fixture verticalFirst = new( "12345\n12345\n12345\n12345", options );
+		verticalFirst.Editor.Arrange( new CursesRectangle( 0, 0, 3, 5 ) ); verticalFirst.Host.Render(); verticalFirst.Host.Render();
+		Assert.Equal( "▲", verticalFirst.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "◄", verticalFirst.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+
+		using Fixture horizontalFirst = new( "123456\n12345\n12345", options );
+		horizontalFirst.Editor.Arrange( new CursesRectangle( 0, 0, 3, 5 ) ); horizontalFirst.Host.Render(); horizontalFirst.Host.Render();
+		Assert.Equal( "▲", horizontalFirst.Host.Screen.StandardWindow.GetCell( 0, 4 ).Content );
+		Assert.Equal( "◄", horizontalFirst.Host.Screen.StandardWindow.GetCell( 2, 0 ).Content );
+	}
+
+	[Fact]
 	public void NewLinePolicyCanChangeForFutureEnterWithoutRewritingExistingText() {
 		using Fixture fixture = new( "one\ntwo", new WidgetEditorOptions { NewLine = "\n" } );
 		fixture.View.SetSelection( fixture.Document.Length, fixture.Document.Length );

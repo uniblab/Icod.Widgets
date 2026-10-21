@@ -229,6 +229,63 @@ public sealed class WidgetEditorPointerTests {
 		using Fixture detached = new(); StartDrag( detached ); Assert.True( detached.Host.Detach( detached.Editor ) ); AssertNoAutoscroll( detached );
 	}
 
+	[Fact]
+	public void HorizontalScrollbarUsesSharedClickShiftDragWheelAndRepeatBehavior() {
+		using HorizontalFixture fixture = new(); fixture.Host.Render();
+
+		fixture.Send( CursesMouseAction.Press, 9, 3 );
+		Assert.Equal( 1, fixture.View.HorizontalOffset );
+		fixture.Send( CursesMouseAction.Release, 9, 3 );
+		fixture.Host.Render(); fixture.Send( CursesMouseAction.WheelRight, 5, 0 );
+		Assert.Equal( 2, fixture.View.HorizontalOffset );
+
+		fixture.View.SetScroll( 0, 0 ); fixture.Host.Render();
+		fixture.Send( CursesMouseAction.Press, 8, 3, CursesKeyModifiers.Shift );
+		Assert.Equal( 1, fixture.View.HorizontalOffset );
+		fixture.Send( CursesMouseAction.Release, 8, 3, CursesKeyModifiers.Shift );
+
+		fixture.View.SetScroll( 0, 0 ); fixture.Host.Render();
+		fixture.Send( CursesMouseAction.Press, 1, 3 ); fixture.Send( CursesMouseAction.Move, 8, 3 ); fixture.Send( CursesMouseAction.Release, 8, 3 );
+		Assert.Equal( 1, fixture.View.HorizontalOffset );
+
+		fixture.View.SetScroll( 10, 0 ); fixture.Host.Render();
+		fixture.SendAt( CursesMouseAction.Press, 0, 3, TimeSpan.FromMilliseconds( 100 ) );
+		Assert.Equal( 9, fixture.View.HorizontalOffset );
+		fixture.Host.Update( TimeSpan.FromMilliseconds( 500 ) );
+		Assert.Equal( 8, fixture.View.HorizontalOffset );
+		Assert.Same( fixture.Editor, fixture.Host.FocusedWidget );
+	}
+
+	[Fact]
+	public void EditorScrollbarContextAndCornerStayOwnedByEditor() {
+		using HorizontalFixture fixture = new( bothAxes: true ); fixture.Host.Render(); long caret = fixture.View.Caret;
+
+		fixture.Send( CursesMouseAction.Press, 9, 3 );
+		fixture.Send( CursesMouseAction.Release, 9, 3 );
+		Assert.Equal( caret, fixture.View.Caret );
+		Assert.Equal( 0, fixture.View.HorizontalOffset );
+
+		fixture.Send( CursesMouseAction.Press, 7, 3, button: CursesMouseButton.Secondary );
+		fixture.Send( CursesMouseAction.Release, 7, 3, button: CursesMouseButton.Secondary );
+		Assert.True( fixture.Editor.HorizontalContextMenu.IsOpen );
+		Assert.Same( fixture.Editor.HorizontalContextMenu, fixture.Host.FocusedWidget );
+		fixture.Host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 10 ) );
+		Assert.True( fixture.View.HorizontalOffset > 0 );
+		Assert.Same( fixture.Editor, fixture.Host.FocusedWidget );
+	}
+
+	[Fact]
+	public void HorizontalScrollbarInteractionCancelsWithLifecycleChanges() {
+		using HorizontalFixture fixture = new(); fixture.Host.Render();
+		fixture.Send( CursesMouseAction.Press, 1, 3 );
+		fixture.Host.Process( WidgetInput.FocusChanged( CursesFocusState.Unfocused ), TimeSpan.FromMilliseconds( 1 ) );
+		long before = fixture.View.HorizontalOffset;
+
+		fixture.Send( CursesMouseAction.Move, 8, 3 ); fixture.Host.Update( TimeSpan.FromSeconds( 1 ) );
+
+		Assert.Equal( before, fixture.View.HorizontalOffset );
+	}
+
 	private static void StartDrag( Fixture fixture ) { fixture.Send( CursesMouseAction.Press, 0, 1 ); fixture.Send( CursesMouseAction.Move, 0, 5 ); }
 	private static void AssertNoAutoscroll( Fixture fixture ) { long before = fixture.View.VerticalOffset; fixture.Host.Update( TimeSpan.FromSeconds( 1 ) ); Assert.Equal( before, fixture.View.VerticalOffset ); }
 	private static void StartScrollbarDrag( Fixture fixture ) { fixture.Editor.Arrange( new CursesRectangle( 0, 0, 6, 20 ) ); fixture.Host.Render(); fixture.Send( CursesMouseAction.Press, 19, 1 ); }
@@ -249,6 +306,33 @@ public sealed class WidgetEditorPointerTests {
 			CursesMouseButton button = action is CursesMouseAction.WheelUp or CursesMouseAction.WheelDown or CursesMouseAction.WheelLeft or CursesMouseAction.WheelRight
 				? CursesMouseButton.None : CursesMouseButton.Primary;
 				return this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, button, column, row, modifiers ) ), TimeSpan.FromMilliseconds( this.tick++ ) );
+		}
+		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
+	}
+
+	private sealed class HorizontalFixture : IDisposable {
+		private int tick;
+		internal HorizontalFixture( bool bothAxes = false ) {
+			string line = new( 'x', 80 ); string text = bothAxes ? string.Join( '\n', Enumerable.Repeat( line, 8 ) ) : line;
+			this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document );
+			this.Editor = new WidgetTextEditor( "horizontal-editor", this.View, new WidgetEditorOptions {
+				ShowHorizontalScrollBar = true, ShowVerticalScrollBar = bothAxes
+			} );
+			this.Host = new WidgetHost( new CursesScreen( 20, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor );
+			this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 10 ) ); Assert.True( this.Host.Focus( this.Editor ) );
+		}
+		internal WidgetTextDocument Document { get; }
+		internal WidgetTextViewState View { get; }
+		internal WidgetTextEditor Editor { get; }
+		internal WidgetHost Host { get; }
+		internal WidgetDispatchResult Send( CursesMouseAction action, int column, int row,
+			CursesKeyModifiers modifiers = CursesKeyModifiers.None, CursesMouseButton? button = null ) =>
+			this.SendAt( action, column, row, TimeSpan.FromMilliseconds( this.tick++ ), modifiers, button );
+		internal WidgetDispatchResult SendAt( CursesMouseAction action, int column, int row, TimeSpan timestamp,
+			CursesKeyModifiers modifiers = CursesKeyModifiers.None, CursesMouseButton? button = null ) {
+			CursesMouseButton actual = button ?? ( action is CursesMouseAction.WheelUp or CursesMouseAction.WheelDown
+				or CursesMouseAction.WheelLeft or CursesMouseAction.WheelRight ? CursesMouseButton.None : CursesMouseButton.Primary );
+			return this.Host.Process( WidgetInput.PointerInput( new CursesMouseEvent( action, actual, column, row, modifiers ) ), timestamp );
 		}
 		public void Dispose() { this.Host.Dispose(); this.View.Dispose(); }
 	}

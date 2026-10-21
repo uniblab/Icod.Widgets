@@ -154,17 +154,7 @@ public sealed class WidgetScrollBar : Widget {
 	}
 
 	private bool ApplyCommand( WidgetScrollCommand command ) {
-		long amount = Math.Max( 1, command.Value );
-		long target = command.Kind switch {
-			WidgetScrollCommandKind.UnitDecrement => SaturatingAdd( this.Offset, -amount ),
-			WidgetScrollCommandKind.UnitIncrement => SaturatingAdd( this.Offset, amount ),
-			WidgetScrollCommandKind.PageDecrement => SaturatingAdd( this.Offset, -SaturatingMultiply( this.Page, amount ) ),
-			WidgetScrollCommandKind.PageIncrement => SaturatingAdd( this.Offset, SaturatingMultiply( this.Page, amount ) ),
-			WidgetScrollCommandKind.Start => 0,
-			WidgetScrollCommandKind.End => this.MaximumOffset,
-			WidgetScrollCommandKind.Absolute or WidgetScrollCommandKind.ThumbTrack => command.Value,
-			_ => throw new ArgumentOutOfRangeException( nameof( command ) )
-		};
+		long target = WidgetScrollBarInteraction.TargetOffset( command, this.Offset, this.MaximumOffset, this.Page );
 		return this.SetUserOffset( target );
 	}
 
@@ -211,15 +201,6 @@ public sealed class WidgetScrollBar : Widget {
 		this.EnsureActionCapacity(); this.Offset = target; this.EmitAction( new WidgetScrollChangedAction( this.Id, target ) ); return true;
 	}
 
-	private static long SaturatingAdd( long left, long right ) {
-		if ( 0 < right && left > long.MaxValue - right ) return long.MaxValue;
-		if ( long.MinValue == right || 0 > right && left < -right ) return 0;
-		return left + right;
-	}
-
-	private static long SaturatingMultiply( long left, long right ) =>
-		0 == left || 0 == right ? 0 : left > long.MaxValue / right ? long.MaxValue : left * right;
-
 	private CursesStyle ScrollStyle( WidgetTheme theme, WidgetScrollBarPointerTarget target, WidgetStyleRole role ) {
 		if ( !this.IsEffectivelyEnabled ) return this.Style( theme, WidgetStyleRole.Disabled );
 		if ( WidgetScrollBarPointerTarget.None != target && target == this.interaction.PressedTarget )
@@ -246,7 +227,7 @@ public sealed class WidgetScrollBar : Widget {
 		yield return this.contextMenu;
 	}
 
-	private static WidgetMenuItem[] ContextItems( WidgetScrollOrientation orientation ) => [
+	internal static WidgetMenuItem[] ContextItems( WidgetScrollOrientation orientation ) => [
 		WidgetMenuItem.Command( "scroll-here", "Scroll Here", "scroll.here" ),
 		WidgetMenuItem.Separator( "separator-1" ),
 		WidgetMenuItem.Command( "start", WidgetScrollOrientation.Vertical == orientation ? "Top" : "Left Edge", "scroll.start" ),

@@ -49,6 +49,22 @@ internal sealed class WidgetScrollBarInteraction {
 
 	internal WidgetScrollBarPointerTarget HoverTarget { get; private set; }
 	internal WidgetScrollBarPointerTarget PressedTarget { get; private set; }
+	internal bool IsActive => this.dragging || this.repeatCommand.HasValue || WidgetScrollBarPointerTarget.None != this.PressedTarget;
+
+	internal static long TargetOffset( WidgetScrollCommand command, long offset, long maximumOffset, long page ) {
+		long amount = Math.Max( 1, command.Value );
+		long target = command.Kind switch {
+			WidgetScrollCommandKind.UnitDecrement => SaturatingAdd( offset, -amount ),
+			WidgetScrollCommandKind.UnitIncrement => SaturatingAdd( offset, amount ),
+			WidgetScrollCommandKind.PageDecrement => SaturatingAdd( offset, -SaturatingMultiply( Math.Max( 1, page ), amount ) ),
+			WidgetScrollCommandKind.PageIncrement => SaturatingAdd( offset, SaturatingMultiply( Math.Max( 1, page ), amount ) ),
+			WidgetScrollCommandKind.Start => 0,
+			WidgetScrollCommandKind.End => maximumOffset,
+			WidgetScrollCommandKind.Absolute or WidgetScrollCommandKind.ThumbTrack => command.Value,
+			_ => throw new ArgumentOutOfRangeException( nameof( command ) )
+		};
+		return Math.Clamp( target, 0, maximumOffset );
+	}
 
 	internal WidgetScrollInteractionResult Press(
 		WidgetScrollBarGeometry geometry,
@@ -126,4 +142,13 @@ internal sealed class WidgetScrollBarInteraction {
 		this.dragOffset = offset;
 		return new WidgetScrollInteractionResult( true );
 	}
+
+	private static long SaturatingAdd( long left, long right ) {
+		if ( 0 < right && left > long.MaxValue - right ) return long.MaxValue;
+		if ( long.MinValue == right || 0 > right && left < -right ) return 0;
+		return left + right;
+	}
+
+	private static long SaturatingMultiply( long left, long right ) =>
+		0 == left || 0 == right ? 0 : left > long.MaxValue / right ? long.MaxValue : left * right;
 }

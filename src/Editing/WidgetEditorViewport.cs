@@ -23,11 +23,21 @@ namespace Icod.Widgets;
 
 using Icod.DCurses;
 
-internal readonly record struct WidgetEditorViewport( CursesRectangle Gutter, CursesRectangle Text, CursesRectangle VerticalScrollBar ) {
+internal readonly record struct WidgetEditorViewport(
+	CursesRectangle Gutter,
+	CursesRectangle Text,
+	CursesRectangle VerticalScrollBar,
+	CursesRectangle HorizontalScrollBar,
+	CursesRectangle ScrollCorner ) {
 	internal int GutterColumns => this.Gutter.Columns;
 
-	internal static WidgetEditorViewport Create( CursesRectangle area, long lineCount, bool showLineNumbers, bool showVerticalScrollBar ) {
-		if ( area.IsEmpty ) return new WidgetEditorViewport( default, area, default );
+	internal static WidgetEditorViewport Create(
+		CursesRectangle area,
+		long lineCount,
+		bool showLineNumbers,
+		bool showVerticalScrollBar,
+		bool showHorizontalScrollBar = false ) {
+		if ( area.IsEmpty ) return new WidgetEditorViewport( default, area, default, default, default );
 		CursesRectangle gutter = default; CursesRectangle text = area;
 		if ( showLineNumbers ) {
 			int digits = 1;
@@ -38,9 +48,18 @@ internal readonly record struct WidgetEditorViewport( CursesRectangle Gutter, Cu
 				text = new CursesRectangle( area.Row, area.Column + gutterColumns, area.Rows, area.Columns - gutterColumns );
 			}
 		}
-		if ( !showVerticalScrollBar || 2 > area.Rows || 2 > text.Columns ) return new WidgetEditorViewport( gutter, text, default );
-		CursesRectangle scrollBar = new( text.Row, text.RightExclusive - 1, text.Rows, 1 );
-		text = new CursesRectangle( text.Row, text.Column, text.Rows, text.Columns - 1 );
-		return new WidgetEditorViewport( gutter, text, scrollBar );
+		bool horizontal = showHorizontalScrollBar && 2 <= text.Rows && 2 <= text.Columns;
+		int contentRows = text.Rows - ( horizontal ? 1 : 0 );
+		bool vertical = showVerticalScrollBar && 2 <= contentRows && 2 <= text.Columns;
+		int contentColumns = text.Columns - ( vertical ? 1 : 0 );
+		if ( !gutter.IsEmpty ) gutter = new CursesRectangle( gutter.Row, gutter.Column, contentRows, gutter.Columns );
+		CursesRectangle verticalScrollBar = vertical
+			? new CursesRectangle( text.Row, text.Column + contentColumns, contentRows, 1 ) : default;
+		CursesRectangle horizontalScrollBar = horizontal
+			? new CursesRectangle( text.Row + contentRows, text.Column, 1, contentColumns ) : default;
+		CursesRectangle corner = vertical && horizontal
+			? new CursesRectangle( text.Row + contentRows, text.Column + contentColumns, 1, 1 ) : default;
+		text = new CursesRectangle( text.Row, text.Column, contentRows, contentColumns );
+		return new WidgetEditorViewport( gutter, text, verticalScrollBar, horizontalScrollBar, corner );
 	}
 }
