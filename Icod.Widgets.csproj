@@ -29,15 +29,15 @@
 		<NoWarn>$(NoWarn);1591</NoWarn>
 		<AssemblyName>Icod.Widgets</AssemblyName>
 		<RootNamespace>Icod.Widgets</RootNamespace>
-		<Version>1.9.0</Version>
-		<PackageVersion>1.9.0</PackageVersion>
+		<Version>1.10.0</Version>
+		<PackageVersion>1.10.0</PackageVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageId>Icod.Widgets</PackageId>
 		<Title>Icod.Widgets</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Add an opt-in, auto-hidden vertical scrollbar to multiline editors. Scroll in displayed rows across wrapped text with Ctrl+Up/Down, the mouse wheel, arrow buttons, track paging, and thumb dragging; clamp an off-screen caret to the approaching viewport edge. Render standard ▲/▼/│/┃ chrome through existing theme roles and compose it with the decorative line-number gutter. Preserve AssemblyVersion 1.0.0.0, Icod.DCurses 2.5.2, and the .NET 8/9/10 targets.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add Win32-inspired, themeable horizontal and vertical scrollbar behavior to standalone controls and multiline editors. Use arrow buttons, track paging, Shift+click absolute positioning, thumb dragging, wheel/cross-axis keys, auto-repeat, and standard context menus through one semantic route. Add opt-in no-wrap editor horizontal scrolling, two-axis corner composition, bounded Unicode-aware extent discovery, and anchored WidgetPopupMenu.OpenAt. Preserve AssemblyVersion 1.0.0.0, Icod.DCurses 2.5.2, and the .NET 8/9/10 targets.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

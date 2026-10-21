@@ -2,6 +2,32 @@
 
 All notable changes to Icod.Widgets are recorded here.
 
+## 1.10.0 — Win32-inspired scrollbars
+
+- Unified standalone and editor scrollbar geometry for horizontal and vertical
+  axes, including inert zero/one-cell layouts, two-cell arrow-only layouts, and
+  overflow-safe thumb/absolute-position mapping across the full `long` range.
+- Added arrow stepping, track paging, Shift+click absolute positioning, thumb
+  dragging, wheel and cross-axis keyboard input, and bounded press-and-hold
+  repeat through one semantic command route.
+- Added standard axis-specific scrollbar context menus with boundary-aware
+  enablement, opened by right-click or Shift+F10. Added public anchored popup
+  placement through `WidgetPopupMenu.OpenAt`.
+- Added opt-in `WidgetEditorOptions.ShowHorizontalScrollBar` for no-wrap editors,
+  stable two-axis auto-hide layout, standard `◄`/`►` horizontal chrome, and an
+  inert themed corner when both bars are visible.
+- Kept horizontal extent discovery bounded and Unicode/display-column aware;
+  visible overflow appears immediately, incomplete scans retain scrolled lower
+  bounds, and exact shrink discovery clamps stale offsets transactionally.
+- Clamp an editor caret to a visible grapheme boundary only when horizontal
+  scrolling would strand it. Visible selections remain intact, and all pointer,
+  repeat, wheel, keyboard, and context-menu routes share the same policy.
+- Added `ScrollButton`, `ScrollHover`, `ScrollPressed`, and `ScrollCorner` theme
+  roles while preserving the existing track/thumb roles and presentation-only
+  theming contract.
+- Retained assembly version `1.0.0.0`, net8.0/net9.0/net10.0, and Icod.DCurses
+  2.5.2 as the sole direct runtime dependency.
+
 ## 1.9.0 — editor viewport scrollbar
 
 - Added opt-in `WidgetEditorOptions.ShowVerticalScrollBar` with auto-hide when

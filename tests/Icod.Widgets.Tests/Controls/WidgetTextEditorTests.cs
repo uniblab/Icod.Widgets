@@ -461,6 +461,22 @@ public sealed class WidgetTextEditorTests {
 	}
 
 	[Fact]
+	public void IntegratedBarsUseAsciiFallbackForNonSingleCellPreferredGlyphs() {
+		using WidgetTextViewState view = new( new WidgetTextDocument( [ "abcdefghijklmnop\nsecond\nthird\nfourth".AsMemory() ] ) );
+		CursesScreen screen = new( 8, 3, new WideScrollbarGlyphProvider() ); using WidgetHost host = new( screen, WidgetTheme.Default );
+		WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions {
+			ShowVerticalScrollBar = true, ShowHorizontalScrollBar = true
+		} ); host.Attach( editor ); editor.Arrange( screen.Bounds ); Assert.True( host.Focus( editor ) );
+
+		host.Render();
+
+		Assert.Equal( "^", screen.StandardWindow.GetCell( 0, 7 ).Content );
+		Assert.Equal( "v", screen.StandardWindow.GetCell( 1, 7 ).Content );
+		Assert.Equal( "<", screen.StandardWindow.GetCell( 2, 0 ).Content );
+		Assert.Equal( ">", screen.StandardWindow.GetCell( 2, 6 ).Content );
+	}
+
+	[Fact]
 	public void WrappingSuppressesHorizontalBarAndNormalizesOffset() {
 		using Fixture fixture = new( "abcdefghijklmnop", new WidgetEditorOptions {
 			ShowHorizontalScrollBar = true, WrapMode = CursesTextWrapMode.TextElement
@@ -525,6 +541,10 @@ public sealed class WidgetTextEditorTests {
 		Assert.Equal( "  ", fixture.Editor.Indentation );
 		fixture.Host.ExecuteEditCommand( WidgetEditCommand.Undo, fixture.NextTime );
 		Assert.Equal( "one", fixture.Text );
+	}
+
+	private sealed class WideScrollbarGlyphProvider : ICursesTextWidthProvider {
+		public int GetWidth( string textElement ) => textElement[ 0 ] > 0x7F ? 2 : 1;
 	}
 
 	private sealed class Fixture : IDisposable {

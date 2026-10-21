@@ -1,7 +1,7 @@
 # Icod.Widgets 1.10.0 Win32-Inspired Editor Scrollbar Design
 
 **Date:** 2026-10-21  
-**Status:** Approved design; implementation not started  
+**Status:** Implemented and locally qualified; cross-platform CI pending
 **Target:** Icod.Widgets 1.10.0, followed by an Icod.Dedit dependency and opt-in update
 
 ## Purpose

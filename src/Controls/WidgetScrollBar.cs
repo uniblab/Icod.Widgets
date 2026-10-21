@@ -80,17 +80,17 @@ public sealed class WidgetScrollBar : Widget {
 		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( track ) );
 		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( length, this.extent, this.viewport, this.Offset );
 		if ( 2 > length ) return;
-		bool vertical = WidgetScrollOrientation.Vertical == this.Orientation;
-		this.WriteCell( screen, 0, vertical ? "▲" : "◄",
+		WidgetScrollBarGlyphs glyphs = WidgetScrollBarGlyphs.Create( this.Orientation, screen.TextWidthProvider );
+		this.WriteCell( screen, 0, glyphs.Decrement,
 			this.ScrollStyle( theme, WidgetScrollBarPointerTarget.DecrementButton, WidgetStyleRole.ScrollButton ) );
 		for ( int coordinate = geometry.TrackStart; coordinate < geometry.TrackStart + geometry.TrackLength; coordinate++ ) {
 			bool insideThumb = coordinate >= geometry.ThumbStart && coordinate < geometry.ThumbStart + geometry.ThumbLength;
 			WidgetScrollBarPointerTarget target = geometry.HitTest( coordinate );
 			WidgetStyleRole role = insideThumb ? focused ? WidgetStyleRole.ScrollFocusedThumb : WidgetStyleRole.ScrollThumb : WidgetStyleRole.ScrollTrack;
-			this.WriteCell( screen, coordinate, vertical ? insideThumb ? "┃" : "│" : insideThumb ? "━" : "─",
+			this.WriteCell( screen, coordinate, insideThumb ? glyphs.Thumb : glyphs.Track,
 				this.ScrollStyle( theme, target, role ) );
 		}
-		this.WriteCell( screen, length - 1, vertical ? "▼" : "►",
+		this.WriteCell( screen, length - 1, glyphs.Increment,
 			this.ScrollStyle( theme, WidgetScrollBarPointerTarget.IncrementButton, WidgetStyleRole.ScrollButton ) );
 	}
 

@@ -181,10 +181,26 @@ Multiline editors opt into a full-width current-line band with
 and remains visually dominant. Wrapped visual rows of the same logical line
 share the band. `ShowLineNumbers = true` adds a fixed, decorative left gutter
 styled by `EditorGutter` and `EditorGutterCurrentLine`.
-`ShowVerticalScrollBar = true` adds an auto-hidden right scrollbar using the
-existing `ScrollTrack`, `ScrollThumb`, and `ScrollFocusedThumb` theme roles.
-Ctrl+Up/Ctrl+Down scroll by one displayed row; wheel and pointer controls use
-the same wrapped-row viewport and clamp the caret only if it would leave view.
+Editors can opt into auto-hidden bars on either axis. Horizontal scrolling is
+available only in no-wrap mode; vertical scrolling continues to count displayed
+rows when wrapping is enabled. The corner is inert when both bars are visible.
+
+```csharp
+WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
+    ShowVerticalScrollBar = true,
+    ShowHorizontalScrollBar = true,
+    WrapMode = CursesTextWrapMode.NoWrap
+});
+```
+
+Arrow buttons, track paging, Shift+click positioning, thumb dragging, wheel and
+keyboard input share one scroll-command route. Ctrl+Up/Ctrl+Down scroll the
+vertical editor viewport by displayed rows. Right-click a bar (or press
+Shift+F10 while it is active) for the standard scroll menu. Presentation uses
+the `ScrollTrack`, `ScrollThumb`, `ScrollFocusedThumb`, `ScrollButton`,
+`ScrollHover`, `ScrollPressed`, and `ScrollCorner` theme roles. See the
+[editor sample](samples/Icod.Widgets.Editor.Sample/README.md) for live and smoke
+qualification of the two-axis behavior.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;

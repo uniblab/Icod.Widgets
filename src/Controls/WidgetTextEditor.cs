@@ -462,15 +462,15 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			WidgetProjectedHit candidate = row.HitTestBoundary( candidateColumn, leftEdge );
 			try {
 				long visibleColumn = row.GetColumn( candidate.Offset, candidate.Affinity );
-				bool visible = leftEdge ? visibleColumn > this.View.HorizontalOffset && visibleColumn < SaturatingAdd( this.View.HorizontalOffset, columns )
-					: visibleColumn >= this.View.HorizontalOffset && visibleColumn < SaturatingAdd( this.View.HorizontalOffset, columns );
+				bool visible = visibleColumn >= this.View.HorizontalOffset &&
+					visibleColumn < SaturatingAdd( this.View.HorizontalOffset, columns );
 				if ( visible ) { hit = candidate; found = true; break; }
 			}
 			catch ( ArgumentOutOfRangeException ) { }
 		}
 		if ( leftEdge && !found ) {
-			long candidate = SaturatingAdd( hit.Offset, 1 ); long limit = Math.Min( this.View.Document.Length,
-				SaturatingAdd( hit.Offset, this.options.MaximumClusterScan ) );
+			WidgetTextLine line = this.View.Document.GetLine( lineIndex ); long lineEnd = SaturatingAdd( line.Start, line.ContentLength );
+			long candidate = SaturatingAdd( hit.Offset, 1 ); long limit = Math.Min( lineEnd, SaturatingAdd( hit.Offset, this.options.MaximumClusterScan ) );
 			while ( candidate <= limit && !this.View.Document.IsTextElementBoundary( candidate ) ) candidate++;
 			if ( candidate <= limit ) hit = new WidgetProjectedHit( candidate, CursesTextAffinity.Leading );
 		}
@@ -747,22 +747,34 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private void RefreshScrollRanges() {
 		CursesRectangle text = this.GetViewport().Text; int textColumns = text.Columns;
-		if ( this.Host is { } host ) this.VerticalScrollRange = this.projection.GetVerticalRange( this.View, this.View.ViewportAnchor,
-			host.Screen.TextWidthProvider, Math.Max( 1, textColumns ), text.Rows );
+		if ( this.Host is { } host ) this.SetScrollRange( WidgetScrollOrientation.Vertical,
+			this.projection.GetVerticalRange( this.View, this.View.ViewportAnchor,
+				host.Screen.TextWidthProvider, Math.Max( 1, textColumns ), text.Rows ) );
 		else {
 			long verticalExtent = Math.Max( this.View.Document.LineCount, SaturatingAdd( this.View.VerticalOffset, text.Rows ) );
-			this.VerticalScrollRange = new WidgetScrollRange( verticalExtent, text.Rows, this.View.VerticalOffset, CursesTextWrapMode.NoWrap == this.View.WrapMode );
+			this.SetScrollRange( WidgetScrollOrientation.Vertical,
+				new WidgetScrollRange( verticalExtent, text.Rows, this.View.VerticalOffset, CursesTextWrapMode.NoWrap == this.View.WrapMode ) );
 		}
 		if ( this.Host is { } owner ) {
-			this.HorizontalScrollRange = this.horizontalExtent.GetRange( this.View, owner.Screen.TextWidthProvider, textColumns );
+			this.SetScrollRange( WidgetScrollOrientation.Horizontal,
+				this.horizontalExtent.GetRange( this.View, owner.Screen.TextWidthProvider, textColumns ) );
 			if ( this.HorizontalScrollRange.Offset != this.View.HorizontalOffset ) {
 				this.View.SetViewport( this.HorizontalScrollRange.Offset, this.View.ViewportAnchor );
 				this.horizontalScrollInteraction.Cancel(); this.horizontalContextMenu?.Close();
 			}
 		} else {
 			long horizontalExtent = Math.Max( textColumns, SaturatingAdd( this.View.HorizontalOffset, textColumns ) );
-			this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, textColumns, this.View.HorizontalOffset, false );
+			this.SetScrollRange( WidgetScrollOrientation.Horizontal,
+				new WidgetScrollRange( horizontalExtent, textColumns, this.View.HorizontalOffset, false ) );
 		}
+	}
+
+	private void SetScrollRange( WidgetScrollOrientation orientation, WidgetScrollRange value ) {
+		WidgetScrollRange previous = this.ScrollRange( orientation ); bool geometryChanged = previous.Extent != value.Extent || previous.Viewport != value.Viewport;
+		if ( WidgetScrollOrientation.Vertical == orientation ) this.VerticalScrollRange = value; else this.HorizontalScrollRange = value;
+		if ( !geometryChanged ) return;
+		this.ScrollInteraction( orientation ).Cancel();
+		if ( WidgetScrollOrientation.Vertical == orientation ) this.verticalContextMenu?.Close(); else this.horizontalContextMenu?.Close();
 	}
 
 	private WidgetEditorViewport GetViewport() {
@@ -772,14 +784,15 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	}
 
 	private void UpdateScrollRanges( WidgetTextProjectionResult result, int rows, int columns, ICursesTextWidthProvider widthProvider ) {
-		this.VerticalScrollRange = this.projection.GetVerticalRange( this.View, this.View.ViewportAnchor, widthProvider, Math.Max( 1, columns ), rows );
+		this.SetScrollRange( WidgetScrollOrientation.Vertical,
+			this.projection.GetVerticalRange( this.View, this.View.ViewportAnchor, widthProvider, Math.Max( 1, columns ), rows ) );
 		long visibleRight = this.View.HorizontalOffset; bool hasOverflow = false;
 		foreach ( WidgetProjectedRow row in result.Rows ) {
 			visibleRight = Math.Max( visibleRight, row.GetColumn( row.SourceEnd ) );
 			hasOverflow |= row.HasContinuation || row.Layout.IsTruncated;
 		}
 		this.horizontalExtent.ObserveVisible( this.View, widthProvider, columns, this.View.HorizontalOffset, visibleRight, hasOverflow );
-		this.HorizontalScrollRange = this.horizontalExtent.GetRange( this.View, widthProvider, columns );
+		this.SetScrollRange( WidgetScrollOrientation.Horizontal, this.horizontalExtent.GetRange( this.View, widthProvider, columns ) );
 	}
 
 	private WidgetEditorViewport ResolveViewport( CursesRectangle area, ICursesTextWidthProvider widthProvider ) {
@@ -798,6 +811,8 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			Math.Max( 1, result.Text.Columns ) );
 		long horizontalOffset = CursesTextWrapMode.NoWrap == this.View.WrapMode ? this.View.HorizontalOffset : 0;
 		if ( normalized != this.View.ViewportAnchor || horizontalOffset != this.View.HorizontalOffset ) this.View.SetViewport( horizontalOffset, normalized );
+		if ( result.VerticalScrollBar.IsEmpty ) { this.verticalScrollInteraction.Cancel(); this.verticalContextMenu?.Close(); }
+		if ( result.HorizontalScrollBar.IsEmpty ) { this.horizontalScrollInteraction.Cancel(); this.horizontalContextMenu?.Close(); }
 		return result;
 	}
 
@@ -829,17 +844,17 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		CursesStyle track = this.EditorScrollStyle( theme, WidgetScrollBarPointerTarget.None, WidgetStyleRole.ScrollTrack, interaction );
 		screen.StandardWindow.FillRectangle( area.Row, area.Column, area.Rows, area.Columns, CursesCell.Blank( track ) );
 		if ( 2 > length ) return;
-		bool vertical = WidgetScrollOrientation.Vertical == orientation;
-		this.WriteScrollBarCell( screen, area, orientation, 0, vertical ? "▲" : "◄",
+		WidgetScrollBarGlyphs glyphs = WidgetScrollBarGlyphs.Create( orientation, screen.TextWidthProvider );
+		this.WriteScrollBarCell( screen, area, orientation, 0, glyphs.Decrement,
 			this.EditorScrollStyle( theme, WidgetScrollBarPointerTarget.DecrementButton, WidgetStyleRole.ScrollButton, interaction ) );
 		for ( int coordinate = geometry.TrackStart; coordinate < geometry.TrackStart + geometry.TrackLength; coordinate++ ) {
 			bool insideThumb = coordinate >= geometry.ThumbStart && coordinate < geometry.ThumbStart + geometry.ThumbLength;
 			WidgetScrollBarPointerTarget target = geometry.HitTest( coordinate );
 			WidgetStyleRole role = insideThumb ? focused ? WidgetStyleRole.ScrollFocusedThumb : WidgetStyleRole.ScrollThumb : WidgetStyleRole.ScrollTrack;
 			this.WriteScrollBarCell( screen, area, orientation, coordinate,
-				vertical ? insideThumb ? "┃" : "│" : insideThumb ? "━" : "─", this.EditorScrollStyle( theme, target, role, interaction ) );
+				insideThumb ? glyphs.Thumb : glyphs.Track, this.EditorScrollStyle( theme, target, role, interaction ) );
 		}
-		this.WriteScrollBarCell( screen, area, orientation, length - 1, vertical ? "▼" : "►",
+		this.WriteScrollBarCell( screen, area, orientation, length - 1, glyphs.Increment,
 			this.EditorScrollStyle( theme, WidgetScrollBarPointerTarget.IncrementButton, WidgetStyleRole.ScrollButton, interaction ) );
 	}
 

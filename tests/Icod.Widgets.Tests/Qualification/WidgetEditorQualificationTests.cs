@@ -129,6 +129,18 @@ public sealed class WidgetEditorQualificationTests {
 		Assert.Equal( 20, range.Extent );
 	}
 
+	[Fact]
+	public void HorizontalExtentUsesTabWideCombiningAndSurrogateDisplayColumns() {
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 16, MaximumWorkPerUpdate = 1, TabWidth = 4 };
+		WidgetTextDocument document = new( [ "\tab界e\u0301\U0001F600z".AsMemory() ] ); using WidgetTextViewState view = new( document ); view.TabWidth = 4;
+		WidgetHorizontalExtentCache cache = new( options );
+
+		while ( !cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 4 ).IsExtentExact )
+			cache.Advance( view, UnicodeCursesTextWidthProvider.Instance );
+
+		Assert.Equal( 12, cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 4 ).Extent );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text ) { this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View ); this.Host = new WidgetHost( new CursesScreen( 30, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 30 ) ); Assert.True( this.Host.Focus( this.Editor ) ); }

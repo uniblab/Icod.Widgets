@@ -287,13 +287,25 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
+	public void HorizontalDragCancelsWhenExtentDiscoveryChangesGeometry() {
+		using HorizontalFixture fixture = new(); fixture.Host.Render();
+		fixture.Send( CursesMouseAction.Press, 1, 3 );
+
+		fixture.Host.Update( TimeSpan.FromMilliseconds( 100 ) ); long before = fixture.View.HorizontalOffset;
+		fixture.SendAt( CursesMouseAction.Move, 8, 3, TimeSpan.FromMilliseconds( 101 ) );
+
+		Assert.True( fixture.Editor.HorizontalScrollRange.IsExtentExact );
+		Assert.Equal( before, fixture.View.HorizontalOffset );
+	}
+
+	[Fact]
 	public void HorizontalScrollClampsCaretToVisibleGraphemeAndEmitsOneAction() {
 		using HorizontalFixture fixture = new(); fixture.View.SetSelection( 0, 0 ); fixture.Host.Render();
 
 		WidgetDispatchResult result = fixture.Send( CursesMouseAction.WheelRight, 5, 0 );
 
 		Assert.False( fixture.View.HasSelection );
-		Assert.Equal( 2, fixture.View.Caret );
+		Assert.Equal( 1, fixture.View.Caret );
 		Assert.IsType<WidgetTextSelectionChangedAction>( Assert.Single( result.Actions ) );
 	}
 

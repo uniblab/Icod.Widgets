@@ -7,7 +7,7 @@ dependencies is needed. Commands use .NET 10; net8.0 and net9.0 are also support
 | Sample | Live command | Workflow |
 |---|---|---|
 | Gallery | `dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0` | Seven pages: forms, lists/drop-downs, menus, dialogs/wizard, folders/files, game UI, workspace colors |
-| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; a themed gutter, current-line band, and auto-hidden vertical scrollbar demonstrate wrapped-row navigation; F7/F8 change future Enter/indentation edits; Copy/Cut and Paste demonstrate linewise behavior |
+| Editor | `dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0` | Ctrl+O opens an in-memory document; a themed gutter, current-line band, and auto-hidden two-axis scrollbars demonstrate wrapped/no-wrap navigation; F7/F8 change future Enter/indentation edits, F9 toggles wrap, and Copy/Cut/Paste demonstrate linewise behavior |
 | Roguelike UI | `dotnet run --project samples/Icod.Widgets.Roguelike.Sample -c Release -f net10.0` | Inventory, actions, messages, status, modal help |
 | Document workspace | `dotnet run --project samples/Icod.Widgets.Workspace.Sample -c Release -f net10.0` | Three in-memory documents, stable-key tabs, close decisions, Find, Save As observation, actionable status |
 
@@ -62,10 +62,15 @@ host, run the gallery and editor commands above and check:
    labels only the first visual row; gutter-origin clicks preserve selection,
    and a very narrow resize suppresses the gutter before it consumes all text
    space. Open a document longer than the viewport and verify the auto-hidden
-   scrollbar appears at the extreme right with `▲`, `▼`, `│`, and `┃` chrome.
+   vertical scrollbar appears at the extreme right with `▲`, `▼`, `│`, and `┃`
+   chrome. Press F9 to disable wrapping and verify an overflowing line adds a
+   bottom bar with `◄`, `►`, `─`, and `━`; when both bars are visible their
+   bottom-right corner is inert.
    Ctrl+Up/Ctrl+Down scroll one displayed row, including within a wrapped line;
    the wheel scrolls three. Click both arrow buttons, page through the track,
-   and drag the thumb to both ends. When the caret would leave the viewport it
+   and drag the thumb to both ends. Right-click either bar for its standard
+   scroll menu; Shift+click the track to position directly. When the caret would
+   leave the viewport it
    is pulled to the approaching edge; when it remains visible it does not move.
    Resize until all content fits and verify the bar auto-hides without changing
    the line-number gutter. Type text and press
@@ -78,7 +83,8 @@ mouse availability.
 
 In the editor, F6 or Shift+F6 escapes the text editor and toggles focus to the
 Open button. F7 cycles LF/CRLF/CR for future Enter edits; F8 cycles tab,
-two-space, and four-space indentation. Existing text stays unchanged.
+two-space, and four-space indentation; F9 toggles wrapped/no-wrap presentation.
+Existing text stays unchanged.
 Ctrl+Z/Ctrl+Y undo and redo; Ctrl+X/C/V/A cut, copy, paste, and
 select all. With no selection, Copy/Cut uses the current line; a local linewise
 Paste inserts at the target line's start. Try Ctrl+Home, Ctrl+C, Down, Ctrl+V

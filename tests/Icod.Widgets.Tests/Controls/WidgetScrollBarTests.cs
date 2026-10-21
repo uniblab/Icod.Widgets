@@ -77,6 +77,26 @@ public sealed class WidgetScrollBarTests {
 		Assert.Equal( "►", host.Screen.StandardWindow.GetCell( 0, 9 ).Content );
 	}
 
+	[Theory]
+	[InlineData( WidgetScrollOrientation.Vertical, "^", "#", "|", "v" )]
+	[InlineData( WidgetScrollOrientation.Horizontal, "<", "=", "-", ">" )]
+	public void NonSingleCellPreferredGlyphsUseAsciiFallback( WidgetScrollOrientation orientation,
+		string decrement, string thumb, string track, string increment ) {
+		WidgetScrollBar bar = new( "scroll", orientation ); bar.SetRange( 100, 20, 0 );
+		CursesScreen screen = new( 10, 10, new WideScrollbarGlyphProvider() ); using WidgetHost host = new( screen, WidgetTheme.Default );
+		host.Attach( bar ); bar.Arrange( WidgetScrollOrientation.Horizontal == orientation
+			? new CursesRectangle( 0, 0, 1, 10 ) : new CursesRectangle( 0, 0, 10, 1 ) ); Assert.True( host.Focus( bar ) );
+
+		host.Render();
+
+		CursesCell Cell( int coordinate ) => WidgetScrollOrientation.Horizontal == orientation
+			? screen.StandardWindow.GetCell( 0, coordinate ) : screen.StandardWindow.GetCell( coordinate, 0 );
+		Assert.Equal( decrement, Cell( 0 ).Content );
+		Assert.Equal( thumb, Cell( 1 ).Content );
+		Assert.Equal( track, Cell( 2 ).Content );
+		Assert.Equal( increment, Cell( 9 ).Content );
+	}
+
 	[Fact]
 	public void BothOrientationsMapLongMaxWithoutOverflow() {
 		foreach ( WidgetScrollOrientation orientation in Enum.GetValues<WidgetScrollOrientation>() ) {
@@ -412,6 +432,10 @@ public sealed class WidgetScrollBarTests {
 	private static WidgetHost Host( Widget widget, CursesRectangle bounds ) {
 		WidgetHost host = new( new CursesScreen( Math.Max( 10, bounds.Columns ), Math.Max( 10, bounds.Rows ) ), WidgetTheme.Default );
 		host.Attach( widget ); widget.Arrange( bounds ); Assert.True( host.Focus( widget ) ); return host;
+	}
+
+	private sealed class WideScrollbarGlyphProvider : ICursesTextWidthProvider {
+		public int GetWidth( string textElement ) => textElement[ 0 ] > 0x7F ? 2 : 1;
 	}
 
 	private static WidgetInput Pointer( CursesMouseAction action, int column, int row, CursesKeyModifiers modifiers = CursesKeyModifiers.None ) =>
