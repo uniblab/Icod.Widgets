@@ -21,8 +21,9 @@ focus. F8 toggles theme hover styling without changing keyboard selection. Help 
 centered modal and theme-defined dim backdrop; click OK to close it and restore
 the editor. Try the same widget and overlay under each mode. The gallery smoke also cycles
 all three while checking that keyboard focus is retained. On its workspace
-color page, F6 and Shift+F6 cycle among tabs, editor, and actionable status;
-the smoke exercises this route too.
+color page, F6 and Shift+F6 cycle among tabs, editor, the standalone horizontal
+scrollbar, and actionable status. Focus the bar to try Left/Right, Page Up/Down,
+Home/End, and Shift+F10; the smoke exercises this route too.
 
 On the Dialogs page, the generic decision demonstrates `[Yes]`,
 `[Don't Save]`, and `[Cancel]` captions, Y/N/C mnemonics, Cancel as the default
@@ -69,8 +70,11 @@ host, run the gallery and editor commands above and check:
    Ctrl+Up/Ctrl+Down scroll one displayed row, including within a wrapped line;
    the wheel scrolls three. Click both arrow buttons, page through the track,
    and drag the thumb to both ends. Right-click either bar for its standard
-   scroll menu. When the caret would leave the viewport it is pulled to the
-   approaching edge; when it remains visible it does not move.
+   scroll menu: Top/Bottom, Page Up/Down, and Scroll Up/Down vertically;
+   Left/Right Edge, Page Left/Right, and Scroll Left/Right horizontally. Track
+   presses always page, including when Shift or Ctrl is reported. When the
+   caret would leave the viewport it is pulled to the approaching edge; when it
+   remains visible it does not move.
    Resize until all content fits and verify the bar auto-hides without changing
    the line-number gutter. Type text and press
    `Ctrl+Z`; the edit is undone rather than suspending or exiting the application.

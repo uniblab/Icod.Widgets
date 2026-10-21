@@ -194,9 +194,11 @@ WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
 ```
 
 Arrow buttons, track paging, thumb dragging, wheel and keyboard input share one
-scroll-command route. Ctrl+Up/Ctrl+Down scroll the vertical editor viewport by
-displayed rows. Right-click a bar (or press
-Shift+F10 while it is active) for the standard scroll menu. Presentation uses
+scroll-command route. Track presses always page; Shift and Ctrl do not change
+that behavior. Ctrl+Up/Ctrl+Down scroll the vertical editor viewport by
+displayed rows. Right-click an editor-owned bar for its standard scroll menu; a
+focused standalone `WidgetScrollBar` also opens that menu with Shift+F10.
+Presentation uses
 the `ScrollTrack`, `ScrollThumb`, `ScrollFocusedThumb`, `ScrollButton`,
 `ScrollHover`, `ScrollPressed`, and `ScrollCorner` theme roles. See the
 [editor sample](samples/Icod.Widgets.Editor.Sample/README.md) for live and smoke
@@ -287,7 +289,9 @@ Recommended entry points:
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
 - [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) — versions and release history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
-- [Current public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.9.md) and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
+- [1.9 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.9.md),
+  [current 1.10 fingerprint](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Fingerprint-1.10.json),
+  and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
 Release audits, versioned plans, API snapshots, and qualification worksheets

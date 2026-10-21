@@ -112,9 +112,13 @@ internal static class Program {
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7 ) ) );
 			long paged = app.HorizontalScrollRange.Offset; if ( 0 >= paged ) return 32;
 			app.ResetEditorForSmoke(); app.Draw();
-			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 8, 7 ) ) );
-			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7 ) ) );
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Shift ) ) );
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Shift ) ) );
 			if ( app.HorizontalScrollRange.Offset != paged ) return 33;
+			app.ResetEditorForSmoke(); app.Draw();
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Control ) ) );
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Control ) ) );
+			if ( app.HorizontalScrollRange.Offset != paged ) return 35;
 			(long horizontal, long vertical) = ( app.HorizontalScrollRange.Offset, app.VerticalScrollRange.Offset );
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 11, 7 ) ) );
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 11, 7 ) ) );
@@ -124,7 +128,7 @@ internal static class Program {
 			if ( app.Text != "hello\r\nwidgets\n" || !app.Running ) return 7;
 			app.Input( WidgetInput.Key( WidgetKey.Character, WidgetInputModifiers.Control, new( 'q' ) ) );
 			if ( app.Running ) return 8;
-			Console.WriteLine( "PASS exact file load, gutter and auto-hidden two-axis scrollbar geometry/input, wrapped-row Ctrl and wheel scrolling, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
+			Console.WriteLine( "PASS exact file load, gutter and auto-hidden two-axis scrollbar geometry/input including modifier paging, wrapped-row Ctrl and wheel scrolling, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document" ); return 0;
 		} finally { Directory.Delete( directory, true ); }
 	}
 	private sealed class Editor : WidgetSampleApplication {

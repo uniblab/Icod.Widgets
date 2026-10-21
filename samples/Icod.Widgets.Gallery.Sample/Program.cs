@@ -47,6 +47,17 @@ internal static class Program {
 		app.Input( WidgetInput.FunctionKey( 6 ) );
 		if ( app.Host.FocusedWidget is not WidgetTextEditor ) return 4;
 		app.Input( WidgetInput.FunctionKey( 6 ) );
+		if ( app.Host.FocusedWidget is not WidgetScrollBar scrollbar ) return 4;
+		long initialOffset = scrollbar.Offset;
+		app.Input( WidgetInput.Key( WidgetKey.Right ) );
+		if ( scrollbar.Offset != initialOffset + 1 ) return 7;
+		app.Input( WidgetInput.Key( WidgetKey.End ) );
+		if ( scrollbar.Offset != 80 ) return 7;
+		app.Input( WidgetInput.FunctionKey( 10, WidgetInputModifiers.Shift ) );
+		if ( app.Host.FocusedWidget is not WidgetPopupMenu { IsOpen: true } ) return 7;
+		app.Input( WidgetInput.Key( WidgetKey.Escape ) );
+		if ( !ReferenceEquals( app.Host.FocusedWidget, scrollbar ) ) return 7;
+		app.Input( WidgetInput.FunctionKey( 6 ) );
 		if ( app.Host.FocusedWidget is not WidgetStatusBar ) return 4;
 		app.Input( WidgetInput.FunctionKey( 6 ) );
 		if ( app.Host.FocusedWidget is not WidgetTabStrip ) return 4;
@@ -55,7 +66,7 @@ internal static class Program {
 		app.SelectPage( 4 ); app.OpenFiles( true ); await app.PollAsync( true ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		app.SelectPage( 3 ); app.OpenWizard(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Draw(); app.Input( WidgetInput.Key( WidgetKey.Enter ) ); app.Input( WidgetInput.Key( WidgetKey.Escape ) );
 		if ( app.Host.ModalDepth != 0 ) return 2;
-		Console.WriteLine( "PASS seven gallery pages, theme cycle, menu navigation/hover/modal, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
+		Console.WriteLine( "PASS seven gallery pages, theme cycle, menu navigation/hover/modal, standalone scrollbar keyboard/context, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering" ); return 0;
 	}
 	private sealed class Gallery : WidgetSampleApplication {
 		private readonly List<Widget[]> pages = [];
@@ -136,7 +147,7 @@ internal static class Program {
 				if ( input.FunctionKeyNumber == 6 ) { bool fromMenu = ReferenceEquals( this.Host.FocusedWidget, this.Menu ); this.Menu.Close(); this.Host.Focus( fromMenu ? this.MenuEditor : this.Menu ); return true; }
 			}
 			if ( this.page == 6 && input.Kind == WidgetInputKind.Key && input.KeyCode == WidgetKey.Function && input.FunctionKeyNumber == 6 ) {
-				Widget[] targets = this.pages[ 6 ].Where( widget => widget.IsFocusable && widget is WidgetTabStrip or WidgetTextEditor or WidgetStatusBar ).ToArray();
+				Widget[] targets = this.pages[ 6 ].Where( widget => widget.IsFocusable && widget is WidgetTabStrip or WidgetTextEditor or WidgetScrollBar or WidgetStatusBar ).ToArray();
 				int current = Array.FindIndex( targets, widget => ReferenceEquals( widget, this.Host.FocusedWidget ) );
 				if ( targets.Length > 0 ) this.Host.Focus( targets[ current < 0 ? 0 : ( current + ( ( input.Modifiers & WidgetInputModifiers.Shift ) != 0 ? targets.Length - 1 : 1 ) ) % targets.Length ] );
 				return true;

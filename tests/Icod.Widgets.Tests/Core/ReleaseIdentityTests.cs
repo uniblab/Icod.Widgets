@@ -87,7 +87,8 @@ public sealed class ReleaseIdentityTests {
 		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.10.0.md" ) );
 
 		Assert.Contains( "## Verification", notes, StringComparison.Ordinal );
-		Assert.Contains( "511 net10.0 tests", notes, StringComparison.Ordinal );
+		Assert.Contains( "510 net10.0 tests", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "pending", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "Windows", notes, StringComparison.Ordinal );
 		Assert.Contains( "Linux", notes, StringComparison.Ordinal );
 		Assert.Contains( "macOS", notes, StringComparison.Ordinal );

@@ -38,7 +38,10 @@ After opening a file:
   Press F9 to toggle wrapping. In no-wrap mode, `◄` and `►` step horizontally,
   track clicks page, and the `━` thumb drags. The bottom-right corner is inert
   when both axes are visible. Right-click a bar for its standard axis-specific
-  scroll menu. If
+  scroll menu. The vertical menu provides Top, Bottom, Page Up/Down, and Scroll
+  Up/Down; the horizontal menu provides Left/Right Edge, Page Left/Right, and
+  Scroll Left/Right. There is no direct-position command: every track press
+  pages, including when Shift or Ctrl is reported. If
   scrolling would strand the caret off-screen, the caret is clamped to the
   approaching viewport edge at its preferred visual column; otherwise it and
   the selection remain untouched.
@@ -80,7 +83,9 @@ and intentionally provides no Save command.
 For live scrollbar qualification, open a file with enough lines and one long
 line. Verify the right bar composes with line numbers, then exercise
 Ctrl+Up/Ctrl+Down within a wrapped line, the wheel, arrow buttons, track paging,
-context menus, and thumb dragging. Press F9 and repeat on the bottom
+context menus, and thumb dragging. When the terminal reports them, repeat a
+track press with Shift and Ctrl and confirm it still pages normally. Press F9
+and repeat on the bottom
 bar. With both axes visible, click the corner and confirm nothing moves. Resize
 wide/tall enough for all content to fit and confirm auto-hide, then shrink to one
 row and confirm no partial scrollbar is painted.
@@ -89,4 +94,4 @@ row and confirm no partial scrollbar is painted.
 dotnet run --project samples/Icod.Widgets.Editor.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS exact file load, gutter and auto-hidden two-axis scrollbar geometry/input, wrapped-row Ctrl and wheel scrolling, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document`.
+Expected: `PASS exact file load, gutter and auto-hidden two-axis scrollbar geometry/input including modifier paging, wrapped-row Ctrl and wheel scrolling, mutable insertion policies, linewise clipboard, in-memory edit, undo to checkpoint, cancellation preserves document`.
