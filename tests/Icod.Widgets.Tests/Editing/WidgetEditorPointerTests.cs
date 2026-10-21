@@ -230,7 +230,7 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
-	public void HorizontalScrollbarUsesSharedClickShiftDragWheelAndRepeatBehavior() {
+	public void HorizontalScrollbarUsesSharedClickDragWheelAndRepeatBehavior() {
 		using HorizontalFixture fixture = new(); fixture.Host.Render();
 
 		fixture.Send( CursesMouseAction.Press, 9, 3 );
@@ -240,9 +240,9 @@ public sealed class WidgetEditorPointerTests {
 		Assert.Equal( 2, fixture.View.HorizontalOffset );
 
 		fixture.View.SetScroll( 0, 0 ); fixture.Host.Render();
-		fixture.Send( CursesMouseAction.Press, 8, 3, CursesKeyModifiers.Shift );
+		fixture.Send( CursesMouseAction.Press, 8, 3 );
 		Assert.Equal( 2, fixture.View.HorizontalOffset );
-		fixture.Send( CursesMouseAction.Release, 8, 3, CursesKeyModifiers.Shift );
+		fixture.Send( CursesMouseAction.Release, 8, 3 );
 
 		fixture.View.SetScroll( 0, 0 ); fixture.Host.Render();
 		fixture.Send( CursesMouseAction.Press, 1, 3 ); fixture.Send( CursesMouseAction.Move, 8, 3 ); fixture.Send( CursesMouseAction.Release, 8, 3 );
@@ -257,12 +257,12 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
-	public void EditorControlTrackClickScrollsHereWhenTerminalReservesShiftClick() {
+	public void EditorControlTrackClickPagesLikeUnmodifiedTrackClick() {
 		using HorizontalFixture fixture = new(); fixture.Host.Update( TimeSpan.Zero ); fixture.Host.Render();
 
 		fixture.Send( CursesMouseAction.Press, 8, 3, CursesKeyModifiers.Control );
 
-		Assert.Equal( 70, fixture.View.HorizontalOffset );
+		Assert.Equal( 10, fixture.View.HorizontalOffset );
 	}
 
 	[Fact]
@@ -278,6 +278,7 @@ public sealed class WidgetEditorPointerTests {
 		fixture.Send( CursesMouseAction.Release, 7, 3, button: CursesMouseButton.Secondary );
 		Assert.True( fixture.Editor.HorizontalContextMenu.IsOpen );
 		Assert.Same( fixture.Editor.HorizontalContextMenu, fixture.Host.FocusedWidget );
+		fixture.Host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 9 ) );
 		fixture.Host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 10 ) );
 		Assert.True( fixture.View.HorizontalOffset > 0 );
 		Assert.Same( fixture.Editor, fixture.Host.FocusedWidget );

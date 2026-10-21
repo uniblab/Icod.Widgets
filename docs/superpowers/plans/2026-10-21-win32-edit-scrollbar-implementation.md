@@ -40,23 +40,23 @@
 
 **Interfaces:**
 - Produces: `WidgetScrollBarGeometry.Create( int length, long extent, long viewport, long offset )`.
-- Produces: `WidgetScrollBarGeometry.OffsetForDrag( int originCoordinate, long originOffset, int coordinate )` and `OffsetForCoordinate( int coordinate )`.
+- Produces: `WidgetScrollBarGeometry.OffsetForDrag( int originCoordinate, long originOffset, int coordinate )`.
 - Produces: identical button/track/thumb hit targets for either orientation; orientation remains a rendering/input-axis concern of `WidgetScrollBar`.
 - Consumes: existing `WidgetScrollRange`, `WidgetScrollOrientation`, and `WidgetScrollChangedAction` contracts.
 
 - [ ] **Step 1: Write failing geometry and rendering tests**
 
-  Add focused tests named `GeometryIsAxisNeutralForShortAndNormalTracks`, `ScrollHereCentersThumbAndClampsEndpoints`, `HorizontalScrollbarRendersButtonsTrackAndThumb`, and `BothOrientationsMapLongMaxWithoutOverflow`. Assert lengths 0/1 are inert, length 2 has two buttons, `◄/─/━/►` render horizontally, `▲/│/┃/▼` remain vertical, and absolute/drag mapping reaches both boundaries.
+  Add focused tests named `GeometryIsAxisNeutralForShortAndNormalTracks`, `HorizontalScrollbarRendersButtonsTrackAndThumb`, and `BothOrientationsMapLongMaxWithoutOverflow`. Assert lengths 0/1 are inert, length 2 has two buttons, `◄/─/━/►` render horizontally, `▲/│/┃/▼` remain vertical, and drag mapping reaches both boundaries.
 
 - [ ] **Step 2: Run the focused tests and verify RED**
 
   Run: `DOTNET_CLI_USE_MSBUILD_SERVER=0 /workspace/scratch/f0e348930601/.dotnet/dotnet test tests/Icod.Widgets.Tests/Icod.Widgets.Tests.csproj -c Release -f net10.0 --no-restore -m:1 --disable-build-servers --filter FullyQualifiedName~WidgetScrollBarTests`
 
-  Expected: FAIL because `Create`/`OffsetForCoordinate` and horizontal end-button rendering do not exist.
+  Expected: FAIL because `Create` and horizontal end-button rendering do not exist.
 
 - [ ] **Step 3: Implement the minimal shared geometry and renderer**
 
-  Replace `CreateVertical` with `Create`; reserve end cells uniformly; use `BigInteger` scaling; add absolute center mapping. Delete the separate horizontal thumb math from `WidgetScrollBar` and render both axes from shared geometry with the approved glyphs.
+  Replace `CreateVertical` with `Create`; reserve end cells uniformly and use `BigInteger` scaling. Delete the separate horizontal thumb math from `WidgetScrollBar` and render both axes from shared geometry with the approved glyphs.
 
 - [ ] **Step 4: Run focused tests and the full net10.0 suite**
 
@@ -80,18 +80,18 @@
 - Modify: `tests/Icod.Widgets.Tests/Core/WidgetColorThemeTests.cs`
 
 **Interfaces:**
-- Consumes: Task 1 `WidgetScrollBarGeometry.Create` and absolute/drag mapping.
-- Produces: internal semantic commands `UnitDecrement`, `UnitIncrement`, `PageDecrement`, `PageIncrement`, `Start`, `End`, `Absolute`, and `ThumbTrack`.
+- Consumes: Task 1 `WidgetScrollBarGeometry.Create` and drag mapping.
+- Produces: internal semantic commands `UnitDecrement`, `UnitIncrement`, `PageDecrement`, `PageIncrement`, `Start`, `End`, and `ThumbTrack`.
 - Produces: internal interaction operations for press/move/release/update/cancel and hover/pressed target state.
 - Produces: new optional style roles for scroll buttons, hover, pressed state, and corner, each resolving through an existing-role fallback.
 
 - [ ] **Step 1: Write failing direct-input and keyboard tests**
 
-  Add tests `ShiftTrackClickScrollsHereWithoutPaging`, `DirectionalKeyPairsMatchWin32Vocabulary`, `TrackAndButtonsUseSameSemanticCommandsOnBothAxes`, and `BoundaryCommandsAreHandledWithoutActions`. Assert Shift+track centers the thumb, Shift+button still steps, and both Up/Left and Down/Right work on a focused standalone bar.
+  Add tests `ModifiedTrackClicksPageLikeUnmodifiedTrackClicks`, `DirectionalKeyPairsMatchWin32Vocabulary`, `TrackAndButtonsUseSameSemanticCommandsOnBothAxes`, and `BoundaryCommandsAreHandledWithoutActions`. Assert track clicks page regardless of key modifiers, and both Up/Left and Down/Right work on a focused standalone bar.
 
 - [ ] **Step 2: Run focused tests and verify RED**
 
-  Expected: FAIL on Shift+track and cross-axis directional keys.
+  Expected: FAIL on cross-axis directional keys and any modifier-specific track behavior.
 
 - [ ] **Step 3: Implement semantic commands and direct interaction**
 
@@ -153,7 +153,7 @@
 
 - [ ] **Step 4: Write failing scrollbar context-menu tests**
 
-  Add `SecondaryReleaseOpensOrientationSpecificCommands`, `ContextCommandsShareDirectScrollBehavior`, `ContextItemsDisableAtBoundaries`, `ShiftF10AnchorsStandaloneMenuAtThumb`, and `ContextSequenceCancelsAcrossLifecycleChanges`. Assert exact captions/order/separators and remembered Scroll Here coordinate.
+  Add `SecondaryReleaseOpensOrientationSpecificCommands`, `ContextCommandsUseSharedScrollBehavior`, `ContextItemsDisableAtBoundaries`, `ShiftF10AnchorsStandaloneMenuAtThumb`, and `ContextSequenceCancelsAcrossLifecycleChanges`. Assert exact captions/order/separators and shared command behavior.
 
 - [ ] **Step 5: Run context tests and verify RED**
 
@@ -202,7 +202,7 @@
 
 - [ ] **Step 4: Write failing editor interaction tests**
 
-  Add tests for horizontal arrows, track paging, Shift+track, drag, wheel, repeat, right-click commands, corner inertness, vertical regression, and cancellation. Assert editor-owned bars never take focus.
+  Add tests for horizontal arrows, track paging, drag, wheel, repeat, right-click commands, corner inertness, vertical regression, and cancellation. Assert editor-owned bars never take focus.
 
 - [ ] **Step 5: Run editor interaction tests and verify RED**
 
@@ -251,7 +251,7 @@
 
 - [ ] **Step 4: Write failing Unicode and caret tests**
 
-  Add `HorizontalScrollClampsCaretToVisibleGrapheme`, `VisibleSelectionSurvivesHorizontalScroll`, and `TabsWideGlyphsCombiningMarksAndSurrogatesUseDisplayColumns`. Exercise click, drag, repeat, context, and wheel paths through shared parameterized cases.
+  Add `HorizontalScrollClampsCaretToVisibleGrapheme`, `VisibleSelectionSurvivesHorizontalScroll`, and `TabsWideGlyphsCombiningMarksAndSurrogatesUseDisplayColumns`. Exercise track paging, drag, repeat, context, and wheel paths through shared parameterized cases.
 
 - [ ] **Step 5: Run caret tests and verify RED**
 
@@ -292,7 +292,7 @@
 
 - [ ] **Step 1: Write failing package-consumer and sample smoke assertions**
 
-  Enable both editor options, exercise horizontal buttons/track/Shift+click and the two-bar corner in the editor smoke, and make the package consumer require `ShowHorizontalScrollBar` plus `WidgetPopupMenu.OpenAt`.
+  Enable both editor options, exercise horizontal buttons/track paging and the two-bar corner in the editor smoke, and make the package consumer require `ShowHorizontalScrollBar` plus `WidgetPopupMenu.OpenAt`.
 
 - [ ] **Step 2: Run sample/consumer checks and verify RED**
 

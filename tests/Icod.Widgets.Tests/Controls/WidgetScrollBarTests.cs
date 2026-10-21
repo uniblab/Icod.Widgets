@@ -56,15 +56,6 @@ public sealed class WidgetScrollBarTests {
 	}
 
 	[Fact]
-	public void ScrollHereCentersThumbAndClampsEndpoints() {
-		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( 12, 100, 20, 0 );
-
-		Assert.Equal( 0, geometry.OffsetForCoordinate( 0 ) );
-		Assert.Equal( 40, geometry.OffsetForCoordinate( 5 ) );
-		Assert.Equal( 80, geometry.OffsetForCoordinate( 11 ) );
-	}
-
-	[Fact]
 	public void HorizontalScrollbarRendersButtonsTrackAndThumb() {
 		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Horizontal ); bar.SetRange( 100, 20, 0 );
 		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 1, 10 ) );
@@ -114,28 +105,24 @@ public sealed class WidgetScrollBarTests {
 	}
 
 	[Fact]
-	public void ShiftTrackClickScrollsHereWithoutPaging() {
+	public void ShiftTrackClickPagesLikeUnmodifiedTrackClick() {
 		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 20, 0 );
 		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 10, 1 ) );
 
 		WidgetDispatchResult result = host.Process( Pointer( CursesMouseAction.Press, 0, 8, CursesKeyModifiers.Shift ), TimeSpan.Zero );
 
-		Assert.Equal( 80, bar.Offset );
+		Assert.Equal( 20, bar.Offset );
 		Assert.Single( result.Actions );
-		host.Process( Pointer( CursesMouseAction.Release, 0, 8, CursesKeyModifiers.Shift ), TimeSpan.FromMilliseconds( 1 ) );
-		bar.SetRange( 100, 20, 10 );
-		host.Process( Pointer( CursesMouseAction.Press, 0, 0, CursesKeyModifiers.Shift ), TimeSpan.FromMilliseconds( 2 ) );
-		Assert.Equal( 9, bar.Offset );
 	}
 
 	[Fact]
-	public void ControlTrackClickScrollsHereWhenTerminalReservesShiftClick() {
+	public void ControlTrackClickPagesLikeUnmodifiedTrackClick() {
 		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Horizontal ); bar.SetRange( 100, 20, 0 );
 		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 1, 10 ) );
 
 		WidgetDispatchResult result = host.Process( Pointer( CursesMouseAction.Press, 8, 0, CursesKeyModifiers.Control ), TimeSpan.Zero );
 
-		Assert.Equal( 80, bar.Offset );
+		Assert.Equal( 20, bar.Offset );
 		Assert.Single( result.Actions );
 	}
 
@@ -255,28 +242,22 @@ public sealed class WidgetScrollBarTests {
 
 		Assert.True( bar.ContextMenu.IsOpen );
 		string[] expected = WidgetScrollOrientation.Vertical == orientation
-			? [ "Scroll Here", "-", "Top", "Bottom", "-", "Page Up", "Page Down", "-", "Scroll Up", "Scroll Down" ]
-			: [ "Scroll Here", "-", "Left Edge", "Right Edge", "-", "Page Left", "Page Right", "-", "Scroll Left", "Scroll Right" ];
+			? [ "Top", "Bottom", "-", "Page Up", "Page Down", "-", "Scroll Up", "Scroll Down" ]
+			: [ "Left Edge", "Right Edge", "-", "Page Left", "Page Right", "-", "Scroll Left", "Scroll Right" ];
 		Assert.Equal( expected, bar.ContextMenu.RootItems.Select( item => WidgetMenuItemKind.Separator == item.Kind ? "-" : item.Text ) );
 	}
 
 	[Fact]
-	public void ContextCommandsShareDirectScrollBehavior() {
-		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 20, 0 );
+	public void ContextCommandsUseSharedScrollBehavior() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Vertical ); bar.SetRange( 100, 20, 20 );
 		using WidgetHost host = ContextHost( bar, WidgetScrollOrientation.Vertical );
 
 		OpenContext( host, WidgetScrollOrientation.Vertical, 8 );
-		WidgetDispatchResult scrollHere = host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 2 ) );
-		Assert.Equal( 80, bar.Offset );
-		Assert.Single( scrollHere.Actions, action => action is WidgetScrollChangedAction );
-		Assert.DoesNotContain( scrollHere.Actions, action => action is WidgetInvokedAction );
-		Assert.Same( bar, host.FocusedWidget );
-
-		OpenContext( host, WidgetScrollOrientation.Vertical, 8, 3 );
-		host.Process( WidgetInput.Key( WidgetKey.Down ), TimeSpan.FromMilliseconds( 5 ) );
-		WidgetDispatchResult top = host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 6 ) );
+		WidgetDispatchResult top = host.Process( WidgetInput.Key( WidgetKey.Enter ), TimeSpan.FromMilliseconds( 2 ) );
 		Assert.Equal( 0, bar.Offset );
 		Assert.Single( top.Actions, action => action is WidgetScrollChangedAction );
+		Assert.DoesNotContain( top.Actions, action => action is WidgetInvokedAction );
+		Assert.Same( bar, host.FocusedWidget );
 	}
 
 	[Fact]
@@ -285,7 +266,6 @@ public sealed class WidgetScrollBarTests {
 		using WidgetHost host = ContextHost( bar, WidgetScrollOrientation.Vertical );
 
 		OpenContext( host, WidgetScrollOrientation.Vertical, 8 );
-		Assert.True( Item( bar, "scroll-here" ).IsEnabled );
 		Assert.False( Item( bar, "start" ).IsEnabled );
 		Assert.False( Item( bar, "page-decrement" ).IsEnabled );
 		Assert.False( Item( bar, "unit-decrement" ).IsEnabled );
@@ -310,7 +290,7 @@ public sealed class WidgetScrollBarTests {
 		Assert.True( bar.ContextMenu.IsOpen );
 		Assert.Equal( 6, bar.ContextMenu.RenderBounds.Row );
 		Assert.Equal( 5, bar.ContextMenu.RenderBounds.Column );
-		Assert.False( Item( bar, "scroll-here" ).IsEnabled );
+		Assert.Equal( "Top", bar.ContextMenu.RootItems[ 0 ].Text );
 	}
 
 	[Fact]

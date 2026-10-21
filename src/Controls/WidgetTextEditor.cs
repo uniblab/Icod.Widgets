@@ -54,7 +54,6 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private readonly WidgetPopupMenu? horizontalContextMenu;
 	private bool scrollSecondaryPressed;
 	private WidgetScrollOrientation secondaryOrientation;
-	private int contextScrollCoordinate;
 	private WidgetScrollOrientation contextScrollOrientation;
 
 	public WidgetTextEditor( string id, WidgetTextViewState view, WidgetEditorOptions? options = null ) : base( id ) {
@@ -422,7 +421,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			? WidgetScrollOrientation.Horizontal : WidgetScrollOrientation.Vertical ).Cancel();
 		WidgetScrollBarInteraction interaction = this.ScrollInteraction( orientation );
 		WidgetScrollInteractionResult result = interaction.Press( this.ScrollGeometry( orientation, area ), coordinate,
-			0 != ( pointer.Modifiers & ( CursesKeyModifiers.Shift | CursesKeyModifiers.Control ) ), this.ScrollRange( orientation ).Offset, host.CurrentTime );
+			this.ScrollRange( orientation ).Offset, host.CurrentTime );
 		return this.ApplyScrollResult( orientation, result, host.Screen.TextWidthProvider );
 	}
 
@@ -510,19 +509,17 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		if ( CursesMouseAction.Press == pointer.Action ) {
 			this.CancelPointerInteraction();
 			if ( orientation is not { } pressed ) return viewport.ScrollCorner.Contains( pointer.Row, pointer.Column );
-			this.scrollSecondaryPressed = true; this.secondaryOrientation = pressed;
-			this.contextScrollCoordinate = ScrollCoordinate( pointer, this.ScrollArea( viewport, pressed ), pressed ); return true;
+			this.scrollSecondaryPressed = true; this.secondaryOrientation = pressed; return true;
 		}
 		if ( CursesMouseAction.Release != pointer.Action ) return false;
 		bool open = this.scrollSecondaryPressed && orientation == this.secondaryOrientation;
 		this.scrollSecondaryPressed = false;
 		if ( !open || orientation is not { } released ) return false;
-		this.OpenScrollContext( released, pointer.Row, pointer.Column,
-			ScrollCoordinate( pointer, this.ScrollArea( viewport, released ), released ) ); return true;
+		this.OpenScrollContext( released, pointer.Row, pointer.Column ); return true;
 	}
 
-	private void OpenScrollContext( WidgetScrollOrientation orientation, int row, int column, int coordinate ) {
-		this.CancelPointerInteraction(); this.contextScrollOrientation = orientation; this.contextScrollCoordinate = coordinate;
+	private void OpenScrollContext( WidgetScrollOrientation orientation, int row, int column ) {
+		this.CancelPointerInteraction(); this.contextScrollOrientation = orientation;
 		WidgetPopupMenu? menu = WidgetScrollOrientation.Vertical == orientation ? this.verticalContextMenu : this.horizontalContextMenu;
 		if ( menu is null ) return;
 		menu.SetPresentation( menu.RootItems.Select( item => new WidgetMenuItemPresentation(
@@ -533,8 +530,6 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private bool ContextScrollItemEnabled( WidgetScrollOrientation orientation, string id ) {
 		WidgetScrollRange range = this.ScrollRange( orientation ); long maximum = Math.Max( 0, range.Extent - range.Viewport );
 		return id switch {
-			"scroll-here" => this.ScrollGeometry( orientation, this.ScrollArea( this.GetViewport(), orientation ) )
-				.OffsetForCoordinate( this.contextScrollCoordinate ) != range.Offset,
 			"start" or "page-decrement" or "unit-decrement" => 0 < range.Offset,
 			"end" or "page-increment" or "unit-increment" => range.Offset < maximum,
 			_ => false
@@ -544,8 +539,6 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private void ApplyContextScrollCommand( WidgetScrollOrientation orientation, WidgetMenuItem item ) {
 		if ( this.Host is not { } host || orientation != this.contextScrollOrientation ) return;
 		WidgetScrollCommand command = item.Id switch {
-			"scroll-here" => new WidgetScrollCommand( WidgetScrollCommandKind.Absolute,
-				this.ScrollGeometry( orientation, this.ScrollArea( this.GetViewport(), orientation ) ).OffsetForCoordinate( this.contextScrollCoordinate ) ),
 			"start" => new WidgetScrollCommand( WidgetScrollCommandKind.Start ),
 			"end" => new WidgetScrollCommand( WidgetScrollCommandKind.End ),
 			"page-decrement" => new WidgetScrollCommand( WidgetScrollCommandKind.PageDecrement ),

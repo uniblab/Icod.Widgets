@@ -37,7 +37,7 @@
 		<Authors>Timothy J. Bruce</Authors>
 		<PackageIcon>icon.png</PackageIcon>
 		<Description>Reusable terminal UI widgets for .NET, including color themes, Unicode text editing, forms, menus, dialogs, lists, filesystem pickers, and game controls above Icod.DCurses.</Description>
-		<PackageReleaseNotes>Add Win32-inspired, themeable horizontal and vertical scrollbar behavior to standalone controls and multiline editors. Use arrow buttons, track paging, Shift+click or terminal-compatible Ctrl+click absolute positioning, thumb dragging, wheel/cross-axis keys, auto-repeat, and standard context menus through one semantic route. Add opt-in no-wrap editor horizontal scrolling, two-axis corner composition, bounded Unicode-aware extent discovery, and anchored WidgetPopupMenu.OpenAt. Preserve AssemblyVersion 1.0.0.0, Icod.DCurses 2.5.2, and the .NET 8/9/10 targets.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add Win32-inspired, themeable horizontal and vertical scrollbar behavior to standalone controls and multiline editors. Use arrow buttons, track paging, thumb dragging, wheel/cross-axis keys, auto-repeat, and standard context menus through one semantic route. Add opt-in no-wrap editor horizontal scrolling, two-axis corner composition, bounded Unicode-aware extent discovery, and anchored WidgetPopupMenu.OpenAt. Preserve AssemblyVersion 1.0.0.0, Icod.DCurses 2.5.2, and the .NET 8/9/10 targets.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Widgets</PackageProjectUrl>
 		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

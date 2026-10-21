@@ -112,9 +112,9 @@ internal static class Program {
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7 ) ) );
 			long paged = app.HorizontalScrollRange.Offset; if ( 0 >= paged ) return 32;
 			app.ResetEditorForSmoke(); app.Draw();
-			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Control ) ) );
-			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7, CursesKeyModifiers.Control ) ) );
-			if ( app.HorizontalScrollRange.Offset <= paged ) return 33;
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 8, 7 ) ) );
+			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 8, 7 ) ) );
+			if ( app.HorizontalScrollRange.Offset != paged ) return 33;
 			(long horizontal, long vertical) = ( app.HorizontalScrollRange.Offset, app.VerticalScrollRange.Offset );
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Press, CursesMouseButton.Primary, 11, 7 ) ) );
 			app.Input( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.Release, CursesMouseButton.Primary, 11, 7 ) ) );

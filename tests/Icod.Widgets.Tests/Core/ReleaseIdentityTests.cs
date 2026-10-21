@@ -67,8 +67,10 @@ public sealed class ReleaseIdentityTests {
 		Assert.Contains( "scrollbar", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "auto-hide", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "horizontal", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "Shift+click", notes, StringComparison.Ordinal );
-		Assert.Contains( "Ctrl+click", notes, StringComparison.Ordinal );
+		Assert.Contains( "track presses page", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.DoesNotContain( "Shift+click", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Ctrl+click", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Scroll Here", notes, StringComparison.Ordinal );
 		Assert.Contains( "wheel", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "clamp", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "pointer", notes, StringComparison.OrdinalIgnoreCase );

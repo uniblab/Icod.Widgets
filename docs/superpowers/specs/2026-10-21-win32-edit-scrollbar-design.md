@@ -1,7 +1,8 @@
 # Icod.Widgets 1.10.0 Win32-Inspired Editor Scrollbar Design
 
 **Date:** 2026-10-21  
-**Status:** Implemented and locally qualified; cross-platform CI pending
+**Status:** Implemented; release qualification is tracked in PR #20
+
 **Target:** Icod.Widgets 1.10.0, followed by an Icod.Dedit dependency and opt-in update
 
 ## Purpose
@@ -20,8 +21,8 @@ Windows control.
 ## Goals
 
 - Give vertical and horizontal scrollbars the same geometry and behavior.
-- Add Win32-style unit, page, endpoint, thumb-drag, Shift+click, hold-repeat,
-  and context-menu interactions.
+- Add Win32-style unit, page, endpoint, thumb-drag, hold-repeat, and
+  context-menu interactions.
 - Add an opt-in, auto-hidden horizontal scrollbar to `WidgetTextEditor`.
 - Compose horizontal and vertical editor bars without overlap or viewport
   oscillation.
@@ -111,8 +112,7 @@ extent, viewport, and offset and returns:
 - increment-button cell;
 - maximum offset;
 - hit target for an axis coordinate;
-- offset for a drag delta;
-- offset that centers the thumb on an absolute track coordinate.
+- offset for a drag delta.
 
 Both orientations reserve one button cell at each end when the axis has at
 least two cells. A two-cell bar contains only its buttons. A three-cell bar has
@@ -122,10 +122,6 @@ on a nonexistent track.
 Thumb size is proportional to `viewport / extent`, has a minimum of one track
 cell, and fills the track when the range cannot scroll. All scaling uses
 `BigInteger` intermediates and clamps to the nonnegative `long` range.
-
-“Scroll Here” and Shift+track click place the thumb center on the requested
-track coordinate, subject to endpoint clamping. The mapping uses the same
-rounding rule in both orientations.
 
 ## Shared Interaction State Machine
 
@@ -142,7 +138,6 @@ The semantic commands are:
 - page increment;
 - start;
 - end;
-- absolute offset;
 - thumb-track offset.
 
 Every input path calls this command layer. Mouse clicks, repeat ticks, keyboard
@@ -166,10 +161,6 @@ does not emit a redundant change action.
 
 Track repeat stops when the thumb reaches or crosses the held pointer
 coordinate. It must not page past that coordinate.
-
-Shift+primary press on a track performs one absolute “Scroll Here” operation.
-It does not start page repeat. Shift does not alter button behavior, and a
-Shift+thumb press still starts an ordinary drag.
 
 Thumb dragging updates content live. Release applies the final position and
 ends capture. Moving outside the control while captured remains valid and
@@ -229,33 +220,25 @@ represented by `CursesKey`/`WidgetKey`.
 
 Vertical menu:
 
-1. Scroll Here
-2. separator
-3. Top
-4. Bottom
-5. separator
-6. Page Up
-7. Page Down
-8. separator
-9. Scroll Up
-10. Scroll Down
+1. Top
+2. Bottom
+3. separator
+4. Page Up
+5. Page Down
+6. separator
+7. Scroll Up
+8. Scroll Down
 
 Horizontal menu:
 
-1. Scroll Here
-2. separator
-3. Left Edge
-4. Right Edge
-5. separator
-6. Page Left
-7. Page Right
-8. separator
-9. Scroll Left
-10. Scroll Right
-
-“Scroll Here” remembers the pointer coordinate that invoked the menu. For a
-keyboard-opened standalone menu, the anchor is the current thumb center and
-“Scroll Here” is disabled because it would be a no-op.
+1. Left Edge
+2. Right Edge
+3. separator
+4. Page Left
+5. Page Right
+6. separator
+7. Scroll Left
+8. Scroll Right
 
 Endpoint and directional items are disabled when their operation cannot move.
 Selecting an item closes the menu, restores prior focus, and invokes the same
@@ -359,7 +342,7 @@ Widgets then applies the previously approved Dedit policy:
   selection/caret.
 
 This policy applies equally to keys, wheel events, button presses, track pages,
-Shift+click, context commands, repeat ticks, and thumb dragging.
+context commands, repeat ticks, and thumb dragging.
 
 ## Failure, Cancellation, and Capacity Rules
 
@@ -382,14 +365,12 @@ Shift+click, context commands, repeat ticks, and thumb dragging.
 - Shared geometry for both orientations and lengths 0, 1, 2, 3, and normal
   tracks.
 - Proportional thumb size/position and `long.MaxValue` overflow safety.
-- Absolute scroll-here mapping and endpoint clamping.
 - Every hit target and semantic command on both axes.
-- Shift+track behavior; Shift+button and Shift+thumb behavior.
 - Live drag, release, outside drag, and cancellation.
 - Repeat delay/cadence, bounded catch-up, track stop-at-pointer, and every
   cancellation route.
-- Context-menu labels, disabled states, remembered coordinate, command parity,
-  dismissal, clipping, and focus restoration.
+- Context-menu labels, disabled states, command parity, dismissal, clipping,
+  and focus restoration.
 - Keyboard mapping including both directional-key pairs and Shift+F10.
 - Preferred glyphs, ASCII fallback, theme fallback, hover, pressed state, and
   inert corner rendering.
@@ -423,7 +404,7 @@ Shift+click, context commands, repeat ticks, and thumb dragging.
 - Add one compact README example showing both editor options and link to the
   editor sample. Do not add version history to the README.
 - Expand the editor sample with a no-wrap long-line document, both auto-hidden
-  bars, Shift+click, drag, hold-repeat, and context-menu verification notes.
+  bars, track paging, drag, hold-repeat, and context-menu verification notes.
 - Add the full change list to `CHANGELOG.md`.
 - Add curated `docs/releases/1.10.0.md` notes with compatibility, verification,
   package identity, and Dedit integration instructions.

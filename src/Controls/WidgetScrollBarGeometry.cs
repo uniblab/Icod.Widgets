@@ -73,13 +73,6 @@ internal readonly record struct WidgetScrollBarGeometry(
 		return Math.Clamp( SaturatingAdd( originOffset, delta ), 0, this.MaximumOffset );
 	}
 
-	internal long OffsetForCoordinate( int coordinate ) {
-		int travel = this.TrackLength - this.ThumbLength;
-		if ( 0 >= travel || 0 == this.MaximumOffset ) return 0;
-		int centeredStart = coordinate - this.TrackStart - ( this.ThumbLength - 1 ) / 2;
-		return Scale( Math.Clamp( centeredStart, 0, travel ), this.MaximumOffset, travel );
-	}
-
 	private static long Scale( long value, long numerator, long denominator ) {
 		if ( 0 == value || 0 == numerator || 0 == denominator ) return 0;
 		return (long)( (BigInteger)value * numerator / denominator );

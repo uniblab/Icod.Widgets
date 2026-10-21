@@ -28,7 +28,6 @@ internal enum WidgetScrollCommandKind {
 	PageIncrement,
 	Start,
 	End,
-	Absolute,
 	ThumbTrack
 }
 
@@ -60,7 +59,7 @@ internal sealed class WidgetScrollBarInteraction {
 			WidgetScrollCommandKind.PageIncrement => SaturatingAdd( offset, SaturatingMultiply( Math.Max( 1, page ), amount ) ),
 			WidgetScrollCommandKind.Start => 0,
 			WidgetScrollCommandKind.End => maximumOffset,
-			WidgetScrollCommandKind.Absolute or WidgetScrollCommandKind.ThumbTrack => command.Value,
+			WidgetScrollCommandKind.ThumbTrack => command.Value,
 			_ => throw new ArgumentOutOfRangeException( nameof( command ) )
 		};
 		return Math.Clamp( target, 0, maximumOffset );
@@ -69,17 +68,12 @@ internal sealed class WidgetScrollBarInteraction {
 	internal WidgetScrollInteractionResult Press(
 		WidgetScrollBarGeometry geometry,
 		int coordinate,
-		bool absolute,
 		long offset,
 		TimeSpan timestamp ) {
 		this.Cancel();
 		WidgetScrollBarPointerTarget target = geometry.HitTest( coordinate );
 		this.HoverTarget = target;
 		this.PressedTarget = target;
-		if ( absolute && target is WidgetScrollBarPointerTarget.PageBefore or WidgetScrollBarPointerTarget.PageAfter ) {
-			return new WidgetScrollInteractionResult( true,
-				new WidgetScrollCommand( WidgetScrollCommandKind.Absolute, geometry.OffsetForCoordinate( coordinate ) ) );
-		}
 		return target switch {
 			WidgetScrollBarPointerTarget.DecrementButton => this.BeginRepeat( WidgetScrollCommandKind.UnitDecrement, coordinate, timestamp ),
 			WidgetScrollBarPointerTarget.IncrementButton => this.BeginRepeat( WidgetScrollCommandKind.UnitIncrement, coordinate, timestamp ),

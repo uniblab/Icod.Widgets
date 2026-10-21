@@ -35,8 +35,6 @@ public sealed class WidgetScrollBar : Widget {
 	private long extent;
 	private long viewport;
 	private bool secondaryPressed;
-	private int contextCoordinate;
-	private bool contextOpenedFromKeyboard;
 
 	public WidgetScrollBar( string id, WidgetScrollOrientation orientation ) : base( id ) {
 		if ( !Enum.IsDefined( orientation ) ) throw new ArgumentOutOfRangeException( nameof( orientation ) ); this.Orientation = orientation;
@@ -124,11 +122,11 @@ public sealed class WidgetScrollBar : Widget {
 		if ( CursesMouseButton.Secondary == pointer.Button ) {
 			bool inside = this.Bounds.Contains( pointer.Row, pointer.Column );
 			if ( CursesMouseAction.Press == pointer.Action ) {
-				this.interaction.Cancel(); this.secondaryPressed = inside; this.contextCoordinate = coordinate; return inside;
+				this.interaction.Cancel(); this.secondaryPressed = inside; return inside;
 			}
 			if ( CursesMouseAction.Release == pointer.Action ) {
 				bool open = this.secondaryPressed && inside; this.secondaryPressed = false;
-				if ( open ) { this.OpenContext( pointer.Row, pointer.Column, coordinate, false ); return true; }
+				if ( open ) { this.OpenContext( pointer.Row, pointer.Column ); return true; }
 			}
 			return false;
 		}
@@ -139,8 +137,7 @@ public sealed class WidgetScrollBar : Widget {
 		if ( CursesMouseButton.Primary != pointer.Button ) return false;
 		if ( CursesMouseAction.Press == pointer.Action ) {
 			this.secondaryPressed = false;
-			WidgetScrollInteractionResult result = this.interaction.Press( geometry, coordinate,
-				0 != ( pointer.Modifiers & ( CursesKeyModifiers.Shift | CursesKeyModifiers.Control ) ), this.Offset, timestamp );
+			WidgetScrollInteractionResult result = this.interaction.Press( geometry, coordinate, this.Offset, timestamp );
 			return this.ApplyResult( result );
 		}
 		if ( CursesMouseAction.Move == pointer.Action ) return this.ApplyResult( this.interaction.Move( geometry, coordinate ) );
@@ -163,19 +160,17 @@ public sealed class WidgetScrollBar : Widget {
 		int coordinate = geometry.ThumbStart + Math.Max( 0, geometry.ThumbLength - 1 ) / 2;
 		int row = this.Bounds.Row + ( WidgetScrollOrientation.Vertical == this.Orientation ? coordinate : 0 );
 		int column = this.Bounds.Column + ( WidgetScrollOrientation.Horizontal == this.Orientation ? coordinate : 0 );
-		this.OpenContext( row, column, coordinate, true );
+		this.OpenContext( row, column );
 	}
 
-	private void OpenContext( int row, int column, int coordinate, bool fromKeyboard ) {
-		this.interaction.Cancel(); this.secondaryPressed = false; this.contextCoordinate = coordinate; this.contextOpenedFromKeyboard = fromKeyboard;
+	private void OpenContext( int row, int column ) {
+		this.interaction.Cancel(); this.secondaryPressed = false;
 		this.contextMenu.SetPresentation( this.contextMenu.RootItems.Select( item => new WidgetMenuItemPresentation(
 			item.Id, item.Text, this.ContextItemEnabled( item.Id ), item.IsChecked ) ).ToArray() );
 		this.contextMenu.OpenAt( row, column );
 	}
 
 	private bool ContextItemEnabled( string id ) => id switch {
-		"scroll-here" => !this.contextOpenedFromKeyboard && WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset )
-			.OffsetForCoordinate( this.contextCoordinate ) != this.Offset,
 		"start" or "page-decrement" or "unit-decrement" => 0 < this.Offset,
 		"end" or "page-increment" or "unit-increment" => this.Offset < this.MaximumOffset,
 		_ => false
@@ -183,8 +178,6 @@ public sealed class WidgetScrollBar : Widget {
 
 	private void ApplyContextCommand( WidgetMenuItem item ) {
 		WidgetScrollCommand command = item.Id switch {
-			"scroll-here" => new WidgetScrollCommand( WidgetScrollCommandKind.Absolute,
-				WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset ).OffsetForCoordinate( this.contextCoordinate ) ),
 			"start" => new WidgetScrollCommand( WidgetScrollCommandKind.Start ),
 			"end" => new WidgetScrollCommand( WidgetScrollCommandKind.End ),
 			"page-decrement" => new WidgetScrollCommand( WidgetScrollCommandKind.PageDecrement ),
@@ -228,14 +221,12 @@ public sealed class WidgetScrollBar : Widget {
 	}
 
 	internal static WidgetMenuItem[] ContextItems( WidgetScrollOrientation orientation ) => [
-		WidgetMenuItem.Command( "scroll-here", "Scroll Here", "scroll.here" ),
-		WidgetMenuItem.Separator( "separator-1" ),
 		WidgetMenuItem.Command( "start", WidgetScrollOrientation.Vertical == orientation ? "Top" : "Left Edge", "scroll.start" ),
 		WidgetMenuItem.Command( "end", WidgetScrollOrientation.Vertical == orientation ? "Bottom" : "Right Edge", "scroll.end" ),
-		WidgetMenuItem.Separator( "separator-2" ),
+		WidgetMenuItem.Separator( "separator-1" ),
 		WidgetMenuItem.Command( "page-decrement", WidgetScrollOrientation.Vertical == orientation ? "Page Up" : "Page Left", "scroll.page-decrement" ),
 		WidgetMenuItem.Command( "page-increment", WidgetScrollOrientation.Vertical == orientation ? "Page Down" : "Page Right", "scroll.page-increment" ),
-		WidgetMenuItem.Separator( "separator-3" ),
+		WidgetMenuItem.Separator( "separator-2" ),
 		WidgetMenuItem.Command( "unit-decrement", WidgetScrollOrientation.Vertical == orientation ? "Scroll Up" : "Scroll Left", "scroll.unit-decrement" ),
 		WidgetMenuItem.Command( "unit-increment", WidgetScrollOrientation.Vertical == orientation ? "Scroll Down" : "Scroll Right", "scroll.unit-increment" )
 	];
