@@ -361,7 +361,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private void CancelPointerInteraction() { this.CancelPointerSelection(); this.scrollBarDragging = false; }
 
 	private bool HandleScrollBarPress( int coordinate, int length, ICursesTextWidthProvider widthProvider ) {
-		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( length, this.VerticalScrollRange.Extent,
+		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( length, this.VerticalScrollRange.Extent,
 			this.VerticalScrollRange.Viewport, this.VerticalScrollRange.Offset );
 		switch ( geometry.HitTest( coordinate ) ) {
 			case WidgetScrollBarPointerTarget.DecrementButton: return this.ScrollViewport( -1, widthProvider );
@@ -377,7 +377,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private bool DragScrollBar( int screenRow, ICursesTextWidthProvider widthProvider ) {
 		WidgetEditorViewport viewport = this.GetViewport(); if ( viewport.VerticalScrollBar.IsEmpty ) { this.scrollBarDragging = false; return true; }
-		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( viewport.VerticalScrollBar.Rows, this.VerticalScrollRange.Extent,
+		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( viewport.VerticalScrollBar.Rows, this.VerticalScrollRange.Extent,
 			this.VerticalScrollRange.Viewport, this.scrollBarDragOffset );
 		long target = geometry.OffsetForDrag( this.scrollBarDragCoordinate, this.scrollBarDragOffset, screenRow - viewport.VerticalScrollBar.Row );
 		return this.ScrollViewport( target - this.VerticalScrollRange.Offset, widthProvider );
@@ -617,7 +617,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private void RenderVerticalScrollBar( CursesScreen screen, WidgetTheme theme, bool focused, CursesRectangle area ) {
 		if ( area.IsEmpty ) return;
-		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.CreateVertical( area.Rows, this.VerticalScrollRange.Extent,
+		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( area.Rows, this.VerticalScrollRange.Extent,
 			this.VerticalScrollRange.Viewport, this.VerticalScrollRange.Offset );
 		CursesStyle track = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : WidgetStyleRole.ScrollTrack );
 		CursesStyle thumb = this.Style( theme, !this.IsEffectivelyEnabled ? WidgetStyleRole.Disabled : focused ? WidgetStyleRole.ScrollFocusedThumb : WidgetStyleRole.ScrollThumb );

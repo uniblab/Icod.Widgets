@@ -240,7 +240,8 @@ public sealed class WidgetColorThemeTests {
 		Assert.Equal( Red, screen.StandardWindow.GetCell( 0, 15 ).Style );
 		WidgetScrollBar bar = new( "bar", WidgetScrollOrientation.Horizontal ); bar.Arrange( new CursesRectangle( 1, 0, 1, 10 ) );
 		bar.SetRange( 100, 20, 0 ); bar.OnRender( screen, theme, false );
-		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 0 ).Style );
+		Assert.Equal( Red, screen.StandardWindow.GetCell( 1, 1 ).Style );
 		Assert.Equal( Blue, screen.StandardWindow.GetCell( 1, 9 ).Style );
 	}
 
