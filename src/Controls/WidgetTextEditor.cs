@@ -34,6 +34,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	private string newLine;
 	private string indentation;
 	private readonly WidgetTextProjection projection;
+	private readonly WidgetHorizontalExtentCache horizontalExtent;
 	private StringBuilder? pendingPaste;
 	private long pendingPasteRevision;
 	private long pendingPasteSelectionEpoch;
@@ -59,6 +60,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 	public WidgetTextEditor( string id, WidgetTextViewState view, WidgetEditorOptions? options = null ) : base( id ) {
 		this.View = view ?? throw new ArgumentNullException( nameof( view ) ); this.options = options ?? new WidgetEditorOptions(); this.options.Validate(); this.newLine = this.options.NewLine; this.indentation = this.options.Indentation;
 		this.View.WrapMode = this.options.WrapMode; this.View.TabWidth = this.options.TabWidth; this.projection = new WidgetTextProjection( this.options );
+		this.horizontalExtent = new WidgetHorizontalExtentCache( this.options );
 		if ( this.options.ShowVerticalScrollBar ) this.verticalContextMenu = new WidgetPopupMenu(
 			$"{id}.vertical-scroll-context", WidgetScrollBar.ContextItems( WidgetScrollOrientation.Vertical ) ) {
 				Parent = this, CommandSink = item => this.ApplyContextScrollCommand( WidgetScrollOrientation.Vertical, item )
@@ -217,6 +219,8 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		if ( this.Host is { } host ) {
 			this.UpdateScrollRepeat( WidgetScrollOrientation.Vertical, timestamp, host.Screen.TextWidthProvider );
 			this.UpdateScrollRepeat( WidgetScrollOrientation.Horizontal, timestamp, host.Screen.TextWidthProvider );
+			_ = this.horizontalExtent.Advance( this.View, host.Screen.TextWidthProvider );
+			this.RefreshScrollRanges();
 		}
 		if ( !this.pointerSelecting || ( 0 == this.horizontalAutoScroll && 0 == this.verticalAutoScroll ) || this.pointerWidthProvider is null ) return;
 		TimeSpan previous = this.lastAutoScroll ?? timestamp; long elapsedTicks = Math.Max( 0, ( timestamp - previous ).Ticks );
@@ -433,8 +437,44 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 		long maximum = Math.Max( offset, Math.Max( 0, range.Extent - range.Viewport ) );
 		long target = WidgetScrollBarInteraction.TargetOffset( command, offset, maximum, range.Viewport );
 		if ( WidgetScrollOrientation.Vertical == orientation ) return this.ScrollViewport( target - range.Offset, widthProvider );
-		if ( target != this.View.HorizontalOffset ) this.View.SetViewport( target, this.View.ViewportAnchor );
+		if ( target == this.View.HorizontalOffset ) return true;
+		CursesRectangle text = this.GetViewport().Text; WidgetProjectedCaret? currentCaret = null;
+		if ( !text.IsEmpty ) currentCaret = this.projection.Project( this.View, widthProvider,
+			new CursesRectangle( 0, 0, text.Rows, text.Columns ) ).Caret;
+		long absoluteCaretColumn = currentCaret is { } caret ? SaturatingAdd( this.View.HorizontalOffset, caret.Column ) : -1;
+		bool clampCaret = currentCaret is not null && ( absoluteCaretColumn < target || absoluteCaretColumn >= SaturatingAdd( target, text.Columns ) );
+		if ( clampCaret ) this.EnsureActionCapacity();
+		this.View.SetViewport( target, this.View.ViewportAnchor );
+		if ( clampCaret ) this.ClampCaretToHorizontalViewport( absoluteCaretColumn < target, text.Columns, widthProvider );
 		this.RefreshScrollRanges(); return true;
+	}
+
+	private void ClampCaretToHorizontalViewport( bool leftEdge, int columns, ICursesTextWidthProvider widthProvider ) {
+		long lineIndex = this.View.Document.GetLineIndex( this.View.Caret );
+		WidgetTextProjectionResult result = this.projection.ProjectAt( this.View, widthProvider,
+			new CursesRectangle( 0, 0, 1, Math.Max( 1, columns ) ), new WidgetTextViewportAnchor( lineIndex, 0 ) );
+		if ( 0 == result.Rows.Count ) return;
+		WidgetProjectedRow row = result.Rows[ 0 ]; long column = leftEdge ? this.View.HorizontalOffset :
+			SaturatingAdd( this.View.HorizontalOffset, Math.Max( 0, columns - 1 ) );
+		WidgetProjectedHit hit = row.HitTestBoundary( column, leftEdge ); bool found = false;
+		for ( int step = 0; step < Math.Max( 1, columns ); step++ ) {
+			long candidateColumn = leftEdge ? SaturatingAdd( column, step ) : Math.Max( 0, column - step );
+			WidgetProjectedHit candidate = row.HitTestBoundary( candidateColumn, leftEdge );
+			try {
+				long visibleColumn = row.GetColumn( candidate.Offset, candidate.Affinity );
+				bool visible = leftEdge ? visibleColumn > this.View.HorizontalOffset && visibleColumn < SaturatingAdd( this.View.HorizontalOffset, columns )
+					: visibleColumn >= this.View.HorizontalOffset && visibleColumn < SaturatingAdd( this.View.HorizontalOffset, columns );
+				if ( visible ) { hit = candidate; found = true; break; }
+			}
+			catch ( ArgumentOutOfRangeException ) { }
+		}
+		if ( leftEdge && !found ) {
+			long candidate = SaturatingAdd( hit.Offset, 1 ); long limit = Math.Min( this.View.Document.Length,
+				SaturatingAdd( hit.Offset, this.options.MaximumClusterScan ) );
+			while ( candidate <= limit && !this.View.Document.IsTextElementBoundary( candidate ) ) candidate++;
+			if ( candidate <= limit ) hit = new WidgetProjectedHit( candidate, CursesTextAffinity.Leading );
+		}
+		this.View.SetSelectionFromProjection( hit.Offset, hit.Offset, false, hit.Affinity ); this.EmitSelection();
 	}
 
 	private void UpdateScrollRepeat( WidgetScrollOrientation orientation, TimeSpan timestamp, ICursesTextWidthProvider widthProvider ) {
@@ -713,8 +753,16 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			long verticalExtent = Math.Max( this.View.Document.LineCount, SaturatingAdd( this.View.VerticalOffset, text.Rows ) );
 			this.VerticalScrollRange = new WidgetScrollRange( verticalExtent, text.Rows, this.View.VerticalOffset, CursesTextWrapMode.NoWrap == this.View.WrapMode );
 		}
-		long horizontalExtent = Math.Max( textColumns, SaturatingAdd( this.View.HorizontalOffset, textColumns ) );
-		this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, textColumns, this.View.HorizontalOffset, CursesTextWrapMode.NoWrap != this.View.WrapMode );
+		if ( this.Host is { } owner ) {
+			this.HorizontalScrollRange = this.horizontalExtent.GetRange( this.View, owner.Screen.TextWidthProvider, textColumns );
+			if ( this.HorizontalScrollRange.Offset != this.View.HorizontalOffset ) {
+				this.View.SetViewport( this.HorizontalScrollRange.Offset, this.View.ViewportAnchor );
+				this.horizontalScrollInteraction.Cancel(); this.horizontalContextMenu?.Close();
+			}
+		} else {
+			long horizontalExtent = Math.Max( textColumns, SaturatingAdd( this.View.HorizontalOffset, textColumns ) );
+			this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, textColumns, this.View.HorizontalOffset, false );
+		}
 	}
 
 	private WidgetEditorViewport GetViewport() {
@@ -725,13 +773,13 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private void UpdateScrollRanges( WidgetTextProjectionResult result, int rows, int columns, ICursesTextWidthProvider widthProvider ) {
 		this.VerticalScrollRange = this.projection.GetVerticalRange( this.View, this.View.ViewportAnchor, widthProvider, Math.Max( 1, columns ), rows );
-		long horizontalExtent = SaturatingAdd( this.View.HorizontalOffset, columns );
+		long visibleRight = this.View.HorizontalOffset; bool hasOverflow = false;
 		foreach ( WidgetProjectedRow row in result.Rows ) {
-			horizontalExtent = Math.Max( horizontalExtent, row.GetColumn( row.SourceEnd ) );
-			if ( row.HasContinuation || row.Layout.IsTruncated ) horizontalExtent = Math.Max( horizontalExtent, SaturatingAdd( this.View.HorizontalOffset, columns + 1L ) );
+			visibleRight = Math.Max( visibleRight, row.GetColumn( row.SourceEnd ) );
+			hasOverflow |= row.HasContinuation || row.Layout.IsTruncated;
 		}
-		bool horizontalExact = CursesTextWrapMode.NoWrap != this.View.WrapMode;
-		this.HorizontalScrollRange = new WidgetScrollRange( horizontalExtent, columns, this.View.HorizontalOffset, horizontalExact );
+		this.horizontalExtent.ObserveVisible( this.View, widthProvider, columns, this.View.HorizontalOffset, visibleRight, hasOverflow );
+		this.HorizontalScrollRange = this.horizontalExtent.GetRange( this.View, widthProvider, columns );
 	}
 
 	private WidgetEditorViewport ResolveViewport( CursesRectangle area, ICursesTextWidthProvider widthProvider ) {
@@ -766,7 +814,8 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 
 	private bool HorizontalContentOverflows( CursesRectangle text, ICursesTextWidthProvider widthProvider ) {
 		if ( text.IsEmpty ) return false;
-		if ( 0 < this.View.HorizontalOffset || this.HorizontalScrollRange.Extent > text.Columns ) return true;
+		WidgetScrollRange known = this.horizontalExtent.GetRange( this.View, widthProvider, text.Columns );
+		if ( 0 < this.View.HorizontalOffset || known.Extent > text.Columns ) return true;
 		WidgetTextProjectionResult probe = this.projection.ProjectAt( this.View, widthProvider,
 			new CursesRectangle( 0, 0, Math.Max( 1, text.Rows ), Math.Max( 1, text.Columns ) ), new WidgetTextViewportAnchor( 0, 0 ) );
 		return probe.Rows.Any( row => row.HasContinuation || row.Layout.IsTruncated || row.GetColumn( row.SourceEnd ) > text.Columns );
