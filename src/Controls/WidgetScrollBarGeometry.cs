@@ -40,13 +40,14 @@ internal readonly record struct WidgetScrollBarGeometry(
 	int ThumbLength,
 	long MaximumOffset
 ) {
-	internal static WidgetScrollBarGeometry CreateVertical( int length, long extent, long viewport, long offset ) {
+	internal static WidgetScrollBarGeometry Create( int length, long extent, long viewport, long offset ) {
 		if ( 0 > length ) throw new ArgumentOutOfRangeException( nameof( length ) );
 		if ( 0 > extent ) throw new ArgumentOutOfRangeException( nameof( extent ) );
 		if ( 0 > viewport ) throw new ArgumentOutOfRangeException( nameof( viewport ) );
 		if ( 0 > offset ) throw new ArgumentOutOfRangeException( nameof( offset ) );
 		long maximumOffset = extent <= viewport ? 0 : extent - viewport;
-		if ( 2 >= length ) return new WidgetScrollBarGeometry( length, 1, 0, 1, 0, maximumOffset );
+		if ( 2 > length ) return new WidgetScrollBarGeometry( length, 0, 0, 0, 0, maximumOffset );
+		if ( 2 == length ) return new WidgetScrollBarGeometry( length, 1, 0, 1, 0, maximumOffset );
 		int trackLength = length - 2;
 		if ( 0 == extent || extent <= viewport ) return new WidgetScrollBarGeometry( length, 1, trackLength, 1, trackLength, maximumOffset );
 		int thumbLength = Math.Clamp( checked( (int)Scale( viewport, trackLength, extent ) ), 1, trackLength );

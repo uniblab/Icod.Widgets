@@ -92,6 +92,55 @@ public sealed class WidgetEditorQualificationTests {
 		Assert.True( map.CachedEntryCount < document.LineCount );
 	}
 
+	[Fact]
+	public void HorizontalExtentDiscoveryIsBoundedAndEventuallyExact() {
+		string text = string.Join( '\n', [ "short", new string( 'x', 40 ), "medium width" ] );
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 16, MaximumWorkPerUpdate = 1 };
+		WidgetTextDocument document = new( [ text.AsMemory() ] ); using WidgetTextViewState view = new( document );
+		WidgetHorizontalExtentCache cache = new( options );
+
+		cache.ObserveVisible( view, UnicodeCursesTextWidthProvider.Instance, 8, 0, 9, true );
+		Assert.False( cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 ).IsExtentExact );
+		Assert.True( cache.Advance( view, UnicodeCursesTextWidthProvider.Instance ) <= options.MaximumProjectionSourceUnits );
+		Assert.False( cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 ).IsExtentExact );
+
+		for ( int index = 0; index < 10 && !cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 ).IsExtentExact; index++ )
+			Assert.True( cache.Advance( view, UnicodeCursesTextWidthProvider.Instance ) <= options.MaximumProjectionSourceUnits );
+
+		WidgetScrollRange range = cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 );
+		Assert.True( range.IsExtentExact );
+		Assert.Equal( 40, range.Extent );
+	}
+
+	[Fact]
+	public void HorizontalExtentInvalidatesAfterEditAndRetainsScrolledLowerBound() {
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 16, MaximumWorkPerUpdate = 2 };
+		WidgetTextDocument document = new( [ new string( 'x', 32 ).AsMemory() ] ); using WidgetTextViewState view = new( document );
+		WidgetHorizontalExtentCache cache = new( options );
+		while ( !cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 ).IsExtentExact ) cache.Advance( view, UnicodeCursesTextWidthProvider.Instance );
+		Assert.Equal( 32, cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 ).Extent );
+
+		WidgetTextEditContext context = new( view.Id, view.Anchor, view.Caret, 0, 0, WidgetTextEditKind.Delete, TimeSpan.Zero, false );
+		Assert.Equal( WidgetTextEditStatus.Applied, document.Apply( [ new WidgetTextEdit( 0, 32, "x" ) ], document.Revision, context ).Status );
+		view.SetScroll( 12, 0 );
+
+		WidgetScrollRange range = cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 8 );
+		Assert.False( range.IsExtentExact );
+		Assert.Equal( 20, range.Extent );
+	}
+
+	[Fact]
+	public void HorizontalExtentUsesTabWideCombiningAndSurrogateDisplayColumns() {
+		WidgetEditorOptions options = new() { MaximumProjectionSourceUnits = 16, MaximumWorkPerUpdate = 1, TabWidth = 4 };
+		WidgetTextDocument document = new( [ "\tab界e\u0301\U0001F600z".AsMemory() ] ); using WidgetTextViewState view = new( document ); view.TabWidth = 4;
+		WidgetHorizontalExtentCache cache = new( options );
+
+		while ( !cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 4 ).IsExtentExact )
+			cache.Advance( view, UnicodeCursesTextWidthProvider.Instance );
+
+		Assert.Equal( 12, cache.GetRange( view, UnicodeCursesTextWidthProvider.Instance, 4 ).Extent );
+	}
+
 	private sealed class Fixture : IDisposable {
 		private int tick;
 		internal Fixture( string text ) { this.Document = new WidgetTextDocument( [ text.AsMemory() ] ); this.View = new WidgetTextViewState( this.Document ); this.Editor = new WidgetTextEditor( "editor", this.View ); this.Host = new WidgetHost( new CursesScreen( 30, 6 ), WidgetTheme.Default ); this.Host.Attach( this.Editor ); this.Editor.Arrange( new CursesRectangle( 0, 0, 4, 30 ) ); Assert.True( this.Host.Focus( this.Editor ) ); }

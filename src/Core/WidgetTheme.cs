@@ -50,6 +50,9 @@ public sealed record WidgetTheme(
 	public CursesStyle Resolve( WidgetStyleRole role ) {
 		if ( this.Parts.TryGetValue( role, out CursesStyle style ) ) return style;
 		return role switch {
+			WidgetStyleRole.ScrollButton => this.Resolve( WidgetStyleRole.ScrollTrack ),
+			WidgetStyleRole.ScrollHover or WidgetStyleRole.ScrollPressed => this.Resolve( WidgetStyleRole.ScrollFocusedThumb ),
+			WidgetStyleRole.ScrollCorner => this.Resolve( WidgetStyleRole.EditorSurface ),
 			WidgetStyleRole.Focused or WidgetStyleRole.PopupFocused or WidgetStyleRole.ListFocused
 				or WidgetStyleRole.MenuBarActive or WidgetStyleRole.MenuBarHover or WidgetStyleRole.PopupHover
 				or WidgetStyleRole.DialogFocusedAction or WidgetStyleRole.ButtonFocused or WidgetStyleRole.StatusFocusedAction => this.Focused,

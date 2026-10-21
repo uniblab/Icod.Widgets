@@ -52,7 +52,7 @@ host.Process( WidgetInput.PointerInput( new CursesMouseEvent( CursesMouseAction.
 probe.IsVisible = false;
 WidgetTextDocument document = new( [ "one\r\ntwo\n".AsMemory() ] ); using WidgetTextViewState view = new( document );
 WidgetTextEditor editor = new( "editor", view, new WidgetEditorOptions {
-	HighlightCurrentLine = true, ShowLineNumbers = true, ShowVerticalScrollBar = true
+	HighlightCurrentLine = true, ShowLineNumbers = true, ShowVerticalScrollBar = true, ShowHorizontalScrollBar = true
 } );
 host.Attach( editor ); editor.Arrange( new CursesRectangle( 0, 0, 4, 24 ) ); host.Focus( editor ); view.SetSelection( 0, 3 );
 bool initialPolicies = editor.NewLine == "\n" && editor.Indentation == "\t";
@@ -80,6 +80,10 @@ WidgetTabStrip tabs = new( "tabs" ); tabs.SetTabs( [ new WidgetTab( "one", "One"
 WidgetContentHost content = new( "content" ); content.SetContent( new WidgetTextEditor( "workspace-editor", new WidgetTextViewState( document ) ) );
 WidgetPopupMenu dynamicMenu = new( "dynamic", [ WidgetMenuItem.Command( "copy", "Copy", "edit.copy", WidgetEditCommand.Copy ) ] );
 dynamicMenu.SetPresentation( [ new WidgetMenuItemPresentation( "copy", "Copy selection", true ) ] );
+host.Attach( dynamicMenu ); dynamicMenu.OpenAt( 4, 23 ); host.Render();
+bool anchoredPopupApi = dynamicMenu.IsOpen && !dynamicMenu.RenderBounds.IsEmpty &&
+	dynamicMenu.RenderBounds.RightExclusive <= host.Screen.Columns && dynamicMenu.RenderBounds.BottomExclusive <= host.Screen.Rows;
+dynamicMenu.Close();
 WidgetStatusField statusField = new( "find", "Find", 10 ) { CommandId = "edit.find" };
 WidgetStatusBar statusBar = new( "status" ); statusBar.SetFields( [ statusField ] ); statusBar.Arrange( new CursesRectangle( 0, 0, 1, 24 ) );
 WidgetFormDialog decision = WidgetFormDialog.SaveDontSaveCancel( "decision", "Close", "Save changes?" );
@@ -88,7 +92,7 @@ WidgetSearchForm search = new( "search", "Find", true ); search.SetContext( docu
 WidgetGoToLineDialog goTo = new( "go-to", "Go To Line" ); goTo.SetContext( document.Id, view.Id, document.Revision );
 bool workspaceApi = tabs.ActiveKey == "two" && content.Content is WidgetTextEditor && dynamicMenu is not null &&
 	statusField.CommandId == "edit.find" && decision.Actions.Count == 3 && saveTarget.NameInput.Value == "draft.txt" &&
-	search.ReplacementInput is not null && goTo.LineInput is not null && WidgetLimits.MaximumTabs == 1024;
+	search.ReplacementInput is not null && goTo.LineInput is not null && WidgetLimits.MaximumTabs == 1024 && anchoredPopupApi;
 return menuResult.Actions.Single() is WidgetInvokedAction &&
 	dialogApi && dialogResult.Actions.Single() is WidgetDialogCompletedAction { Result.Outcome: WidgetDialogOutcome.No } &&
 	probeResult.Actions.Single() is WidgetInvokedAction { CommandId: "public" } && probe.UpdateCount == 1 && probe.CancellationCount == 1 &&

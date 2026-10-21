@@ -27,7 +27,7 @@ using Xunit;
 
 public sealed class ReleaseIdentityTests {
 	[Fact]
-	public void CandidateAndPackageConsumerUseVersion190() {
+	public void CandidateAndPackageConsumerUseVersion1100() {
 		string root = FindRepositoryRoot();
 		XDocument production = XDocument.Load(
 			Path.Combine( root, "Icod.Widgets.csproj" )
@@ -39,54 +39,60 @@ public sealed class ReleaseIdentityTests {
 			"PackageConsumer.csproj"
 		) );
 
-		Assert.Equal( "1.9.0", GetSingleValue( production, "Version" ) );
-		Assert.Equal( "1.9.0", GetSingleValue( production, "PackageVersion" ) );
+		Assert.Equal( "1.10.0", GetSingleValue( production, "Version" ) );
+		Assert.Equal( "1.10.0", GetSingleValue( production, "PackageVersion" ) );
 		Assert.Equal( "1.0.0.0", GetSingleValue( production, "AssemblyVersion" ) );
 		XElement consumerReference = Assert.Single(
 			consumer.Descendants(),
 			static current => "PackageReference" == current.Name.LocalName
 		);
 		Assert.Equal( "Icod.Widgets", consumerReference.Attribute( "Include" )?.Value );
-		Assert.Equal( "1.9.0", consumerReference.Attribute( "Version" )?.Value );
+		Assert.Equal( "1.10.0", consumerReference.Attribute( "Version" )?.Value );
 		XElement dependency = Assert.Single( production.Descendants(), static current =>
 			"PackageReference" == current.Name.LocalName && "Icod.DCurses" == current.Attribute( "Include" )?.Value );
 		Assert.Equal( "2.5.2", dependency.Attribute( "Version" )?.Value );
 	}
 
 	[Fact]
-	public void CandidateHasCuratedEditorScrollbarNotes() {
+	public void CandidateHasCuratedTwoAxisScrollbarNotes() {
 		string notesPath = Path.Combine(
 			FindRepositoryRoot(),
 			"docs",
 			"releases",
-			"1.9.0.md"
+			"1.10.0.md"
 		);
 		Assert.True( File.Exists( notesPath ), $"Missing curated notes: {notesPath}" );
 
 		string notes = File.ReadAllText( notesPath );
 		Assert.Contains( "scrollbar", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "auto-hide", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "wrapped", notes, StringComparison.OrdinalIgnoreCase );
-		Assert.Contains( "Ctrl+Up", notes, StringComparison.Ordinal );
+		Assert.Contains( "horizontal", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.Contains( "track presses page", notes, StringComparison.OrdinalIgnoreCase );
+		Assert.DoesNotContain( "Shift+click", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Ctrl+click", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Scroll Here", notes, StringComparison.Ordinal );
 		Assert.Contains( "wheel", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "clamp", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "pointer", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "▲", notes, StringComparison.Ordinal );
+		Assert.Contains( "◄", notes, StringComparison.Ordinal );
 		Assert.Contains( "ScrollTrack", notes, StringComparison.Ordinal );
+		Assert.Contains( "OpenAt", notes, StringComparison.Ordinal );
 		Assert.Contains( "AssemblyVersion", notes, StringComparison.Ordinal );
 	}
 
 	[Fact]
 	public void CuratedNotesIncludeVerificationAndInstall() {
 		string root = FindRepositoryRoot();
-		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.9.0.md" ) );
+		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.10.0.md" ) );
 
 		Assert.Contains( "## Verification", notes, StringComparison.Ordinal );
-		Assert.Contains( "463 tests", notes, StringComparison.Ordinal );
+		Assert.Contains( "510 net10.0 tests", notes, StringComparison.Ordinal );
+		Assert.DoesNotContain( "pending", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "Windows", notes, StringComparison.Ordinal );
 		Assert.Contains( "Linux", notes, StringComparison.Ordinal );
 		Assert.Contains( "macOS", notes, StringComparison.Ordinal );
-		Assert.Contains( "dotnet add package Icod.Widgets --version 1.9.0", notes, StringComparison.Ordinal );
+		Assert.Contains( "dotnet add package Icod.Widgets --version 1.10.0", notes, StringComparison.Ordinal );
 	}
 
 	[Fact]
@@ -104,15 +110,14 @@ public sealed class ReleaseIdentityTests {
 	}
 
 	[Fact]
-	public void PublicApi190AddsOnlyVerticalScrollbarOption() {
-		string root = FindRepositoryRoot(); string fingerprintPath = Path.Combine( root, "docs", "Public-API-Fingerprint-1.9.json" );
+	public void PublicApi1100AddsScrollbarAndAnchoredPopupSurface() {
+		string root = FindRepositoryRoot(); string fingerprintPath = Path.Combine( root, "docs", "Public-API-Fingerprint-1.10.json" );
 		Assert.True( File.Exists( fingerprintPath ), $"Missing API fingerprint: {fingerprintPath}" );
-		Assert.True( File.Exists( Path.Combine( root, "docs", "Public-API-Baseline-1.9.md" ) ) );
 		Assert.True( File.Exists( Path.Combine( root, "packaging", "Get-PublicApiFingerprint.ps1" ) ) );
 		using JsonDocument fingerprint = JsonDocument.Parse( File.ReadAllText( fingerprintPath ) );
-		Assert.Equal( "1.9.0", fingerprint.RootElement.GetProperty( "packageVersion" ).GetString() );
+		Assert.Equal( "1.10.0", fingerprint.RootElement.GetProperty( "packageVersion" ).GetString() );
 		Assert.Equal( "1.0.0.0", fingerprint.RootElement.GetProperty( "assemblyVersion" ).GetString() );
-		using JsonDocument previous = JsonDocument.Parse( File.ReadAllText( Path.Combine( root, "docs", "Public-API-Fingerprint-1.8.json" ) ) );
+		using JsonDocument previous = JsonDocument.Parse( File.ReadAllText( Path.Combine( root, "docs", "Public-API-Fingerprint-1.9.json" ) ) );
 		Dictionary<string, string[]> oldTypes = ReadTypes( previous );
 		Dictionary<string, string[]> newTypes = ReadTypes( fingerprint );
 		Assert.Equal( oldTypes.Keys.Order(), newTypes.Keys.Order() );
@@ -122,9 +127,14 @@ public sealed class ReleaseIdentityTests {
 			additions.AddRange( newTypes[ name ].Except( oldMembers, StringComparer.Ordinal ).Select( member => name + " :: " + member ) );
 		}
 		Assert.Equal( [
-			"Icod.Widgets.WidgetEditorOptions :: Method: Boolean get_ShowVerticalScrollBar()",
-			"Icod.Widgets.WidgetEditorOptions :: Method: Void set_ShowVerticalScrollBar(Boolean)",
-			"Icod.Widgets.WidgetEditorOptions :: Property: Boolean ShowVerticalScrollBar"
+			"Icod.Widgets.WidgetEditorOptions :: Method: Boolean get_ShowHorizontalScrollBar()",
+			"Icod.Widgets.WidgetEditorOptions :: Method: Void set_ShowHorizontalScrollBar(Boolean)",
+			"Icod.Widgets.WidgetEditorOptions :: Property: Boolean ShowHorizontalScrollBar",
+			"Icod.Widgets.WidgetPopupMenu :: Method: Void OpenAt(Int32, Int32)",
+			"Icod.Widgets.WidgetStyleRole :: Field: Icod.Widgets.WidgetStyleRole ScrollButton",
+			"Icod.Widgets.WidgetStyleRole :: Field: Icod.Widgets.WidgetStyleRole ScrollCorner",
+			"Icod.Widgets.WidgetStyleRole :: Field: Icod.Widgets.WidgetStyleRole ScrollHover",
+			"Icod.Widgets.WidgetStyleRole :: Field: Icod.Widgets.WidgetStyleRole ScrollPressed"
 		], additions.Order( StringComparer.Ordinal ) );
 	}
 
@@ -143,10 +153,11 @@ public sealed class ReleaseIdentityTests {
 	public void ReadmeDocumentsEditorScrollbarWithoutReleaseHistory() {
 		string readme = File.ReadAllText( Path.Combine( FindRepositoryRoot(), "README.md" ) );
 		Assert.Contains( "ShowVerticalScrollBar", readme, StringComparison.Ordinal );
+		Assert.Contains( "ShowHorizontalScrollBar", readme, StringComparison.Ordinal );
 		Assert.Contains( "Ctrl+Up", readme, StringComparison.Ordinal );
 		Assert.Contains( "ScrollTrack", readme, StringComparison.Ordinal );
 		Assert.DoesNotContain( "## Release history", readme, StringComparison.OrdinalIgnoreCase );
-		Assert.DoesNotContain( "Icod.Widgets 1.9.0", readme, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Icod.Widgets 1.10.0", readme, StringComparison.Ordinal );
 	}
 
 	[Fact]

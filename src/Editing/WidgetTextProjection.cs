@@ -72,6 +72,19 @@ internal sealed class WidgetProjectedRow {
 		return new WidgetProjectedHit( this.origin + hit.Position.Offset, hit.Affinity );
 	}
 
+	internal WidgetProjectedHit HitTestBoundary( long column, bool forward ) {
+		if ( this.IsPlaceholder ) return new WidgetProjectedHit( this.origin, CursesTextAffinity.Leading );
+		long localColumn = this.layoutStartingColumn + column - this.baseColumn;
+		CursesTextHitTestResult hit = this.Layout.HitTest( this.layoutVisualLineIndex, (int)Math.Clamp( localColumn, 0, int.MaxValue ) );
+		CursesTextPosition position = hit.Position;
+		if ( forward && CursesTextAffinity.Trailing == hit.Affinity ) position = this.Layout.GetNextPosition( position );
+		else if ( !forward && CursesTextAffinity.Leading == hit.Affinity ) {
+			CursesTextVisualPosition visual = this.Layout.GetVisualPosition( position );
+			if ( visual.Column > localColumn ) position = this.Layout.GetPreviousPosition( position );
+		}
+		return new WidgetProjectedHit( this.origin + position.Offset, CursesTextAffinity.Leading );
+	}
+
 	internal long TranslateLayoutColumn( int column ) => this.baseColumn + column - this.layoutStartingColumn;
 }
 
@@ -301,7 +314,11 @@ internal sealed class WidgetTextProjection {
 			if ( state.Column + width <= targetColumn ) { state.SourceOffset += source.Length; state.Column += width; continue; }
 			long requested = startingColumn + targetColumn - state.Column; CursesTextHitTestResult hit = layout.HitTest( 0, (int)Math.Clamp( requested, 0, int.MaxValue ) );
 			CursesTextVisualPosition visual = layout.GetVisualPosition( hit.Position, hit.Affinity );
-			if ( state.Column + visual.Column - startingColumn > targetColumn ) { CursesTextPosition previous = layout.GetPreviousPosition( hit.Position ); visual = layout.GetVisualPosition( previous ); hit = new CursesTextHitTestResult( previous, CursesTextAffinity.Leading, false ); }
+			if ( state.Column + visual.Column - startingColumn > targetColumn ) {
+				CursesTextPosition boundary = CursesTextAffinity.Trailing == hit.Affinity
+					? layout.GetNextPosition( hit.Position ) : layout.GetPreviousPosition( hit.Position );
+				visual = layout.GetVisualPosition( boundary ); hit = new CursesTextHitTestResult( boundary, CursesTextAffinity.Leading, false );
+			}
 			state.SourceOffset += hit.Position.Offset; state.Column += visual.Column - startingColumn; return;
 		}
 	}

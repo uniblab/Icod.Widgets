@@ -52,6 +52,8 @@ public sealed record WidgetEditorOptions {
 	public bool ShowLineNumbers { get; init; }
 	/// <summary>Gets whether the editor may show an auto-hidden vertical scrollbar when its content overflows.</summary>
 	public bool ShowVerticalScrollBar { get; init; }
+	/// <summary>Gets whether a no-wrap editor may show an auto-hidden horizontal scrollbar when its content overflows.</summary>
+	public bool ShowHorizontalScrollBar { get; init; }
 
 	internal void Validate() {
 		if ( !Enum.IsDefined( this.WrapMode ) ) throw new ArgumentOutOfRangeException( nameof( this.WrapMode ) );

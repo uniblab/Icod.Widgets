@@ -66,8 +66,11 @@ public partial class WidgetPopupMenu {
 		for ( int depth = this.FirstPopupLevel; depth < this.levels.Count; depth++ ) {
 			Level level = this.levels[ depth ]; CursesRectangle bounds;
 			if ( depth == 0 && !this.IsMenuBar ) {
-				CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); int inset = Inset( area );
-				bounds = new( area.Row, area.Column, Math.Min( area.Rows, level.Items.Count + inset * 2 ), area.Columns );
+				if ( this.hasScreenAnchor ) bounds = this.MeasureAnchoredRoot( screen, level );
+				else {
+					CursesRectangle area = this.Bounds.Intersect( screen.Bounds ); int inset = Inset( area );
+					bounds = new( area.Row, area.Column, Math.Min( area.Rows, level.Items.Count + inset * 2 ), area.Columns );
+				}
 			} else {
 				int labelWidth = level.Items.Max( item => CursesText.MeasureColumns( Prefix( item ) + Label( item ) + Suffix( item ), screen.TextWidthProvider ) );
 				int shortcutWidth = level.Items.Max( item => item.Shortcut is { } shortcut ? CursesText.MeasureColumns( FormatShortcut( shortcut ), screen.TextWidthProvider ) : 0 );
@@ -89,6 +92,16 @@ public partial class WidgetPopupMenu {
 			result.Add( ( depth, bounds ) );
 		}
 		return result;
+	}
+
+	private CursesRectangle MeasureAnchoredRoot( CursesScreen screen, Level level ) {
+		int labelWidth = level.Items.Max( item => CursesText.MeasureColumns( Prefix( item ) + Label( item ) + Suffix( item ), screen.TextWidthProvider ) );
+		int shortcutWidth = level.Items.Max( item => item.Shortcut is { } shortcut ? CursesText.MeasureColumns( FormatShortcut( shortcut ), screen.TextWidthProvider ) : 0 );
+		int width = Math.Min( screen.Columns, labelWidth + ( shortcutWidth > 0 ? shortcutWidth + 2 : 0 ) + 4 );
+		int height = Math.Min( screen.Rows, level.Items.Count + 2 );
+		int row = Math.Clamp( this.screenAnchorRow, 0, Math.Max( 0, screen.Rows - height ) );
+		int column = Math.Clamp( this.screenAnchorColumn, 0, Math.Max( 0, screen.Columns - width ) );
+		return new CursesRectangle( row, column, height, width );
 	}
 
 	internal bool ContainsPopupPoint( int row, int column, CursesScreen screen ) =>

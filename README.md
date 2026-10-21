@@ -181,10 +181,28 @@ Multiline editors opt into a full-width current-line band with
 and remains visually dominant. Wrapped visual rows of the same logical line
 share the band. `ShowLineNumbers = true` adds a fixed, decorative left gutter
 styled by `EditorGutter` and `EditorGutterCurrentLine`.
-`ShowVerticalScrollBar = true` adds an auto-hidden right scrollbar using the
-existing `ScrollTrack`, `ScrollThumb`, and `ScrollFocusedThumb` theme roles.
-Ctrl+Up/Ctrl+Down scroll by one displayed row; wheel and pointer controls use
-the same wrapped-row viewport and clamp the caret only if it would leave view.
+Editors can opt into auto-hidden bars on either axis. Horizontal scrolling is
+available only in no-wrap mode; vertical scrolling continues to count displayed
+rows when wrapping is enabled. The corner is inert when both bars are visible.
+
+```csharp
+WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
+    ShowVerticalScrollBar = true,
+    ShowHorizontalScrollBar = true,
+    WrapMode = CursesTextWrapMode.NoWrap
+});
+```
+
+Arrow buttons, track paging, thumb dragging, wheel and keyboard input share one
+scroll-command route. Track presses always page; Shift and Ctrl do not change
+that behavior. Ctrl+Up/Ctrl+Down scroll the vertical editor viewport by
+displayed rows. Right-click an editor-owned bar for its standard scroll menu; a
+focused standalone `WidgetScrollBar` also opens that menu with Shift+F10.
+Presentation uses
+the `ScrollTrack`, `ScrollThumb`, `ScrollFocusedThumb`, `ScrollButton`,
+`ScrollHover`, `ScrollPressed`, and `ScrollCorner` theme roles. See the
+[editor sample](samples/Icod.Widgets.Editor.Sample/README.md) for live and smoke
+qualification of the two-axis behavior.
 
 Color requests follow DCurses' public capability observations. Unsupported
 foreground and background axes revert independently to terminal defaults;
@@ -271,7 +289,9 @@ Recommended entry points:
 - [Controls and interaction](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Controls-and-Interaction.md) — behavior, keys, examples, errors, and limits.
 - [Changelog](https://github.com/uniblab/Icod.Widgets/blob/main/CHANGELOG.md) — versions and release history.
 - [Main roadmap](https://github.com/uniblab/Icod.Widgets/blob/main/ROADMAP.md) — broader direction and library/application boundaries.
-- [Current public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.9.md) and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
+- [1.9 public API baseline](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Baseline-1.9.md),
+  [current 1.10 fingerprint](https://github.com/uniblab/Icod.Widgets/blob/main/docs/Public-API-Fingerprint-1.10.json),
+  and [1.0 baseline](https://github.com/uniblab/Icod.Widgets/blob/v1.0.0/docs/Public-API-Baseline-1.0.md) — compatibility references.
 - [Build and packaging guide](https://github.com/uniblab/Icod.Widgets/blob/main/packaging/README.md) — local builds and validation/publication workflows.
 
 Release audits, versioned plans, API snapshots, and qualification worksheets

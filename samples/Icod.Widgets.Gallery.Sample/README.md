@@ -46,10 +46,14 @@ captions, status fields, and the editor's focused/unfocused selection. Seven pag
    filters. Ctrl+B shows basket; Enter/Space/Delete removes a basket entry.
    Escape cancels. Selection survives directory/filter changes; failures stay open.
 6. Game UI: inventory, messages, status, and modal help.
-7. Workspace color: an active modified tab, multiline editor, scrollbar track
-   and thumb, plus actionable status. F6/Shift+F6 cycles focus among tabs,
-   editor, and status, including a way out of the editor, which consumes Tab.
-   Ctrl+T switches themes while preserving the active tab and document view.
+7. Workspace color: an active modified tab, multiline editor, standalone
+   horizontal scrollbar, and actionable status. F6/Shift+F6 cycles focus among
+   tabs, editor, scrollbar, and status, including a way out of the editor, which
+   consumes Tab. On the scrollbar, Left/Right step, Page Up/Down page,
+   Home/End select an endpoint, and Shift+F10 opens the horizontal scroll menu.
+   Pointer arrows, track paging, thumb dragging, and right-click use the same
+   command route. Ctrl+T switches themes while preserving the active tab and
+   document view.
 
 Resize repeatedly, including compact layouts. Ctrl+Q always exits; Q/Escape
 exits outside a dialog/menu and text field. Keyboard operation requires no mouse.
@@ -59,10 +63,11 @@ The sample uses retained text presentation and no raster graphics.
 dotnet run --project samples/Icod.Widgets.Gallery.Sample -c Release -f net10.0 -- --smoke
 ```
 
-Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering`.
+Expected: `PASS seven gallery pages, theme cycle, menu navigation/hover/modal, standalone scrollbar keyboard/context, generic dialog mnemonic/default/pointer actions, provider-backed picker cancellation, wizard validation, rendering`.
 The smoke cycles all three themes, verifies focus retention, and exercises
-F6/Shift+F6 navigation on the workspace page, root menu switching, Escape focus
-restoration, independent hover, closing About with both Escape and an OK click,
+F6/Shift+F6 navigation plus standalone scrollbar keyboard/context behavior on
+the workspace page, root menu switching, Escape focus restoration, independent
+hover, closing About with both Escape and an OK click,
 and the decision dialog's N mnemonic, Cancel-default Enter, pointer Yes choice,
 and scoped warning style. It does not verify physical terminal color output.
 

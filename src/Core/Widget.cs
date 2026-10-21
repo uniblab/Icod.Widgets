@@ -48,7 +48,7 @@ public abstract class Widget {
 		set { if ( this.isVisible == value ) return; this.isVisible = value; this.Host?.SynchronizeTree( this ); }
 	}
 
-	internal WidgetContainer? Parent { get; set; }
+	internal Widget? Parent { get; set; }
 	internal WidgetHost? Host { get; set; }
 	internal bool IsEffectivelyEnabled => this.isEnabled && ( this.Parent?.IsEffectivelyEnabled ?? true );
 	internal bool IsEffectivelyVisible => this.isVisible && ( this.Parent?.IsEffectivelyVisible ?? true );
