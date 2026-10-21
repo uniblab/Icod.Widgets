@@ -31,27 +31,37 @@ public readonly record struct WidgetScrollRange( long Extent, long Viewport, lon
 /// <summary>Provides a keyboard- and pointer-operable scrollbar over a nonnegative long range.</summary>
 public sealed class WidgetScrollBar : Widget {
 	private readonly WidgetScrollBarInteraction interaction = new();
+	private readonly WidgetPopupMenu contextMenu;
 	private long extent;
 	private long viewport;
+	private bool secondaryPressed;
+	private int contextCoordinate;
+	private bool contextOpenedFromKeyboard;
 
 	public WidgetScrollBar( string id, WidgetScrollOrientation orientation ) : base( id ) {
 		if ( !Enum.IsDefined( orientation ) ) throw new ArgumentOutOfRangeException( nameof( orientation ) ); this.Orientation = orientation;
+		this.contextMenu = new WidgetPopupMenu( $"{id}.scroll-context", ContextItems( orientation ) ) { Parent = this, CommandSink = this.ApplyContextCommand };
 	}
 
 	public override bool IsFocusable => true;
 	public WidgetScrollOrientation Orientation { get; }
 	public long Offset { get; private set; }
+	internal WidgetPopupMenu ContextMenu => this.contextMenu;
 
 	public void SetRange( long extent, long viewport, long offset ) {
 		if ( 0 > extent ) throw new ArgumentOutOfRangeException( nameof( extent ) );
 		if ( 0 > viewport ) throw new ArgumentOutOfRangeException( nameof( viewport ) );
 		if ( 0 > offset ) throw new ArgumentOutOfRangeException( nameof( offset ) );
+		this.contextMenu.Close(); this.secondaryPressed = false;
 		this.extent = extent; this.viewport = viewport; this.Offset = Math.Min( offset, this.MaximumOffset ); this.interaction.Cancel();
 	}
 
 	protected internal override bool OnInput( WidgetInput input, WidgetHost host ) {
 		if ( WidgetInputKind.Pointer == input.Kind && input.Pointer is { } pointer ) return this.OnPointer( pointer, host.CurrentTime );
 		if ( WidgetInputKind.Key != input.Kind ) return false;
+		if ( WidgetKey.Function == input.KeyCode && 10 == input.FunctionKeyNumber && 0 != ( input.Modifiers & WidgetInputModifiers.Shift ) ) {
+			this.OpenContextAtThumb(); return true;
+		}
 		WidgetScrollCommandKind? command = input.KeyCode switch {
 			WidgetKey.Home => WidgetScrollCommandKind.Start,
 			WidgetKey.End => WidgetScrollCommandKind.End,
@@ -84,9 +94,9 @@ public sealed class WidgetScrollBar : Widget {
 			this.ScrollStyle( theme, WidgetScrollBarPointerTarget.IncrementButton, WidgetStyleRole.ScrollButton ) );
 	}
 
-	protected override void OnArrange( CursesRectangle bounds ) => this.interaction.Cancel();
-	protected override void OnCaptureCanceled() => this.interaction.Cancel();
-	internal override void OnDetached() => this.interaction.Cancel();
+	protected override void OnArrange( CursesRectangle bounds ) { this.contextMenu.Close(); this.secondaryPressed = false; this.interaction.Cancel(); }
+	protected override void OnCaptureCanceled() { this.secondaryPressed = false; this.interaction.Cancel(); }
+	internal override void OnDetached() { this.contextMenu.Close(); this.secondaryPressed = false; this.interaction.Cancel(); }
 	protected override void OnUpdate( TimeSpan timestamp ) {
 		for ( int work = 0; work < WidgetScrollBarInteraction.MaximumWorkPerUpdate; work++ ) {
 			WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset );
@@ -111,12 +121,24 @@ public sealed class WidgetScrollBar : Widget {
 				? WidgetScrollCommandKind.UnitDecrement : WidgetScrollCommandKind.UnitIncrement, 3 ) );
 		}
 		int coordinate = WidgetScrollOrientation.Horizontal == this.Orientation ? pointer.Column - this.Bounds.Column : pointer.Row - this.Bounds.Row;
+		if ( CursesMouseButton.Secondary == pointer.Button ) {
+			bool inside = this.Bounds.Contains( pointer.Row, pointer.Column );
+			if ( CursesMouseAction.Press == pointer.Action ) {
+				this.interaction.Cancel(); this.secondaryPressed = inside; this.contextCoordinate = coordinate; return inside;
+			}
+			if ( CursesMouseAction.Release == pointer.Action ) {
+				bool open = this.secondaryPressed && inside; this.secondaryPressed = false;
+				if ( open ) { this.OpenContext( pointer.Row, pointer.Column, coordinate, false ); return true; }
+			}
+			return false;
+		}
 		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset );
 		if ( CursesMouseAction.Move == pointer.Action && CursesMouseButton.Primary != pointer.Button ) {
 			this.interaction.Hover( geometry, coordinate ); return false;
 		}
 		if ( CursesMouseButton.Primary != pointer.Button ) return false;
 		if ( CursesMouseAction.Press == pointer.Action ) {
+			this.secondaryPressed = false;
 			WidgetScrollInteractionResult result = this.interaction.Press( geometry, coordinate,
 				0 != ( pointer.Modifiers & CursesKeyModifiers.Shift ), this.Offset, timestamp );
 			return this.ApplyResult( result );
@@ -144,6 +166,44 @@ public sealed class WidgetScrollBar : Widget {
 			_ => throw new ArgumentOutOfRangeException( nameof( command ) )
 		};
 		return this.SetUserOffset( target );
+	}
+
+	private void OpenContextAtThumb() {
+		WidgetScrollBarGeometry geometry = WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset );
+		int coordinate = geometry.ThumbStart + Math.Max( 0, geometry.ThumbLength - 1 ) / 2;
+		int row = this.Bounds.Row + ( WidgetScrollOrientation.Vertical == this.Orientation ? coordinate : 0 );
+		int column = this.Bounds.Column + ( WidgetScrollOrientation.Horizontal == this.Orientation ? coordinate : 0 );
+		this.OpenContext( row, column, coordinate, true );
+	}
+
+	private void OpenContext( int row, int column, int coordinate, bool fromKeyboard ) {
+		this.interaction.Cancel(); this.secondaryPressed = false; this.contextCoordinate = coordinate; this.contextOpenedFromKeyboard = fromKeyboard;
+		this.contextMenu.SetPresentation( this.contextMenu.RootItems.Select( item => new WidgetMenuItemPresentation(
+			item.Id, item.Text, this.ContextItemEnabled( item.Id ), item.IsChecked ) ).ToArray() );
+		this.contextMenu.OpenAt( row, column );
+	}
+
+	private bool ContextItemEnabled( string id ) => id switch {
+		"scroll-here" => !this.contextOpenedFromKeyboard && WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset )
+			.OffsetForCoordinate( this.contextCoordinate ) != this.Offset,
+		"start" or "page-decrement" or "unit-decrement" => 0 < this.Offset,
+		"end" or "page-increment" or "unit-increment" => this.Offset < this.MaximumOffset,
+		_ => false
+	};
+
+	private void ApplyContextCommand( WidgetMenuItem item ) {
+		WidgetScrollCommand command = item.Id switch {
+			"scroll-here" => new WidgetScrollCommand( WidgetScrollCommandKind.Absolute,
+				WidgetScrollBarGeometry.Create( this.TrackLength, this.extent, this.viewport, this.Offset ).OffsetForCoordinate( this.contextCoordinate ) ),
+			"start" => new WidgetScrollCommand( WidgetScrollCommandKind.Start ),
+			"end" => new WidgetScrollCommand( WidgetScrollCommandKind.End ),
+			"page-decrement" => new WidgetScrollCommand( WidgetScrollCommandKind.PageDecrement ),
+			"page-increment" => new WidgetScrollCommand( WidgetScrollCommandKind.PageIncrement ),
+			"unit-decrement" => new WidgetScrollCommand( WidgetScrollCommandKind.UnitDecrement ),
+			"unit-increment" => new WidgetScrollCommand( WidgetScrollCommandKind.UnitIncrement ),
+			_ => throw new InvalidOperationException( $"Unknown scrollbar context command '{item.Id}'." )
+		};
+		_ = this.ApplyCommand( command );
 	}
 
 	private bool SetUserOffset( long value ) {
@@ -180,4 +240,22 @@ public sealed class WidgetScrollBar : Widget {
 		if ( !screen.Bounds.Contains( row, column ) ) return;
 		screen.StandardWindow.Move( row, column ); screen.StandardWindow.Write( content, style );
 	}
+
+	internal override IEnumerable<Widget> DescendantsAndSelf() {
+		yield return this;
+		yield return this.contextMenu;
+	}
+
+	private static WidgetMenuItem[] ContextItems( WidgetScrollOrientation orientation ) => [
+		WidgetMenuItem.Command( "scroll-here", "Scroll Here", "scroll.here" ),
+		WidgetMenuItem.Separator( "separator-1" ),
+		WidgetMenuItem.Command( "start", WidgetScrollOrientation.Vertical == orientation ? "Top" : "Left Edge", "scroll.start" ),
+		WidgetMenuItem.Command( "end", WidgetScrollOrientation.Vertical == orientation ? "Bottom" : "Right Edge", "scroll.end" ),
+		WidgetMenuItem.Separator( "separator-2" ),
+		WidgetMenuItem.Command( "page-decrement", WidgetScrollOrientation.Vertical == orientation ? "Page Up" : "Page Left", "scroll.page-decrement" ),
+		WidgetMenuItem.Command( "page-increment", WidgetScrollOrientation.Vertical == orientation ? "Page Down" : "Page Right", "scroll.page-increment" ),
+		WidgetMenuItem.Separator( "separator-3" ),
+		WidgetMenuItem.Command( "unit-decrement", WidgetScrollOrientation.Vertical == orientation ? "Scroll Up" : "Scroll Left", "scroll.unit-decrement" ),
+		WidgetMenuItem.Command( "unit-increment", WidgetScrollOrientation.Vertical == orientation ? "Scroll Down" : "Scroll Right", "scroll.unit-increment" )
+	];
 }

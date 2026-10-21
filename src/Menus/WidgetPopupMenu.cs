@@ -35,6 +35,9 @@ public partial class WidgetPopupMenu : Widget {
 	private int pressedHeading = -1;
 	private int hoveredIndex = -1;
 	private int hoveredHeading = -1;
+	private bool hasScreenAnchor;
+	private int screenAnchorRow;
+	private int screenAnchorColumn;
 	private bool IsMenuBar => this is WidgetMenuBar;
 
 	public WidgetPopupMenu( string id, IReadOnlyList<WidgetMenuItem> items ) : base( id ) {
@@ -61,6 +64,8 @@ public partial class WidgetPopupMenu : Widget {
 	public int Depth => this.levels.Count;
 	public WidgetMenuItem? CurrentItem => 0 == this.levels.Count ? null : this.levels[ ^1 ].Items[ this.levels[ ^1 ].Cursor ];
 	public CursesRectangle RenderBounds { get; private set; }
+	internal IReadOnlyList<WidgetMenuItem> RootItems => this.rootItems;
+	internal Action<WidgetMenuItem>? CommandSink { get; set; }
 
 	/// <summary>Applies a validated presentation snapshot without changing the immutable menu definitions.</summary>
 	public void SetPresentation( IReadOnlyList<WidgetMenuItemPresentation> presentation ) {
@@ -102,6 +107,17 @@ public partial class WidgetPopupMenu : Widget {
 
 	public void Open() {
 		if ( this.IsOpen ) return;
+		this.hasScreenAnchor = false;
+		this.OpenCore();
+	}
+	/// <summary>Opens a content-sized root popup at a screen-cell anchor, moving it left or up as needed to remain visible.</summary>
+	public void OpenAt( int row, int column ) {
+		if ( this.Host is null ) throw new InvalidOperationException( "An anchored popup menu must be attached to a widget host." );
+		this.hasScreenAnchor = true; this.screenAnchorRow = row; this.screenAnchorColumn = column;
+		if ( this.IsOpen ) { this.ResetPointer(); this.UpdatePopupBounds(); return; }
+		this.OpenCore();
+	}
+	private void OpenCore() {
 		this.levels.Clear(); this.levels.Add( new Level( this.rootItems ) ); this.IsOpen = true;
 		if ( this.IsMenuBar ) {
 			this.levels[ 0 ].Cursor = Math.Max( 0, FindEligible( this.rootItems, 0 ) );
@@ -110,7 +126,7 @@ public partial class WidgetPopupMenu : Widget {
 		try { this.Host?.OpenPopup( this, this.GetPopupBounds( this.Host.Screen ) ); }
 		catch { this.levels.Clear(); this.IsOpen = false; throw; }
 	}
-	public void Close() { this.firstHeading = 0; this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; }
+	public void Close() { this.firstHeading = 0; this.ResetPointer(); this.Host?.ClosePopup( this ); this.levels.Clear(); this.IsOpen = false; this.RenderBounds = default; this.hasScreenAnchor = false; }
 	private void ResetPointer() { this.pressedIndex = -1; this.pressedLevel = -1; this.pressedHeading = -1; this.hoveredIndex = -1; this.hoveredLevel = -1; this.hoveredHeading = -1; }
 	protected override void OnCaptureCanceled() { this.pressedIndex = -1; this.pressedLevel = -1; this.pressedHeading = -1; }
 	protected override void OnArrange( CursesRectangle bounds ) { this.ResetPointer(); this.UpdatePopupBounds(); }
@@ -216,7 +232,7 @@ public partial class WidgetPopupMenu : Widget {
 		if ( WidgetMenuItemKind.Submenu == item.Kind ) return this.OpenSubmenu();
 		bool? checkedValue = WidgetMenuItemKind.CheckableCommand == item.Kind ? !item.IsChecked : null;
 		if ( checkedValue.HasValue && !item.IsPresentationControlled ) item.IsChecked = checkedValue.Value;
-		this.Close(); host.DispatchFocusedEditOrApplication( item, this.Id, checkedValue ); return true;
+		this.Close(); this.DispatchCommand( host, item, checkedValue ); return true;
 	}
 
 	protected bool TryRootMnemonic( WidgetInput input, WidgetHost host ) {
@@ -247,9 +263,14 @@ public partial class WidgetPopupMenu : Widget {
 			if ( item.Kind is WidgetMenuItemKind.Separator or WidgetMenuItemKind.Submenu ) return false;
 			bool? checkedValue = WidgetMenuItemKind.CheckableCommand == item.Kind ? !item.IsChecked : null;
 			if ( checkedValue.HasValue && !item.IsPresentationControlled ) item.IsChecked = checkedValue.Value;
-			this.Close(); host.DispatchFocusedEditOrApplication( item, this.Id, checkedValue ); return true;
+			this.Close(); this.DispatchCommand( host, item, checkedValue ); return true;
 		}
 		return false;
+	}
+
+	private void DispatchCommand( WidgetHost host, WidgetMenuItem item, bool? checkedValue ) {
+		if ( this.CommandSink is { } sink ) sink( item );
+		else host.DispatchFocusedEditOrApplication( item, this.Id, checkedValue );
 	}
 
 	private static bool ShortcutCharacterMatches( WidgetMenuShortcut shortcut, WidgetInput input ) => !shortcut.Character.HasValue ||
