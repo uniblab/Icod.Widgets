@@ -69,8 +69,9 @@ host, run the gallery and editor commands above and check:
    Ctrl+Up/Ctrl+Down scroll one displayed row, including within a wrapped line;
    the wheel scrolls three. Click both arrow buttons, page through the track,
    and drag the thumb to both ends. Right-click either bar for its standard
-   scroll menu; Shift+click the track to position directly. When the caret would
-   leave the viewport it
+   scroll menu; Ctrl+click the track to position directly. Shift+click is also
+   accepted when the terminal reports it, but Windows Terminal reserves that
+   gesture for terminal selection. When the caret would leave the viewport it
    is pulled to the approaching edge; when it remains visible it does not move.
    Resize until all content fits and verify the bar auto-hides without changing
    the line-number gutter. Type text and press

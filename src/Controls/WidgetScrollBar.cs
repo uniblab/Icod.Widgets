@@ -140,7 +140,7 @@ public sealed class WidgetScrollBar : Widget {
 		if ( CursesMouseAction.Press == pointer.Action ) {
 			this.secondaryPressed = false;
 			WidgetScrollInteractionResult result = this.interaction.Press( geometry, coordinate,
-				0 != ( pointer.Modifiers & CursesKeyModifiers.Shift ), this.Offset, timestamp );
+				0 != ( pointer.Modifiers & ( CursesKeyModifiers.Shift | CursesKeyModifiers.Control ) ), this.Offset, timestamp );
 			return this.ApplyResult( result );
 		}
 		if ( CursesMouseAction.Move == pointer.Action ) return this.ApplyResult( this.interaction.Move( geometry, coordinate ) );

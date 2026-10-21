@@ -257,6 +257,15 @@ public sealed class WidgetEditorPointerTests {
 	}
 
 	[Fact]
+	public void EditorControlTrackClickScrollsHereWhenTerminalReservesShiftClick() {
+		using HorizontalFixture fixture = new(); fixture.Host.Update( TimeSpan.Zero ); fixture.Host.Render();
+
+		fixture.Send( CursesMouseAction.Press, 8, 3, CursesKeyModifiers.Control );
+
+		Assert.Equal( 70, fixture.View.HorizontalOffset );
+	}
+
+	[Fact]
 	public void EditorScrollbarContextAndCornerStayOwnedByEditor() {
 		using HorizontalFixture fixture = new( bothAxes: true ); fixture.Host.Render(); long caret = fixture.View.Caret;
 

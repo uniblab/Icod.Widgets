@@ -69,14 +69,14 @@ internal sealed class WidgetScrollBarInteraction {
 	internal WidgetScrollInteractionResult Press(
 		WidgetScrollBarGeometry geometry,
 		int coordinate,
-		bool shift,
+		bool absolute,
 		long offset,
 		TimeSpan timestamp ) {
 		this.Cancel();
 		WidgetScrollBarPointerTarget target = geometry.HitTest( coordinate );
 		this.HoverTarget = target;
 		this.PressedTarget = target;
-		if ( shift && target is WidgetScrollBarPointerTarget.PageBefore or WidgetScrollBarPointerTarget.PageAfter ) {
+		if ( absolute && target is WidgetScrollBarPointerTarget.PageBefore or WidgetScrollBarPointerTarget.PageAfter ) {
 			return new WidgetScrollInteractionResult( true,
 				new WidgetScrollCommand( WidgetScrollCommandKind.Absolute, geometry.OffsetForCoordinate( coordinate ) ) );
 		}

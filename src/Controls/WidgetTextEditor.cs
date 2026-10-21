@@ -422,7 +422,7 @@ public sealed class WidgetTextEditor : Widget, IWidgetEditTarget, IWidgetClipboa
 			? WidgetScrollOrientation.Horizontal : WidgetScrollOrientation.Vertical ).Cancel();
 		WidgetScrollBarInteraction interaction = this.ScrollInteraction( orientation );
 		WidgetScrollInteractionResult result = interaction.Press( this.ScrollGeometry( orientation, area ), coordinate,
-			0 != ( pointer.Modifiers & CursesKeyModifiers.Shift ), this.ScrollRange( orientation ).Offset, host.CurrentTime );
+			0 != ( pointer.Modifiers & ( CursesKeyModifiers.Shift | CursesKeyModifiers.Control ) ), this.ScrollRange( orientation ).Offset, host.CurrentTime );
 		return this.ApplyScrollResult( orientation, result, host.Screen.TextWidthProvider );
 	}
 

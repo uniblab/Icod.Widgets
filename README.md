@@ -193,9 +193,11 @@ WidgetTextEditor editor = new("document", view, new WidgetEditorOptions {
 });
 ```
 
-Arrow buttons, track paging, Shift+click positioning, thumb dragging, wheel and
-keyboard input share one scroll-command route. Ctrl+Up/Ctrl+Down scroll the
-vertical editor viewport by displayed rows. Right-click a bar (or press
+Arrow buttons, track paging, Shift+click or Ctrl+click positioning, thumb
+dragging, wheel and keyboard input share one scroll-command route. Ctrl+click
+is the compatible choice in hosts such as Windows Terminal that reserve
+Shift+mouse for terminal selection. Ctrl+Up/Ctrl+Down scroll the vertical
+editor viewport by displayed rows. Right-click a bar (or press
 Shift+F10 while it is active) for the standard scroll menu. Presentation uses
 the `ScrollTrack`, `ScrollThumb`, `ScrollFocusedThumb`, `ScrollButton`,
 `ScrollHover`, `ScrollPressed`, and `ScrollCorner` theme roles. See the

@@ -7,9 +7,10 @@ All notable changes to Icod.Widgets are recorded here.
 - Unified standalone and editor scrollbar geometry for horizontal and vertical
   axes, including inert zero/one-cell layouts, two-cell arrow-only layouts, and
   overflow-safe thumb/absolute-position mapping across the full `long` range.
-- Added arrow stepping, track paging, Shift+click absolute positioning, thumb
-  dragging, wheel and cross-axis keyboard input, and bounded press-and-hold
-  repeat through one semantic command route.
+- Added arrow stepping, track paging, Shift+click absolute positioning, a
+  Ctrl+click alias for terminal hosts that reserve Shift+mouse for selection,
+  thumb dragging, wheel and cross-axis keyboard input, and bounded
+  press-and-hold repeat through one semantic command route.
 - Added standard axis-specific scrollbar context menus with boundary-aware
   enablement, opened by right-click or Shift+F10. Added public anchored popup
   placement through `WidgetPopupMenu.OpenAt`.

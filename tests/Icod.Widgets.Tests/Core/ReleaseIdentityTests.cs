@@ -68,6 +68,7 @@ public sealed class ReleaseIdentityTests {
 		Assert.Contains( "auto-hide", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "horizontal", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "Shift+click", notes, StringComparison.Ordinal );
+		Assert.Contains( "Ctrl+click", notes, StringComparison.Ordinal );
 		Assert.Contains( "wheel", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "clamp", notes, StringComparison.OrdinalIgnoreCase );
 		Assert.Contains( "pointer", notes, StringComparison.OrdinalIgnoreCase );
@@ -84,7 +85,7 @@ public sealed class ReleaseIdentityTests {
 		string notes = File.ReadAllText( Path.Combine( root, "docs", "releases", "1.10.0.md" ) );
 
 		Assert.Contains( "## Verification", notes, StringComparison.Ordinal );
-		Assert.Contains( "509 net10.0 tests", notes, StringComparison.Ordinal );
+		Assert.Contains( "511 net10.0 tests", notes, StringComparison.Ordinal );
 		Assert.Contains( "Windows", notes, StringComparison.Ordinal );
 		Assert.Contains( "Linux", notes, StringComparison.Ordinal );
 		Assert.Contains( "macOS", notes, StringComparison.Ordinal );

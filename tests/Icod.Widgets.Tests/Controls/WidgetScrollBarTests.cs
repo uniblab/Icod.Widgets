@@ -129,6 +129,17 @@ public sealed class WidgetScrollBarTests {
 	}
 
 	[Fact]
+	public void ControlTrackClickScrollsHereWhenTerminalReservesShiftClick() {
+		WidgetScrollBar bar = new( "scroll", WidgetScrollOrientation.Horizontal ); bar.SetRange( 100, 20, 0 );
+		using WidgetHost host = Host( bar, new CursesRectangle( 0, 0, 1, 10 ) );
+
+		WidgetDispatchResult result = host.Process( Pointer( CursesMouseAction.Press, 8, 0, CursesKeyModifiers.Control ), TimeSpan.Zero );
+
+		Assert.Equal( 80, bar.Offset );
+		Assert.Single( result.Actions );
+	}
+
+	[Fact]
 	public void DirectionalKeyPairsMatchWin32Vocabulary() {
 		foreach ( WidgetScrollOrientation orientation in Enum.GetValues<WidgetScrollOrientation>() ) {
 			WidgetScrollBar bar = new( $"scroll-{orientation}", orientation ); bar.SetRange( 100, 20, 10 );

@@ -36,11 +36,13 @@ After opening a file:
   thumb may be dragged. Ctrl+Up/Ctrl+Down scroll one displayed row and the
   wheel scrolls three, so wrapped continuations count just like ordinary rows.
   Press F9 to toggle wrapping. In no-wrap mode, `◄` and `►` step horizontally,
-  track clicks page, Shift+click positions directly, and the `━` thumb drags;
-  the bottom-right corner is inert when both axes are visible. Right-click a bar
-  for its standard axis-specific scroll menu. If scrolling would strand the
-  caret off-screen, the caret is clamped to the approaching viewport edge at
-  its preferred visual column; otherwise it and the selection remain untouched.
+  track clicks page, Shift+click or Ctrl+click positions directly, and the `━`
+  thumb drags. Use Ctrl+click in Windows Terminal, which reserves Shift+mouse
+  for terminal selection. The bottom-right corner is inert when both axes are
+  visible. Right-click a bar for its standard axis-specific scroll menu. If
+  scrolling would strand the caret off-screen, the caret is clamped to the
+  approaching viewport edge at its preferred visual column; otherwise it and
+  the selection remain untouched.
   The chrome uses the scrollbar track, thumb, button, hover, pressed, corner,
   and disabled theme roles, so themes control presentation without changing
   behavior.
@@ -79,7 +81,8 @@ and intentionally provides no Save command.
 For live scrollbar qualification, open a file with enough lines and one long
 line. Verify the right bar composes with line numbers, then exercise
 Ctrl+Up/Ctrl+Down within a wrapped line, the wheel, arrow buttons, track paging,
-Shift+click, context menus, and thumb dragging. Press F9 and repeat on the bottom
+Ctrl+click (or Shift+click when the terminal reports it), context menus, and
+thumb dragging. Press F9 and repeat on the bottom
 bar. With both axes visible, click the corner and confirm nothing moves. Resize
 wide/tall enough for all content to fit and confirm auto-hide, then shrink to one
 row and confirm no partial scrollbar is painted.
