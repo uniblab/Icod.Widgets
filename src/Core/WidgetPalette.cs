@@ -94,6 +94,8 @@ public static class WidgetPalette {
 			.With( WidgetStyleRole.DialogDisabledAction, disabled )
 			.With( WidgetStyleRole.ScrollTrack, Style( dim, background ) ).With( WidgetStyleRole.ScrollThumb, border )
 			.With( WidgetStyleRole.ScrollFocusedThumb, focused )
+			.With( WidgetStyleRole.ScrollButton, border ).With( WidgetStyleRole.ScrollHover, selected )
+			.With( WidgetStyleRole.ScrollPressed, focused ).With( WidgetStyleRole.ScrollCorner, normal )
 			.With( WidgetStyleRole.StatusSurface, border ).With( WidgetStyleRole.StatusField, normal )
 			.With( WidgetStyleRole.StatusAction, Style( accent, background, emphasis ) ).With( WidgetStyleRole.StatusFocusedAction, focused )
 			.With( WidgetStyleRole.Indicator, normal ).With( WidgetStyleRole.MessageSurface, normal )

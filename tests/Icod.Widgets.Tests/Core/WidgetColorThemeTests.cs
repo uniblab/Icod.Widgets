@@ -262,6 +262,38 @@ public sealed class WidgetColorThemeTests {
 	}
 
 	[Fact]
+	public void NewScrollbarRolesFallBackToExistingThemeParts() {
+		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty
+			.With( WidgetStyleRole.ScrollTrack, Blue ).With( WidgetStyleRole.ScrollFocusedThumb, Green )
+			.With( WidgetStyleRole.EditorSurface, Gray ) };
+
+		Assert.Equal( Blue, theme.Resolve( WidgetStyleRole.ScrollButton ) );
+		Assert.Equal( Green, theme.Resolve( WidgetStyleRole.ScrollHover ) );
+		Assert.Equal( Green, theme.Resolve( WidgetStyleRole.ScrollPressed ) );
+		Assert.Equal( Gray, theme.Resolve( WidgetStyleRole.ScrollCorner ) );
+	}
+
+	[Fact]
+	public void ScrollbarHoverAndPressedStylesDoNotChangeHitBehavior() {
+		WidgetTheme theme = WidgetTheme.Default with { Parts = WidgetStyles.Empty
+			.With( WidgetStyleRole.ScrollButton, Blue ).With( WidgetStyleRole.ScrollHover, Green )
+			.With( WidgetStyleRole.ScrollPressed, Gray ) };
+		CursesScreen screen = new( 10, 1 ); using WidgetHost host = new( screen, theme );
+		WidgetScrollBar bar = new( "bar", WidgetScrollOrientation.Horizontal ); bar.SetRange( 100, 20, 10 );
+		host.Attach( bar ); bar.Arrange( screen.Bounds ); Assert.True( host.Focus( bar ) );
+
+		host.Process( WidgetInput.PointerInput( new CursesMouseEvent(
+			CursesMouseAction.Move, CursesMouseButton.None, 0, 0 ) ), TimeSpan.Zero ); host.Render();
+		Assert.Equal( 10, bar.Offset );
+		Assert.Equal( Green, screen.StandardWindow.GetCell( 0, 0 ).Style );
+
+		host.Process( WidgetInput.PointerInput( new CursesMouseEvent(
+			CursesMouseAction.Press, CursesMouseButton.Primary, 0, 0 ) ), TimeSpan.FromMilliseconds( 1 ) ); host.Render();
+		Assert.Equal( 9, bar.Offset );
+		Assert.Equal( Gray, screen.StandardWindow.GetCell( 0, 0 ).Style );
+	}
+
+	[Fact]
 	public void IntegratedScrollbarUsesExactGlyphsAndThemeRoles() {
 		WidgetStyles parts = WidgetStyles.Empty.With( WidgetStyleRole.ScrollTrack, Blue )
 			.With( WidgetStyleRole.ScrollThumb, Red ).With( WidgetStyleRole.ScrollFocusedThumb, Green );
